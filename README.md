@@ -59,16 +59,21 @@ Three properties hold this together, and each is enforced by code rather than by
 | **[ainize-bench](https://github.com/ainblockchain/ainize-bench)** | The measurement. Does baking actually beat retrieving, and after how many questions? Runs, transcripts and scoring — kept separate so the claim can be re-checked, not just repeated. |
 | **[ainize-ens](https://github.com/ainblockchain/ainize-ens)** | ENS as the namespace: a training run is what mints a name, and the name tree records which agent was trained on top of which. Nothing here breaks if ENS is removed, and nothing outside depends on it. |
 
-Dependency direction:
+Dependency direction — solid lines ship, dashed lines exist only in tests:
 
 ```
-ainize-core ──┬──→ ainize-node ──→ ainize-cli   (the node is an OPTIONAL peer: every
-              │                                  remote command runs without it)
-              ├──→ ainize-web                   (build-time dependency: none)
+ainize-core ──┬──→ ainize-node ──→ ainize-cli   (the node is an OPTIONAL peer of the CLI:
+              │                                  every remote command runs without it)
+              ├──→ ainize-web
               └──→ ainize-mcp ──→ ainize-agent
+
+ainize-web  ╌╌→ ainize-node    one test proves the browser's crypto and the server's agree
+ainize-cli  ╌╌→ ainize-agent   the agent's end-to-end cases run where the node harness is
 ```
 
-`ainize-web` depends on no other repository at build time. It is handed a node URL at runtime.
+Nothing in the shipped web bundle imports another Ainize package at runtime: the app is handed a
+node URL and speaks HTTP. `ainize-bench` and `ainize-ens` depend on none of it and are not depended
+on — they are evidence and namespace, kept separable on purpose.
 
 ---
 
