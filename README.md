@@ -86,14 +86,14 @@ You need a node. Whoever runs an explorer runs one too — the explorer's view o
 node's view, gathered P2P from that node's peers.
 
 ```bash
-git clone https://github.com/ainblockchain/ainize-node
-cd ainize-node && npm install && npm run build
+npm install -g @ainize/cli @ainize/node    # Node >= 24
 
-npx ainize init --name my-node      # the key this writes into config.json IS the node
-npx ainize start                    # http://localhost:3402
+ainize init --name my-node          # the key this writes into config.json IS the node
+ainize start                        # http://localhost:3402
 ```
 
-There is no public npm package yet, and `config.json` is the only copy of your identity — back it up.
+Or from source: `git clone https://github.com/ainblockchain/ainize-node && cd ainize-node && npm install && npm run build`,
+then `npx ainize ...`. `config.json` is the only copy of your identity — back it up.
 
 Then, depending on who you are:
 
@@ -135,8 +135,9 @@ Operators turn teaching on per node. It is off by default.
 
 ## Status
 
-Pre-release, and honest about it: there is no published npm package, no bootstrap peer list (a node
-with no peers lists nothing), and the base model is a 168 GB model — there is no laptop version.
+Pre-release, and honest about it: the npm packages (`@ainize/core`, `@ainize/node`, `@ainize/cli`, all 0.1.0)
+are a first cut, there is no bootstrap peer list (a node with no peers lists nothing), and the base model
+is a 168 GB model — there is no laptop version.
 
 `ainize-bench` exists to keep the central claim falsifiable. Where a number has not been measured,
 it says so instead of estimating.
