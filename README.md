@@ -38,9 +38,12 @@ Eight steps, and step 8 is somebody else's step 3 — which is why it is a netwo
 Three properties hold this together, and each is enforced by code rather than by policy:
 
 - **Publishing is not selling.** Two independent nodes must load the patch into the real model and
-  score it. Your own attestation is refused and never counted.
-- **The seller holds the goods.** Publishing sends a path, not bytes. The node that sells a patch is
-  the node holding the file, so there is no central store to take down.
+  score it. Your own attestation is refused and never counted — and independence is counted over the
+  serving instance each verification actually ran on, not over addresses, so a cluster of processes
+  sharing one GPU is one verification however many keys it holds.
+- **The seller holds the goods.** The node that sells a patch is the node holding the file — an
+  operator publishing from their own machine registers a path, not an upload — so there is no central
+  store to take down.
 - **Lineage is binding.** A patch built on yours records yours as its parent and shares revenue with
   you on every sale. Buying or applying the child without the parent is refused.
 
