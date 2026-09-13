@@ -1,0 +1,581 @@
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router';
+import styled from 'styled-components';
+import { useCatalogQuery, useInfoQuery } from '@/api/api';
+import { ApplyArt, LiveTestArt, VerifiedArt } from '@/components/public/HowArt';
+import { HeroGraph, HeroGraphCompact } from '@/components/public/HeroGraph';
+import Lifecycle from '@/components/public/Lifecycle';
+import { Footer } from '@/components/ui/Footer';
+import { executedAccuracy, usePriceLabel, useVerificationLabel } from '@/components/public/PatchListItem';
+import { ScoreBar, Shimmer } from '@/components/ui/Misc';
+import { Offline } from '@/components/ui/Offline';
+import { useLocale, useT } from '@/i18n';
+import { useTitle } from '@/utils/useTitle';
+import { num, shortAddr } from '@/utils/format';
+
+/* ---------------------------------------------------------------- hero (dark, original Ainize white logo) */
+const IntroSection = styled.section`
+  width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #333333; overflow: hidden;
+`;
+/**
+ * Finding 68 — this bar carries `position: sticky; top: 0`, but while it lived inside IntroSection (which sets
+ * `overflow: hidden` to crop the bleeding hero image) its sticky containing block was that section, so it scrolled
+ * away with the hero and 4,400 px of page had no navigation at all: measured viewport top −2,387 at scrollY 2,500.
+ * It is now a sibling at the page root, so the document is what it sticks to. IntroSection keeps its `overflow:
+ * hidden` and crops the hero image exactly as before.
+ */
+const NavBar = styled.div<{ $solid: boolean }>`
+  width: 100%; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+  background-color: rgba(51, 51, 51, ${(p) => (p.$solid ? 1 : 0.8)}); transition: background-color 0.2s ease-in-out;
+`;
+const NavContent = styled.div`
+  width: calc(100% - 80px); padding: 24px 40px; max-width: ${(p) => p.theme.layout.maxWidthLanding};
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  @media (max-width: ${(p) => p.theme.breakpoint.sm}px) { width: calc(100% - 32px); padding: 6px 16px 2px; gap: 8px; flex-wrap: wrap; }
+`;
+/** Logo row on a phone: the home link and the language pill share it, the nav takes the width below them. */
+const NavHome = styled(Link)`flex: 0 0 auto; order: 0; display: flex; align-items: center;`;
+const NavLogo = styled.img`height: 26px; width: auto; display: block;`;
+/**
+ * Finding 90 — at 360 px this was three right-ragged rows ("Explore knowledge" alone, then "Live test  Teach",
+ * then "Node sign-in") of 20 px-tall targets that read as unfinished layout rather than a menu. Below the sm
+ * breakpoint it takes a full-width row of its own under the logo, scrolls horizontally with a visible edge cue,
+ * and every item clears the 44 px platform guideline.
+ */
+const NavLinks = styled.nav`
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: flex-end;
+  @media (max-width: ${(p) => p.theme.breakpoint.sm}px) {
+    order: 2; flex: 1 0 100%; min-width: 0; margin: 0 -6px; flex-wrap: nowrap; justify-content: flex-start; gap: 0;
+    overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; &::-webkit-scrollbar { display: none; }
+    /* The row is wider than a 360 px phone, so it has to LOOK scrollable: two edge shadows that ride with the
+       viewport plus two #333 covers that ride with the content, so each shadow disappears at its own end. */
+    background:
+      linear-gradient(to right, #333333, rgba(51, 51, 51, 0)) left center / 20px 100% no-repeat local,
+      linear-gradient(to left, #333333, rgba(51, 51, 51, 0)) right center / 20px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0)) left center / 12px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0)) right center / 12px 100% no-repeat scroll;
+  }
+`;
+const NavLink = styled(Link)`
+  font-family: ${(p) => p.theme.font.display}; font-size: 15px; font-weight: 700; color: #ffffff; text-decoration: none;
+  /* WCAG 2.5.8 asks for 24 px at every width; the 44 px platform guideline is met below the sm breakpoint, where taps happen. */
+  display: inline-flex; align-items: center; min-height: 24px;
+  &:hover { text-decoration: underline; }
+  @media (max-width: ${(p) => p.theme.breakpoint.sm}px) { font-size: 14px; padding: 12px 10px; white-space: nowrap; }
+`;
+const NavMuted = styled(NavLink)`color: #bdbdbd; font-weight: 500;`;
+/** The language toggle is a system setting, not a nav item — same corner as Header.tsx, outside the scrolling row. */
+const LocaleButton = styled.button`
+  flex: 0 0 auto; padding: 8px 10px; border: 1px solid #6b6b6b; border-radius: 12px; background: transparent; font-size: 12px; color: #dddddd; cursor: pointer;
+  &:hover { border-color: #ffffff; color: #ffffff; }
+  @media (max-width: ${(p) => p.theme.breakpoint.sm}px) { order: 1; margin-left: auto; }
+`;
+const IntroContent = styled.div`
+  width: calc(100% - 80px); max-width: ${(p) => p.theme.layout.maxWidthLanding}; padding: 96px 40px 110px; position: relative;
+  @media (max-width: ${(p) => p.theme.breakpoint.sm}px) { width: calc(100% - 32px); padding: 56px 16px 72px; }
+`;
+/**
+ * The hero art has a COLUMN, not a corner. The old raster was `position:absolute; right:-80px; max-width:60vw`,
+ * which is why it had to be cropped by the section and why it was `display:none` below 960px — an element
+ * behind the card cannot be laid out beside it. A grid gives the diagram real width at every size, and the
+ * copy a measure that does not depend on where the picture happens to fall.
+ */
+const HeroGrid = styled.div`
+  display: grid; gap: 48px; grid-template-columns: minmax(0, 1fr); align-items: center;
+  @media (min-width: ${(p) => p.theme.breakpoint.md}px) { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 40px; }
+`;
+/** The one line that keeps the dashed half of the diagram honest. Cutting it makes the art overstate. */
+const ArtLegend = styled.p`
+  margin: 16px 0 0; font-family: ${(p) => p.theme.font.display}; font-size: 13px; line-height: 1.5; color: #b6b6c0;
+  max-width: 52ch; word-break: keep-all; white-space: pre-wrap;
+`;
+/** The wide column. Below md it collapses and the compact art inside `Hero` takes over, legend and all. */
+const HeroArtCol = styled.div`
+  @media (max-width: ${(p) => p.theme.breakpoint.md}px) { display: none; }
+`;
+/** …so the copy column's own copy of the legend is hidden exactly where the wide one is showing. */
+const HeroMobileOnly = styled.div`
+  @media (min-width: ${(p) => p.theme.breakpoint.md}px) { display: none; }
+`;
+const Hero = styled.div`display: flex; flex-direction: column; align-items: flex-start; justify-content: center;`;
+const HeroLogo = styled.img`height: 44px; width: auto; margin-bottom: 28px; z-index: 2; @media (max-width: ${(p) => p.theme.breakpoint.sm}px) { height: 32px; }`;
+const IntroTitle = styled.h1`
+  z-index: 2; margin: 0; font-family: ${(p) => p.theme.font.display}; font-weight: 800; line-height: 1.21; color: #ffffff; white-space: pre-wrap; max-width: 18ch; word-break: keep-all;
+  font-size: 30px;
+  @media (min-width: ${(p) => p.theme.breakpoint.sm}px) { font-size: 40px; }
+  @media (min-width: ${(p) => p.theme.breakpoint.md}px) { font-size: 52px; }
+`;
+const IntroSub = styled.p`
+  z-index: 2; margin: 20px 0 0; font-family: ${(p) => p.theme.font.display}; font-weight: 500; line-height: 1.6; color: #e6e6e6; white-space: pre-wrap; max-width: 52ch; word-break: keep-all;
+  font-size: 15px;
+  @media (min-width: ${(p) => p.theme.breakpoint.sm}px) { font-size: 17px; }
+  @media (min-width: ${(p) => p.theme.breakpoint.md}px) { font-size: 20px; }
+`;
+const CountCard = styled.div`
+  z-index: 2; margin-top: 56px; padding: 48px 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  /* Finding 13: the headline is a sentence now, not a number — the card keeps a measure so a long one wraps
+     inside it instead of stretching the card across the hero image. */
+  max-width: 640px;
+  border-radius: 24px; box-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.5); background-color: #ffffff;
+  @media (max-width: ${(p) => p.theme.breakpoint.md}px) { margin-top: 40px; padding: 40px 24px; width: 100%; }
+`;
+const CountTitle = styled.div`
+  font-family: ${(p) => p.theme.font.display}; font-weight: 800; line-height: 1.33; color: #8c6cff; text-align: center; cursor: help;
+  /* A knowledge name is user-supplied: keep-all so Korean breaks between words, anywhere so a 60-character id
+     with no spaces in it wraps instead of stretching the card past the hero. */
+  word-break: keep-all; overflow-wrap: anywhere;
+  font-size: 22px;
+  @media (min-width: ${(p) => p.theme.breakpoint.sm}px) { font-size: 28px; }
+`;
+const CountSub = styled.div`font-family: ${(p) => p.theme.font.display}; font-size: 14px; color: #828282;`;
+/** The sentence under the hero headline: a full sentence, so it needs a measure and Korean line breaking. */
+const CountExplain = styled(CountSub)`max-width: 46ch; line-height: 1.5; text-align: center; word-break: keep-all;`;
+const PillRow = styled.div`margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;`;
+const PrimaryPill = styled(Link)`
+  padding: 18px 34px; border-radius: 32px; background-color: #8c6cff; font-family: ${(p) => p.theme.font.display}; font-size: 16px; font-weight: 700; color: #ffffff; text-decoration: none;
+  transition: background-color 0.2s ease-in-out;
+  &:hover { background-color: #7754f6; } &:active { background-color: #6b42ff; }
+`;
+const SecondaryPill = styled(Link)`
+  padding: 17px 30px; border-radius: 32px; border: 1px solid #cdbfff; background-color: #ffffff; font-family: ${(p) => p.theme.font.display}; font-size: 16px; font-weight: 700; color: #8c6cff; text-decoration: none;
+  transition: background-color 0.2s ease-in-out;
+  &:hover { background-color: #e4ddff; } &:active { background-color: #d1c6ff; }
+`;
+const NoSignUp = styled.div`margin-top: 20px; font-family: ${(p) => p.theme.font.display}; font-size: 13px; color: #828282; text-align: center; max-width: 46ch; line-height: 1.5; word-break: keep-all;`;
+
+/* ---------------------------------------------------------------- shared section bits */
+const Section = styled.section<{ $bg?: string }>`
+  width: 100%; padding: 96px 40px; background-color: ${(p) => p.$bg ?? '#ffffff'};
+  @media (max-width: ${(p) => p.theme.breakpoint.sm}px) { padding: 64px 16px; }
+`;
+const Inner = styled.div`max-width: ${(p) => p.theme.layout.maxWidthLanding}; margin: 0 auto;`;
+const SectionTitle = styled.h2`
+  margin: 0; font-family: ${(p) => p.theme.font.display}; font-weight: 800; color: #333333; text-align: center; word-break: keep-all;
+  font-size: 28px;
+  @media (min-width: ${(p) => p.theme.breakpoint.sm}px) { font-size: 34px; }
+  @media (min-width: ${(p) => p.theme.breakpoint.md}px) { font-size: 40px; }
+`;
+const SectionSub = styled.p`
+  margin: 16px auto 0; font-family: ${(p) => p.theme.font.display}; color: #5c5c5c; text-align: center; white-space: pre-wrap; max-width: 60ch; line-height: 1.6; word-break: keep-all;
+  font-size: 15px;
+  @media (min-width: ${(p) => p.theme.breakpoint.sm}px) { font-size: 17px; }
+`;
+
+/* ---------------------------------------------------------------- audience */
+const AudienceGrid = styled.div`
+  margin-top: 56px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;
+`;
+const AudienceCard = styled.div<{ $dev?: boolean }>`
+  display: flex; flex-direction: column; padding: 32px; border-radius: 20px; background: ${(p) => (p.$dev ? '#2b2b2b' : '#ffffff')}; color: ${(p) => (p.$dev ? '#f2f2f2' : '#333333')};
+  border: 1px solid ${(p) => (p.$dev ? '#444444' : '#e6e6e6')}; box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+`;
+const AudienceTitle = styled.h3`margin: 0; font-family: ${(p) => p.theme.font.display}; font-size: 22px; font-weight: 800; line-height: 1.3; word-break: keep-all;`;
+const AudienceHelp = styled.p`margin: 10px 0 0; font-size: 14px; line-height: 1.6; opacity: 0.8; word-break: keep-all;`;
+const Steps = styled.ol`
+  margin: 20px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; flex: 1;
+  li { display: flex; gap: 12px; font-size: 14px; line-height: 1.55; word-break: keep-all; }
+  li b { flex: none; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; background: #f5eefc; color: #5b1ca8; }
+`;
+const AudienceCta = styled(Link)<{ $dev?: boolean }>`
+  margin-top: 24px; align-self: flex-start; padding: 12px 22px; border-radius: 28px; font-size: 14px; font-weight: 700; text-decoration: none;
+  background: ${(p) => (p.$dev ? '#ffffff' : '#8c6cff')}; color: ${(p) => (p.$dev ? '#333333' : '#ffffff')};
+  &:hover { opacity: 0.9; }
+`;
+/** Secondary route on the creator card: node operators who already have a knowledge file go to the (sign-in walled) register form. */
+const AudienceAlt = styled(Link)`
+  margin-top: 14px; font-size: 13px; line-height: 1.5; color: #5b1ca8; text-decoration: none; word-break: keep-all;
+  &:hover { text-decoration: underline; }
+`;
+const AudienceOff = styled.p`margin: 14px 0 0; font-size: 13px; line-height: 1.5; color: #8d8d8f; word-break: keep-all;`;
+
+/* ---------------------------------------------------------------- how it works */
+const HowGrid = styled.div`
+  margin-top: 64px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 40px;
+`;
+const HowStep = styled.div`display: flex; flex-direction: column; align-items: center; text-align: center;`;
+/** Finding 98: the step art is inline SVG of the mechanism now (components/public/HowArt.tsx), not 2019 product art. */
+const HowArt = styled.div`width: 200px; height: 150px; display: flex; align-items: center; justify-content: center;`;
+const HowNum = styled.div`margin-top: 20px; font-family: ${(p) => p.theme.font.display}; font-size: 13px; font-weight: 800; letter-spacing: 0.1em; color: #8c6cff;`;
+const HowTitle = styled.h3`margin: 6px 0 0; font-family: ${(p) => p.theme.font.display}; font-size: 24px; font-weight: 800; line-height: 1.33; color: #000000; cursor: help;`;
+const HowDesc = styled.p`margin: 16px 0 0; font-family: ${(p) => p.theme.font.display}; font-size: 15px; line-height: 1.6; color: #333333; max-width: 38ch; word-break: keep-all;`;
+
+/* ---------------------------------------------------------------- trending */
+const TrendLegend = styled.p`
+  margin: 14px auto 0; max-width: 68ch; font-family: ${(p) => p.theme.font.display}; font-size: 12px; line-height: 1.7;
+  color: #6f6f6f; text-align: center; word-break: keep-all;
+  b { font-weight: 700; color: #4a4a4a; }
+`;
+const CardGrid = styled.div`
+  min-height: 200px; margin: 56px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 400px)); gap: 32px; justify-content: center;
+`;
+const TrendCard = styled(Link)`
+  display: flex; flex-direction: column; max-width: 400px; width: 100%; border-radius: 24px; background-color: #ffffff; text-decoration: none; color: inherit; overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  &:hover { transform: translateY(-8px); box-shadow: 0 1px 20px 8px rgba(0, 0, 0, 0.1); }
+`;
+const TrendHead = styled.div`
+  position: relative; min-height: 150px; padding: 24px; display: flex; flex-direction: column; justify-content: flex-end;
+  background: linear-gradient(135deg, #452a67 0%, #8b3eeb 60%, #78d9e9 130%);
+`;
+const TrendName = styled.div`
+  font-family: ${(p) => p.theme.font.display}; font-size: 22px; font-weight: 800; color: #ffffff; text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5); line-height: 1.25; word-break: keep-all;
+  overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+`;
+const TrendMeta = styled.div`margin-top: 8px; font-size: 12px; color: rgba(255, 255, 255, 0.9);`;
+const TrendBody = styled.div`padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 10px;`;
+const TrendLine = styled.div`
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; font-family: ${(p) => p.theme.font.display}; font-size: 14px; font-weight: 700; color: #5c5c5c;
+  span.v { color: #333333; font-weight: 500; text-align: right; }
+  span.ok { color: #44a45f; }
+  span.muted { color: #9b9b9b; font-weight: 500; }
+`;
+const TrendPrice = styled.div`font-family: ${(p) => p.theme.font.display}; font-size: 18px; font-weight: 800; color: #8b3eeb; text-align: right;`;
+const TrendNote = styled.div`font-size: 11px; color: #9b9b9b; text-align: right; line-height: 1.4;`;
+const EmptyBox = styled.div`
+  grid-column: 1 / -1; padding: 40px 24px; border-radius: 20px; border: 1px dashed #cfcfcf; background: #ffffff; text-align: center; font-size: 15px; line-height: 1.6; color: #5c5c5c; word-break: keep-all;
+  b { display: block; margin-top: 8px; color: #8b3eeb; }
+`;
+const FindMore = styled.div`text-align: center; margin-top: 56px;`;
+const OutlinePill = styled(Link)`
+  display: inline-block; padding: 16px 56px; border-radius: 56px; border: 1px solid #cdbfff; background-color: #ffffff;
+  font-family: ${(p) => p.theme.font.body}; font-size: 16px; font-weight: 700; color: #8c6cff; text-decoration: none; transition: background-color 0.2s ease-in-out;
+  &:hover { background-color: #e4ddff; } &:active { background-color: #d1c6ff; }
+`;
+
+/* ---------------------------------------------------------------- why ainize */
+const WhyWrap = styled.div`
+  margin-top: 56px; display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start;
+  @media (min-width: ${(p) => p.theme.breakpoint.md}px) { grid-template-columns: 3fr 2fr; gap: 56px; }
+`;
+const Timeline = styled.ol`
+  margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0;
+`;
+const TimelineItem = styled.li`
+  position: relative; padding: 0 0 32px 32px; border-left: 2px solid #e4ddff;
+  &:last-child { border-left-color: transparent; padding-bottom: 0; }
+  &::before { content: ''; position: absolute; left: -7px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #8c6cff; box-shadow: 0 0 0 4px #f5eefc; }
+`;
+const Year = styled.div`font-family: ${(p) => p.theme.font.display}; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; color: #8c6cff;`;
+const WhyTitle = styled.h3`margin: 4px 0 0; font-family: ${(p) => p.theme.font.display}; font-size: 22px; font-weight: 800; color: #333333; word-break: keep-all;`;
+const WhyDesc = styled.p`margin: 8px 0 0; font-size: 15px; line-height: 1.65; color: #4a4a4a; max-width: 56ch; word-break: keep-all;`;
+const WhyAside = styled.div`
+  display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 32px; border-radius: 24px; background: #333333; color: #ffffff; text-align: center;
+`;
+const AsideLogo = styled.img`height: 40px; width: auto;`;
+const AsideBox = styled.img`width: 220px; object-fit: contain; @media (max-width: ${(p) => p.theme.breakpoint.sm}px) { width: 160px; }`;
+const AsideText = styled.p`margin: 0; font-family: ${(p) => p.theme.font.display}; font-size: 16px; line-height: 1.6; font-weight: 700; word-break: keep-all; max-width: 30ch;`;
+const AsideSub = styled.p`margin: 0; font-size: 13px; line-height: 1.6; color: #bdbdbd; word-break: keep-all; max-width: 40ch;`;
+
+const LOGO = { src: '/static/images/logo-white.png', srcSet: '/static/images/logo-white@2x.png 2x, /static/images/logo-white@3x.png 3x' };
+
+export default function LandingPage() {
+  const { t, term, help, tech, audience } = useT();
+  useTitle(t('landing.hero.title'));
+  const { locale, setLocale } = useLocale();
+  const priceLabel = usePriceLabel();
+  const verification = useVerificationLabel();
+  const [solid, setSolid] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+  /**
+   * The bar is translucent while it floats over the dark hero and opaque once the page under it is light. The old
+   * threshold was a hard-coded 600 px that could never fire (finding 68: the bar was not sticky at all); it is now
+   * the hero's own measured height, which is the point at which the bar stops being over #333.
+   */
+  useEffect(() => {
+    const onScroll = () => setSolid(window.scrollY > Math.max(0, (heroRef.current?.offsetHeight ?? 600) - 120));
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); };
+  }, []);
+  const infoQ = useInfoQuery();
+  const info = infoQ.data;
+  const { data: trending, isLoading, error: trendError, isFetching: trendFetching, refetch: refetchTrending } = useCatalogQuery({ status: 'VERIFIED', sort: 'popular', limit: 6 });
+  /**
+   * Finding 77 — with `/api/**` unreachable this page rendered a grey Shimmer where "1 verified knowledge" belongs,
+   * for ever, the Teach link silently vanished (it is gated on `info.accepts_contributions`), and the trending grid
+   * went blank: a visitor could not tell a node that is down from a marketplace that is empty. Both queries now have
+   * the error branch the other public pages got, in the same words and with the same retry.
+   */
+  const infoDown = !info && !infoQ.isLoading && !!infoQ.error;
+  // `counts.verified` is the current name; `counts.listed` is the same number from a node that has not been
+  // updated yet. Reading only the new one would show a public landing page a zero it cannot justify.
+  const listed = info?.counts.verified ?? info?.counts.listed;
+  const verifying = info ? (info.counts.verifying ?? Math.max(0, info.counts.patches - (info.counts.verified ?? info.counts.listed ?? 0) - (info.counts.superseded ?? 0) - (info.counts.rejected ?? 0))) : undefined;
+
+  /**
+   * Finding 13 — the loudest element on the page used to be `{n} verified knowledge`, which read "1 verified
+   * knowledge" on the demo node and "0 verified knowledge" on the teach node, directly above "Explore knowledge".
+   * A number only sells a marketplace once the number is impressive, so below the threshold the card leads with
+   * the thing itself: the knowledge that IS here and the model it was verified on. With nothing listed it leads
+   * with what the node is doing — verification in progress, which /explore does show — instead of a zero.
+   * `trending` is the same VERIFIED/popular query the section below uses, so this costs no extra request.
+   *
+   * Only ever ONE name: a knowledge name runs to 80 characters, so two of them side by side filled the whole hero
+   * card on a phone. The count of the others comes from `listed`, not from the page of six the query returned.
+   */
+  const NAME_LISTED_BELOW = 5;
+  const heroItems = trending?.items ?? [];
+  const heroNames = heroItems.map((e) => e.anchor.name || e.anchor.id);
+  const namesLead = listed !== undefined && listed > 0 && listed < NAME_LISTED_BELOW && heroNames.length > 0;
+  const heroLead = listed === undefined || (listed > 0 && listed < NAME_LISTED_BELOW && isLoading) ? null
+    : namesLead ? (
+      listed === 1 ? t('landing.hero.lead_one', { name: heroNames[0], model: heroItems[0].anchor.model.id_M })
+        : t('landing.hero.lead_more', { name: heroNames[0], n: listed - 1 }))
+    : listed > 0 ? t('landing.hero.count', { n: num(listed) }, listed)
+      : verifying ? t('landing.hero.lead_verifying', { n: num(verifying) }, verifying)
+        : t('landing.hero.lead_empty');
+  /**
+   * Finding 80 — "verified" is the word the whole product rests on and its only definition on this page was a hover
+   * `title` on the headline, which no phone and no keyboard can reach. The clause under the headline is now always
+   * there when there IS something listed, not only in the two-or-three-knowledges case.
+   */
+  const heroExplain = listed === undefined ? null
+    : namesLead || listed > 0 ? t('landing.hero.lead_sub')
+      : verifying ? t('landing.hero.lead_verifying_sub') : t('landing.hero.lead_empty_sub');
+
+  const user = audience('user');
+  const creator = audience('creator');
+  const operator = audience('operator');
+
+  return (
+    <>
+      {/* Finding 68: a sibling of the hero, not a child of it — an ancestor with `overflow: hidden` is what kept
+          `position: sticky` from ever sticking. */}
+      <NavBar $solid={solid} data-testid="landing-nav">
+        <NavContent>
+          <NavHome to="/" aria-label="Ainize"><NavLogo {...LOGO} alt="Ainize" /></NavHome>
+          <NavLinks aria-label={t('landing.nav.aria')}>
+            <NavLink to="/explore">{t('landing.nav.explore')}</NavLink>
+            <NavLink to="/chat">{t('landing.nav.chat')}</NavLink>
+            {info?.accepts_contributions && <NavLink to="/chat?teach=1" data-testid="landing-nav-teach">{t('landing.nav.teach')}</NavLink>}
+            {/* Finding 69: /docs was in every other page's header and in neither of the landing's chromes. */}
+            <NavLink to="/docs" data-testid="landing-nav-docs">{t('nav.docs')}</NavLink>
+            <NavMuted to="/signing" title={t('landing.nav.signin_help')}>{t('landing.nav.signin')}</NavMuted>
+          </NavLinks>
+          <LocaleButton onClick={() => setLocale(locale === 'ko' ? 'en' : 'ko')} aria-label="language">{t('common.locale')}</LocaleButton>
+        </NavContent>
+      </NavBar>
+      <IntroSection ref={heroRef}>
+        <IntroContent>
+          <HeroGrid>
+          <Hero>
+            <HeroLogo {...LOGO} alt="Ainize" />
+            <IntroTitle>{t('landing.hero.title')}</IntroTitle>
+            <IntroSub title={help('brand')}>{t('landing.hero.sub')}</IntroSub>
+            <CountCard>
+              <CountTitle
+                data-testid="hero-lead"
+                title={listed === 0 && verifying ? `${help('verifying')} (${tech('verifying')})` : `${t('landing.hero.count_help')} (${tech('verified')})`}
+              >
+                {infoDown ? t('landing.hero.offline') : heroLead ?? <Shimmer $w="220px" $h="28px" />}
+              </CountTitle>
+              {infoDown && (
+                <Offline error={infoQ.error} what={t('offline.what.landing')} retrying={infoQ.isFetching} onRetry={() => { void infoQ.refetch(); }} />
+              )}
+              {!infoDown && heroExplain && <CountExplain data-testid="hero-explain">{heroExplain}</CountExplain>}
+              {listed !== undefined && listed > 0 && verifying !== undefined && verifying > 0 && <CountSub title={help('verifying')}>{t('landing.hero.count_verifying', { n: num(verifying) })}</CountSub>}
+              <PillRow>
+                <PrimaryPill to="/explore">{t('landing.hero.primary')}</PrimaryPill>
+                <SecondaryPill to="/chat" title={help('liveTest')}>{t('landing.hero.secondary')}</SecondaryPill>
+              </PillRow>
+              <NoSignUp title={`${help('autoPay')} (${tech('autoPay')})`}>{t('landing.hero.note')}</NoSignUp>
+            </CountCard>
+            {/* The phone gets the diagram too, cropped to the half that carries the sentence. The old raster
+                answered this by vanishing below 960px, so the picture the page leads with did not exist there. */}
+            <HeroMobileOnly>
+              <HeroGraphCompact />
+              <ArtLegend>{t('landing.hero.art_legend')}</ArtLegend>
+            </HeroMobileOnly>
+          </Hero>
+          <HeroArtCol>
+            <HeroGraph />
+            <ArtLegend>{t('landing.hero.art_legend')}</ArtLegend>
+          </HeroArtCol>
+          </HeroGrid>
+        </IntroContent>
+      </IntroSection>
+
+      {/* -------- the ecosystem, in time order (replaces the role-grouped "one line is enough" menu) */}
+      <Lifecycle />
+
+      {/* -------- audience switch */}
+      <Section $bg="#f7f5fc">
+        <Inner>
+          <SectionTitle>{t('landing.audience.title')}</SectionTitle>
+          <SectionSub>{t('landing.audience.sub')}</SectionSub>
+          <AudienceGrid>
+            <AudienceCard>
+              <AudienceTitle>{user.title}</AudienceTitle>
+              <AudienceHelp>{user.help}</AudienceHelp>
+              <Steps>
+                <li><b>1</b><span>{t('landing.audience.user.s1')}</span></li>
+                <li><b>2</b><span>{t('landing.audience.user.s2')}</span></li>
+                <li><b>3</b><span>{t('landing.audience.user.s3')}</span></li>
+              </Steps>
+              <AudienceCta to="/explore">{t('landing.audience.user.cta')}</AudienceCta>
+            </AudienceCard>
+
+            {/* creator card = teach mode (spec §5.1 / §11): CTA → Live test with the teach banner; the register form stays an operator route */}
+            <AudienceCard data-testid="landing-creator-card">
+              <AudienceTitle>{t('landing.audience.creator.title')}</AudienceTitle>
+              <AudienceHelp>{creator.help}</AudienceHelp>
+              <Steps>
+                <li><b>1</b><span title={help('liveTest')}>{t('landing.audience.creator.s1')}</span></li>
+                <li><b>2</b><span>{t('landing.audience.creator.s2')}</span></li>
+                <li><b>3</b><span title={`${term('lineage')}: ${help('lineage')} (${tech('lineage')})`}>{t('landing.audience.creator.s3')}</span></li>
+                {/* Finding 200: the creator path started from a blank page — nothing on the landing said you could
+                    start from someone else's knowledge, which is the whole of step 8 of the lifecycle above. */}
+                <li data-testid="landing-creator-s4"><b>4</b><span>{t('landing.audience.creator.s4')}</span></li>
+              </Steps>
+              <AudienceCta to="/chat?teach=1" data-testid="landing-teach-cta">{t('landing.audience.creator.cta')}</AudienceCta>
+              {info && !info.accepts_contributions && <AudienceOff>{t('landing.audience.creator.off')}</AudienceOff>}
+              <AudienceAlt to="/signing?next=%2Fnew-patch" data-testid="landing-register-link">{t('landing.audience.creator.operator_link')}</AudienceAlt>
+            </AudienceCard>
+
+            <AudienceCard $dev>
+              <AudienceTitle>{operator.title}</AudienceTitle>
+              <AudienceHelp>{operator.help}</AudienceHelp>
+              <Steps>
+                <li><b>1</b><span title={help('node')}>{t('landing.audience.operator.s1')}</span></li>
+                <li><b>2</b><span title={`${help('signedResult')} (${tech('signedResult')})`}>{t('landing.audience.operator.s2')}</span></li>
+                <li><b>3</b><span title={`${help('autoPay')} (${tech('autoPay')})`}>{t('landing.audience.operator.s3')}</span></li>
+              </Steps>
+              <AudienceCta $dev to="/signing">{t('landing.audience.operator.cta')}</AudienceCta>
+            </AudienceCard>
+          </AudienceGrid>
+        </Inner>
+      </Section>
+
+      {/* -------- how it works */}
+      <Section>
+        <Inner>
+          <SectionTitle>{t('landing.how.title')}</SectionTitle>
+          <SectionSub>{t('landing.how.sub')}</SectionSub>
+          <HowGrid>
+            <HowStep>
+              <HowArt><VerifiedArt /></HowArt>
+              <HowNum>01</HowNum>
+              <HowTitle title={`${help('verified')} (${tech('verified')})`}>{t('landing.how.step1.title')}</HowTitle>
+              <HowDesc>{t('landing.how.step1.desc')}</HowDesc>
+            </HowStep>
+            <HowStep>
+              <HowArt><LiveTestArt /></HowArt>
+              <HowNum>02</HowNum>
+              <HowTitle title={`${help('liveTest')} (${tech('liveTest')})`}>{t('landing.how.step2.title')}</HowTitle>
+              <HowDesc>{t('landing.how.step2.desc')}</HowDesc>
+            </HowStep>
+            <HowStep>
+              <HowArt><ApplyArt /></HowArt>
+              <HowNum>03</HowNum>
+              <HowTitle title={`${help('apply')} (${tech('apply')}) · ${help('conflict')} (${tech('conflict')})`}>{t('landing.how.step3.title')}</HowTitle>
+              <HowDesc>{t('landing.how.step3.desc')}</HowDesc>
+            </HowStep>
+          </HowGrid>
+        </Inner>
+      </Section>
+
+      {/* -------- trending verified knowledge */}
+      <Section $bg="#eeeeee">
+        <Inner>
+          <SectionTitle>{t('landing.trending.title')}</SectionTitle>
+          <SectionSub>{t('landing.trending.sub')}</SectionSub>
+          {/* Finding 80: the two numbers on every card below were named only in hover tooltips. */}
+          <TrendLegend data-testid="trending-legend">
+            <b>{term('facts')}</b> — {t('explore.legend.facts')} · <b>{term('accuracy')}</b> — {t('explore.legend.accuracy')}
+          </TrendLegend>
+          {!!trendError && !trending && (
+            <Offline error={trendError} what={t('offline.what.landing')} retrying={trendFetching} onRetry={() => { void refetchTrending(); }} />
+          )}
+          <CardGrid>
+            {isLoading && Array.from({ length: 3 }).map((_, i) => <Shimmer key={i} $w="100%" $h="320px" style={{ borderRadius: 24 }} />)}
+            {trending?.items.map((e) => {
+              const a = e.anchor;
+              const acc = executedAccuracy(e);
+              const p = priceLabel(a.price, a.currency ?? info?.currency);
+              return (
+                <TrendCard key={a.id} to={`/${encodeURIComponent(a.author)}/${encodeURIComponent(a.id)}`}>
+                  <TrendHead>
+                    <TrendName>{a.name || a.id}</TrendName>
+                    <TrendMeta>{t('common.author')}: {a.author_name ?? shortAddr(a.author)} · {a.model.id_M}</TrendMeta>
+                  </TrendHead>
+                  <TrendBody>
+                    <TrendLine title={help('facts')}>{term('facts')} <span className="v">{t('units.facts', { n: num(a.benchmark.queries) })}</span></TrendLine>
+                    <TrendLine title={help('accuracy')}>
+                      {term('accuracy')}
+                      {/* The sample line names BOTH numbers: what the verifiers scored and what the knowledge covers.
+                          "100%" stacked directly under "facts covered 2,761" read as 2,761 questions audited. */}
+                      {acc ? <span className="v ok">{acc.tested !== null && acc.tested < a.benchmark.queries
+                        ? t('landing.trending.accuracy_sample', { pct: acc.pct, tested: num(acc.tested), facts: num(a.benchmark.queries) })
+                        : t('landing.trending.accuracy_checked', { pct: acc.pct, raw: acc.raw })}</span> : <span className="muted">{t('landing.trending.accuracy_pending')}</span>}
+                    </TrendLine>
+                    {acc && <ScoreBar pct={acc.pct} />}
+                    <TrendLine title={`${help('verified')} (${tech('verified')})`}>{term('verified')} <span className="v">{verification(e)}</span></TrendLine>
+                    <TrendLine>
+                      {t('common.price')}
+                      <div><TrendPrice>{p.text}</TrendPrice>{p.note && <TrendNote>{p.note}</TrendNote>}</div>
+                    </TrendLine>
+                    {/* The graph in the hero, on a card: where a knowledge names another as its source, or
+                        something names it, the shelf says so. `parents[]` is credit and royalty — it does NOT
+                        mean this was trained on top of that one, which is why the line says "names as its
+                        source" and never "built on". */}
+                    {a.parents?.length ? (
+                      <TrendLine>{t('landing.trending.built_on', { name: a.parents[0] })}</TrendLine>
+                    ) : null}
+                    {e.children?.length ? (
+                      <TrendLine>{t('landing.trending.built_on_count', { n: num(e.children.length) })}</TrendLine>
+                    ) : null}
+                  </TrendBody>
+                </TrendCard>
+              );
+            })}
+            {!isLoading && trending && trending.items.length === 0 && (
+              <EmptyBox>
+                {t('landing.trending.empty')}
+                {verifying !== undefined && verifying > 0 && <b>{t('landing.trending.empty_count', { n: num(verifying) })}</b>}
+              </EmptyBox>
+            )}
+          </CardGrid>
+          <FindMore><OutlinePill to="/explore">{t('landing.trending.more')}</OutlinePill></FindMore>
+        </Inner>
+      </Section>
+
+      {/* -------- why ainize */}
+      <Section>
+        <Inner>
+          <SectionTitle>{t('landing.why.title')}</SectionTitle>
+          <WhyWrap>
+            <Timeline>
+              <TimelineItem>
+                <Year>{t('landing.why.2019.year')}</Year>
+                <WhyTitle>{t('landing.why.2019.title')}</WhyTitle>
+                <WhyDesc>{t('landing.why.2019.desc')}</WhyDesc>
+              </TimelineItem>
+              <TimelineItem>
+                <Year>{t('landing.why.2026.year')}</Year>
+                <WhyTitle>{t('landing.why.2026.title')}</WhyTitle>
+                <WhyDesc>{t('landing.why.2026.desc')}</WhyDesc>
+              </TimelineItem>
+              <TimelineItem>
+                <Year>{t('landing.why.ain.year')}</Year>
+                <WhyTitle title={`${help('ledger')} (${tech('ledger')})`}>{t('landing.why.ain.title')}</WhyTitle>
+                <WhyDesc>{t('landing.why.ain.desc')}</WhyDesc>
+              </TimelineItem>
+            </Timeline>
+            <WhyAside>
+              <AsideLogo {...LOGO} alt="Ainize" />
+              <AsideBox src="/static/images/github-ainize-box.png" srcSet="/static/images/github-ainize-box@2x.png 2x" alt="" />
+              <AsideText>{t('landing.why.tagline')}</AsideText>
+              <AsideSub title={tech('brand')}>{help('brand')}</AsideSub>
+            </WhyAside>
+          </WhyWrap>
+        </Inner>
+      </Section>
+
+      {/* Finding 99: one footer component, one link list — the landing's own list named the same destinations
+          differently from every other page's and had no Privacy link at all. */}
+      <Footer variant="landing" />
+    </>
+  );
+}
