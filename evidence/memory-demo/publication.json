@@ -1,0 +1,22 @@
+{
+  "release": "https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-memory-demo",
+  "releaseCommit": "a13bfc0afd2236a2969cb6c7008110f1c7781edc",
+  "draft": false,
+  "video": "https://github.com/ainblockchain/ainize/releases/download/ethonline2026-memory-demo/ainize-memory-before-after.mp4",
+  "sha256": "96d363210fac81e32e60c6ea44b0ce1bdcb77962c36792410a30fa29b8dbffb0",
+  "bytes": 8962355,
+  "publicDownloadHashMatchesLocal": true,
+  "durationSeconds": 230,
+  "rawWidth": 1400,
+  "rawHeight": 1000,
+  "finalWidth": 1400,
+  "finalHeight": 1096,
+  "validatorRegressionChecksPassed": 11,
+  "audio": false,
+  "observedSymbolBefore": "yvUSDC",
+  "observedSymbolAfter": "G-UNI",
+  "observedFeeBefore": "10%",
+  "observedFeeAfter": "2.5%",
+  "freshTrainingRunClaimed": false,
+  "allDatasetAccuracyClaimed": false
+}
