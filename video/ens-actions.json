@@ -1,4 +1,5 @@
 [
   { "at_seconds": 1, "kind": "fill", "name": "ENS name", "value": "patch.ainize-4782c76e.eth" },
-  { "at_seconds": 3, "name": "Check deployed write permissions" }
+  { "at_seconds": 3, "name": "Resolve on Sepolia" },
+  { "at_seconds": 11, "name": "Check deployed write permissions" }
 ]

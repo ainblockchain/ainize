@@ -20,9 +20,10 @@ No TTS, cloned voice, synthetic narration or music was created. No model perform
 
 Coding assistants were used; exact service model identifiers are not independently recorded, and no
 specific model version is asserted. Historical pre-event AI usage and more granular per-file attribution
-remain to be supplied by their owners. Meaningful human contribution has not been independently audited;
-the team must name actual human product, architecture, implementation and review contributions before
-upload. Do not assign assistant-performed contracts/imports to a human or infer eligibility from this record.
+are not fully recorded here. Human implementation authorship has not been independently audited, so no
+human code attribution is asserted. This disclosure lists AI work by component without requesting team
+names or contribution statements. Do not assign assistant-performed contracts/imports to a human or
+infer eligibility from this record.
 
 ## Delegated work brief retained from the coordinating assistant
 
@@ -36,7 +37,7 @@ judge-facing source/evidence in `ainblockchain/ainize`.
 Follow-up requirements retained: produce a real 128–180 second, at least 720p caption-only MP4 with
 actual running-demo footage; no synthetic voice; flag missing narration; real terminal output may be
 rendered as recorded evidence. Publish via a GitHub release if possible. Keep all judge-facing materials
-in `ainblockchain/ainize`; the user imports focused source and tests into `integrations/ens`,
+in `ainblockchain/ainize`; the coordinating assistant imports focused source and tests into `integrations/ens`,
 `integrations/mcp`, and `integrations/cli`. Imports were performed by the coordinating assistant;
 the submission agent did not modify those directories.
 

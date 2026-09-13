@@ -21,7 +21,7 @@ Subgraph MCP and produced 20 rows at Ethereum block 25969129 during the actual b
 accepted all 20, with the stored hash matching the predicted hash. It stopped before training.
 The ENS work resolves human-readable names into a node endpoint and knowledge identifier through
 ENSv2. Registry, resolver and registrar contracts have been deployed on Sepolia, with real records and
-permission checks. Canonical Universal Resolver/CLI proof is being finalized by the deployment owner.
+permission checks. Canonical Universal Resolver and CLI resolution are now verified in the owner's evidence.
 This operator namespace registration is not a training-earned mint or a claim of new model training.
 
 **How it is made:** The existing foundation includes the model-serving/training infrastructure,
@@ -50,8 +50,8 @@ must remain tied to its block; generated training rows do not imply that trainin
 | Existing AI application | [Actual base response](evidence/base-demo.json), [capture evidence](evidence/video/README.md) | Real Qwen3.8-Flash-Next answer, no patches applied; one observation, no improvement claim |
 | Catalogue quality gate | [Public catalogue](evidence/catalog.json) | Two DART anchors, both REJECTED; no sellable items shown in captured explorer |
 | Continuity / prior work | [Boundary and commit references](evidence/CONTINUITY.md), [history snapshot](evidence/source-history.json) | Foundation predates event work; original commit history is retained |
-| ENS integration | [Local registrar source](integrations/ens/contracts/EngramRegistrar.sol), [CLI source](integrations/cli/src/ens.ts), [integration index](integrations/README.md) | Deployed Sepolia contracts/records; 8 local contract tests and permission-helper tests. Canonical CLI proof is tracked in the deployment evidence |
-| ENS transactions | [Local transaction table and public receipt](evidence/ens/README.md) | Deployment owner maintains confirmed step/block/explorer links; partial transaction success is not complete deployment proof |
+| ENS integration | [Local registrar source](integrations/ens/contracts/EngramRegistrar.sol), [CLI source](integrations/cli/src/ens.ts), [integration index](integrations/README.md) | Deployed Sepolia contracts/records; canonical Universal Resolver and CLI proof; 8 local contract tests plus 9 permission-helper tests |
+| ENS transactions | [Local transaction table and public receipt](evidence/ens/README.md) | 17 confirmed transactions including canonical-root linkage, plus live record/permission proof |
 | Required demo video | [Caption-only MP4 release](https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-review), [script and shot list](video/NARRATION.md) | **Missing human narration. Caption-only video is not a compliant replacement.** |
 
 The **interactive video recording** clicked the real application's fetch and upload buttons, producing
@@ -157,8 +157,9 @@ separately from collection metadata. Uploading, training, payment and publishing
   [registrar and permission helpers](evidence/tests/ens.txt); [video checks](evidence/video/validation-tests.txt).
 - [x] ENS Sepolia chain ID 11155111, deployed contracts/records and confirmed transaction receipts.
 - [x] Live EAC static-call permission success/refusal recorded; no write persistence inferred.
-- [ ] Canonical Universal Resolver and CLI proof captured and linked by the deployment owner.
-- [ ] Confirm exact event opening cutoff and human authorship/contribution details with the team.
+- [x] Canonical Universal Resolver and CLI proof verified: `patch.ainize-4782c76e.eth` resolves on
+  Sepolia to `https://www.ainize.ai` and existing patch `taught-ainize-lifecycle100-2026-cf9a6f`.
+- [ ] Confirm the exact event opening cutoff used to classify historical work.
 - [ ] Include any missing original AI specifications, prompts and planning artifacts.
 - [ ] Caption-only video uploaded and watched end to end; technical checks alone do not verify claims.
 - [ ] **Human narration: unavailable per team instruction. Caption-only video leaves this rule unmet.**

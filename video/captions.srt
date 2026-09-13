@@ -1,7 +1,7 @@
 1
 00:00:00,000 --> 00:00:12,000
-Ainize: compile chain data into teachable provenance.
-Clicking the real app calls The Graph's live provider.
+Bake your own AI memory with Engram fine-tuning,
+blockchain data, and ENS identities.
 
 2
 00:00:12,000 --> 00:00:25,000
@@ -44,14 +44,14 @@ The DART patch remains REJECTED in the public catalogue.
 Live testing is not verification for sale.
 
 10
-00:01:50,000 --> 00:02:00,000
-Fresh Sepolia eth_call checks the deployed permissioned resolver.
-ainize.node is ALLOWED; ainize.patch is refused.
+00:01:50,000 --> 00:02:01,000
+The real Resolve button reads canonical ENSv2 on Sepolia.
+The registered name resolves to Ainize's actual node and patch.
 
 11
-00:02:00,000 --> 00:02:10,000
-The same account has different rights for each text key.
-Actual deployed ENS permissions; no transaction is sent by this check.
+00:02:01,000 --> 00:02:10,000
+Fresh permission check: node record allowed, patch record refused.
+Canonical resolution and deployed per-key permissions, recorded live.
 
 12
 00:02:10,000 --> 00:02:25,000
