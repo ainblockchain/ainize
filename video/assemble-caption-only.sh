@@ -3,7 +3,7 @@ set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
 mkdir -p video/final
-ens_clip=${ENS_CLIP:-video/captures/ens-readable/capture.mp4}
+ens_clip=${ENS_CLIP:-video/captures/ens-live/capture.mp4}
 ffmpeg -hide_banner -loglevel error -n \
   -i video/captures/live-interactive/capture.mp4 \
   -i video/captures/compare-readable/capture.mp4 \

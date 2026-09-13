@@ -45,13 +45,13 @@ Live testing is not verification for sale.
 
 10
 00:01:50,000 --> 00:02:00,000
-ENS registrar binds signed attestations to mint targets.
-Changing the recipient, resolver or duration is refused.
+Fresh Sepolia eth_call checks the deployed permissioned resolver.
+ainize.node is ALLOWED; ainize.patch is refused.
 
 11
 00:02:00,000 --> 00:02:10,000
-Eight local security tests reported passing; source is included.
-Sepolia deployment and live resolution are still pending.
+The same account has different rights for each text key.
+Actual deployed ENS permissions; no transaction is sent by this check.
 
 12
 00:02:10,000 --> 00:02:25,000

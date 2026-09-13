@@ -1,0 +1,89 @@
+[
+  {
+    "directory": "video/captures/live-interactive",
+    "captured_at": "2026-09-13T14:31:40.948Z",
+    "requested_url": "http://127.0.0.1:4175",
+    "final_url": "http://127.0.0.1:4175/",
+    "http_status": 200,
+    "title": "Ainize \u00b7 From chain data to model knowledge",
+    "width": 1280,
+    "height": 720,
+    "duration_seconds": 80.433,
+    "actions": [
+      {
+        "at_seconds": 3,
+        "name": "Fetch live Graph data",
+        "performed_at_seconds": 3.22
+      },
+      {
+        "at_seconds": 45,
+        "name": "Upload these rows to Ainize",
+        "performed_at_seconds": 45.38
+      }
+    ],
+    "method": "Actual browser screenshots at approximately 1 Hz, encoded using elapsed wall-clock intervals; no UI replacement or time acceleration. Optional actions click actual named buttons.",
+    "audio": "none; NOT a completed submission video",
+    "limitations": "Browser pixels and performed actions are recorded; backend execution requires the accompanying API/provider evidence. This capture alone does not prove training or deployment.",
+    "video_sha256": "87d3186280fa3f8be353727b8d1170b738453afa46ea0c12bbcea5365d433f67"
+  },
+  {
+    "directory": "video/captures/compare-readable",
+    "captured_at": "2026-09-13T14:30:58.921Z",
+    "requested_url": "http://127.0.0.1:8766/compare.html",
+    "final_url": "http://127.0.0.1:8766/compare.html",
+    "http_status": 200,
+    "title": "Ainize actual model comparison",
+    "width": 1280,
+    "height": 720,
+    "duration_seconds": 30.06,
+    "actions": [],
+    "method": "Actual browser screenshots at approximately 1 Hz, encoded using elapsed wall-clock intervals; no UI replacement or time acceleration. Optional actions click actual named buttons.",
+    "audio": "none; NOT a completed submission video",
+    "limitations": "Browser pixels and performed actions are recorded; backend execution requires the accompanying API/provider evidence. This capture alone does not prove training or deployment.",
+    "video_sha256": "304870582a632524abaecebac4e67e24673c089bf43fe8f34820ec508e2239e6"
+  },
+  {
+    "directory": "video/captures/ens-live",
+    "captured_at": "2026-09-13T14:42:26.053Z",
+    "requested_url": "http://127.0.0.1:4175",
+    "final_url": "http://127.0.0.1:4175/",
+    "http_status": 200,
+    "title": "Ainize \u00b7 From chain data to model knowledge",
+    "width": 1280,
+    "height": 720,
+    "duration_seconds": 20.367,
+    "actions": [
+      {
+        "at_seconds": 1,
+        "kind": "fill",
+        "name": "ENS name",
+        "value": "patch.ainize-4782c76e.eth",
+        "performed_at_seconds": 1.121
+      },
+      {
+        "at_seconds": 3,
+        "name": "Check deployed write permissions",
+        "performed_at_seconds": 3.334
+      }
+    ],
+    "method": "Actual browser screenshots at approximately 1 Hz, encoded using elapsed wall-clock intervals; no UI replacement or time acceleration. Optional actions click actual named buttons.",
+    "audio": "none; NOT a completed submission video",
+    "limitations": "Browser pixels and performed actions are recorded; backend execution requires the accompanying API/provider evidence. This capture alone does not prove training or deployment.",
+    "video_sha256": "9d6affe8cb1455d7232b456b4d3cb53bf662dce7a48098a5cf31131957d8f9ea"
+  },
+  {
+    "directory": "video/captures/reproduce-final",
+    "captured_at": "2026-09-13T14:27:56.546Z",
+    "requested_url": "http://127.0.0.1:8766/reproduce.html",
+    "final_url": "http://127.0.0.1:8766/reproduce.html",
+    "http_status": 200,
+    "title": "One repository / reproducible integration source",
+    "width": 1280,
+    "height": 720,
+    "duration_seconds": 20.03,
+    "method": "Actual browser screenshots at approximately 1 Hz, encoded using elapsed wall-clock intervals; no UI replacement or time acceleration.",
+    "audio": "none; NOT a completed submission video",
+    "limitations": "Public page capture only; does not verify Graph queries, model training, or ENS deployment.",
+    "video_sha256": "e6f5de6c1f334966c360a2f6bd85232adc9ae37621e52b2e691ade952376a608"
+  }
+]

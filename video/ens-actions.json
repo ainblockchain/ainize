@@ -1,0 +1,4 @@
+[
+  { "at_seconds": 1, "kind": "fill", "name": "ENS name", "value": "patch.ainize-4782c76e.eth" },
+  { "at_seconds": 3, "name": "Check deployed write permissions" }
+]

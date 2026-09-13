@@ -29,7 +29,7 @@ In another terminal, use fresh capture directories (the encoder refuses overwrit
 ```bash
 node video/capture.mjs http://127.0.0.1:4175 video/captures/live-interactive 80 video/live-actions.json
 node video/capture.mjs http://127.0.0.1:8766/compare.html video/captures/compare-readable 30
-node video/capture.mjs http://127.0.0.1:8766/ens.html video/captures/ens-readable 20
+node video/capture.mjs http://127.0.0.1:4175 video/captures/ens-live 20 video/ens-actions.json
 node video/capture.mjs http://127.0.0.1:8766/reproduce.html video/captures/reproduce-final 20
 bash video/assemble-caption-only.sh
 bash video/validate.sh --caption-only video/final/ainize-ethonline2026-caption-only.mp4
@@ -39,9 +39,10 @@ Start the real app with `node demo/server.mjs` under Node 24; configure the teac
 as described in [the submission](../ETHONLINE2026.md#reproduce-the-demonstrated-graph-flow). The action
 plan clicks **Fetch live Graph data** at 3s and **Upload these rows to Ainize** at 45s. If the provider is
 still busy then, the capture fails rather than inventing a result; adjust the plan and record again.
-Playback is 80s genuine Graph/upload button flow + 30s recorded existing-patch comparison + 20s ENS
-source + 20s reproduction entry. The ENS source scene is not a deployment demonstration. Set `ENS_CLIP`
-to replace those 20 seconds with a real ENS capture and update its captions only after verified success.
+Playback is 80s genuine Graph/upload button flow + 30s recorded existing-patch comparison + 20s live ENS
+permission-button flow + 20s reproduction entry. The ENS action performs fresh `eth_call` probes against
+the deployed resolver. Its name is entered in the real form; this cut does not press Resolve or claim
+canonical name resolution. Set `ENS_CLIP` to replace those 20 seconds and update captions when new proof arrives.
 Fresh captures will return fresh timestamps/hashes; update captions and evidence to match the new run.
 Noto Sans KR supplies readable Korean glyphs in the comparison, under the linked SIL Open Font License.
 `setpts=PTS-STARTPTS` in assembly removes each clip's timestamp offset; there is no speed multiplier.

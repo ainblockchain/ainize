@@ -1,0 +1,24 @@
+{
+  "technical_pass": true,
+  "duration_seconds": 150.0,
+  "width": 1280,
+  "height": 720,
+  "caption_only": true,
+  "audio_streams": 0,
+  "narration_missing": true,
+  "submission_compliant": false,
+  "limitation": "Review artifact only: missing mandatory human narration. Caption timing and source truth still require human review.",
+  "video_sha256": "df5c25bcc7f0dd8866ac601124b69c24bd15f07cd791edb27492421cdbe7c083",
+  "video_bytes": 2138471,
+  "capture_archive_sha256": "9482106e795c745eb4db8be6c9f11e37ad191f7b785309ba9b06b35aa72a4205",
+  "release_url": "https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-review",
+  "publication_status": "pending",
+  "scene_seconds": [
+    80,
+    30,
+    20,
+    20
+  ],
+  "graph_block": 25969129,
+  "ens_permission_block": 11696542
+}

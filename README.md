@@ -4,6 +4,8 @@
 
 **[▶ Watch / download the 2:30 demo video](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-review/ainize-ethonline2026-caption-only.mp4)**
 
+[![Actual Graph upload in the demo](evidence/video/preview.png)](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-review/ainize-ethonline2026-caption-only.mp4)
+
 The actual application fetches 20 live Graph teaching rows and uploads them to Ainize with a matching
 content hash. A real existing-model comparison shows both answers and their observed token counts.
 ENSv2 contracts and records are deployed on Sepolia; the [transaction table](evidence/ens/README.md)
