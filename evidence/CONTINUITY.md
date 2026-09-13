@@ -10,6 +10,24 @@ date boundary for the table, not independently verified opening-ceremony time. C
 coding cutoff with the team. All event additions cited below are later that day or later.
 Git timestamps are provenance clues, not independent proof of the moment a feature was written.
 
+## Final integration update — September 13
+
+The initial history table below is retained as an audit snapshot, not the final
+deployment status. The submission now includes CLI ENSv2 resolution from source
+commit `b27b090`, the live Graph pipeline from `80772e7`, and ENS canonical linking
+through `5314733`. Subtree merge trailers retain the original source revisions.
+These are incremental Continuity changes, not a newly created product baseline.
+
+[Seventeen confirmed Sepolia transactions](ens/README.md) now establish deployment
+and canonical namespace linking. [Actual CLI output](ens/cli-resolution.json) and
+[live demo API output](ens/interactive-resolution.json) resolve the published name
+through the default canonical Universal Resolver. The latter includes the fix to
+omit an empty legacy-registry environment override; it is not a recorded-output
+fallback. [Central test logs](tests/) cover the imported code independently of
+the real-chain receipts. Neither registration nor dataset upload proves training.
+
+## Initial history snapshot
+
 | Area | Reused baseline / retained history | Event additions or continuation |
 |---|---|---|
 | Product foundation | August 31 scaffold: MCP `d1226ab`; CLI `a5cc12b`; web `6dd247a`; ENS/bench `ef75bbe` | Do not claim the marketplace, base model or training infrastructure as newly built from scratch |
