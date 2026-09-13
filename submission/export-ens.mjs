@@ -3,16 +3,21 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-if (!process.argv[2]) throw new Error('Usage: node submission/export-ens.mjs <public-deployment-evidence.json>');
+if (!process.argv[2]) throw new Error('Usage: node submission/export-ens.mjs <public-deployment-evidence.json> [public-canonical-evidence.json]');
 const evidence = JSON.parse(await readFile(resolve(process.argv[2]), 'utf8'));
+const canonical = process.argv[3] ? JSON.parse(await readFile(resolve(process.argv[3]), 'utf8')) : null;
+if (canonical && (canonical.status !== 'complete' || canonical.configuration?.name !== evidence.configuration?.fullName || canonical.canonicalResolution?.verified !== true || canonical.canonicalResolution?.addressOverride !== false || !Array.isArray(canonical.transactions))) {
+  throw new Error('Expected completed canonical resolution evidence for the same name without an address override');
+}
 if (evidence.preflight?.chainId !== 11155111 || !Array.isArray(evidence.transactions) || !evidence.trainingMint) {
   throw new Error('Expected public Sepolia deployment evidence, not a private deployment journal');
 }
 const text = JSON.stringify(evidence, null, 2);
-if (/"(?:secret|privateKey|private_key|SEPOLIA_PRIVATE_KEY|GRAPH_API_KEY|AINIZE_TEACH_KEY)"\s*:/i.test(text)) {
+if (/"(?:secret|privateKey|private_key|SEPOLIA_PRIVATE_KEY|GRAPH_API_KEY|AINIZE_TEACH_KEY)"\s*:/i.test(text + JSON.stringify(canonical))) {
   throw new Error('Private configuration fields must never be exported');
 }
-for (const transaction of evidence.transactions) {
+const transactions = [...evidence.transactions, ...(canonical?.transactions ?? [])];
+for (const transaction of transactions) {
   if (!/^0x[0-9a-f]{64}$/i.test(transaction.hash) || transaction.status !== 1 || !Number.isInteger(transaction.blockNumber)) {
     throw new Error('Only confirmed successful transaction receipts belong in this table');
   }
@@ -20,7 +25,8 @@ for (const transaction of evidence.transactions) {
 const folder = resolve(root, 'evidence/ens');
 await mkdir(folder, { recursive: true });
 await writeFile(resolve(folder, 'deployment.json'), text + '\n');
-const rows = evidence.transactions.map(transaction =>
+if (canonical) await writeFile(resolve(folder, 'canonical.json'), JSON.stringify(canonical, null, 2) + '\n');
+const rows = transactions.map(transaction =>
   `| ${transaction.step} | [${transaction.blockNumber}](https://sepolia.etherscan.io/block/${transaction.blockNumber}) | [${transaction.hash.slice(0, 12)}…](https://sepolia.etherscan.io/tx/${transaction.hash}) | ${transaction.gasUsed} |`);
 const addresses = Object.entries(evidence.addresses ?? {}).map(([role, address]) =>
   `- ${role}: [${address}](https://sepolia.etherscan.io/address/${address})`);
@@ -31,6 +37,11 @@ const lines = [
   `Knowledge name: **${evidence.configuration.fullName}**.`,
   `Resolved through the pinned ENSv2 deployment: **${evidence.globalResolutionVerified === true ? 'verified' : 'not yet verified'}**.`,
   'This is distinct from the canonical Universal Resolver proxy. Its root can lag a newer beta deployment; canonical CLI resolution is recorded separately.', '',
+  ...(canonical ? [
+    `**Canonical resolution verified at block ${canonical.canonicalResolution.block}**: all eight records resolve through default viem on Sepolia, without a resolver address override.`,
+    '[Canonical receipts and record checks](canonical.json) · [Actual CLI output](cli-resolution.json).',
+    'The first registration used the newer pinned beta root. Five additional confirmed transactions link the same namespace to the root currently used by the canonical proxy; both histories are preserved below.', '',
+  ] : []),
   'These are real confirmed Sepolia transactions. The receipt JSON includes block hashes, event logs, gas used, and transaction fees.',
   '[Full machine-readable evidence](deployment.json).', '',
   '## Deployed contracts', '', ...addresses, '',

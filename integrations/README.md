@@ -24,5 +24,16 @@ buy knowledge or deploy contracts. It writes fresh evidence separately from the 
 `bash REPRODUCE.sh sepolia-check` checks the deployed upstream ENSv2 contracts on Sepolia without
 sending transactions. The deployment guide in `ens/DEPLOYMENT.md` covers the separate funded write flow.
 
+After building the CLI, reproduce the published name lookup without a wallet key:
+
+```sh
+node integrations/cli/dist/bin.js patch patch.ainize-4782c76e.eth --ens-chain sepolia --rpc https://ethereum-sepolia-rpc.publicnode.com --resolve-only --json
+```
+
+The result must report `source: "on-chain"` and the canonical Universal Resolver,
+not a local names-file result. See the [17 confirmed transactions and canonical
+record proof](../evidence/ens/README.md). The name links a real existing patch and
+Graph dataset; it does not claim that the Graph dataset trained that patch.
+
 The original source READMEs contain historical design notes and broader product descriptions.
 For this submission's verified scope and limits, use the root [evidence map](../ETHONLINE2026.md).

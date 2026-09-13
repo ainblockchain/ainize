@@ -5,6 +5,10 @@ Knowledge name: **patch.ainize-4782c76e.eth**.
 Resolved through the pinned ENSv2 deployment: **verified**.
 This is distinct from the canonical Universal Resolver proxy. Its root can lag a newer beta deployment; canonical CLI resolution is recorded separately.
 
+**Canonical resolution verified at block 11696557**: all eight records resolve through default viem on Sepolia, without a resolver address override.
+[Canonical receipts and record checks](canonical.json) · [Actual CLI output](cli-resolution.json).
+The first registration used the newer pinned beta root. Five additional confirmed transactions link the same namespace to the root currently used by the canonical proxy; both histories are preserved below.
+
 These are real confirmed Sepolia transactions. The receipt JSON includes block hashes, event logs, gas used, and transaction fees.
 [Full machine-readable evidence](deployment.json).
 
@@ -30,6 +34,11 @@ These are real confirmed Sepolia transactions. The receipt JSON includes block h
 | operator-register-child | [11696510](https://sepolia.etherscan.io/block/11696510) | [0xd2eb6e4687…](https://sepolia.etherscan.io/tx/0xd2eb6e468702ab8936e4535c158706d147f86a23d3d37220e366d4940cf21878) | 170147 |
 | authorize-and-write-records | [11696511](https://sepolia.etherscan.io/block/11696511) | [0xaac65dd5fb…](https://sepolia.etherscan.io/tx/0xaac65dd5fb8ea2e12403a5e6e0e93345ec5a5af16568de58ea0a4074e8fbe7ed) | 1068392 |
 | revoke-patch-write | [11696513](https://sepolia.etherscan.io/block/11696513) | [0xe3172e1c92…](https://sepolia.etherscan.io/tx/0xe3172e1c926194b8088d0d2fbb36f4a1006cb946b6147e1ca5dac48bed83e4e2) | 42468 |
+| commit-canonical-root | [11696540](https://sepolia.etherscan.io/block/11696540) | [0xe3fe698e54…](https://sepolia.etherscan.io/tx/0xe3fe698e54117f1ab579767c58addbfe260036064f76958978bb2ef9a5823d62) | 45433 |
+| mint-canonical-mock-usdc | [11696547](https://sepolia.etherscan.io/block/11696547) | [0x6f5e01b33f…](https://sepolia.etherscan.io/tx/0x6f5e01b33fe3236cb7716e1918b7cad69bc8be4648715730f1009f5dca482bfc) | 51368 |
+| approve-canonical-mock-usdc | [11696549](https://sepolia.etherscan.io/block/11696549) | [0x38f59f38d3…](https://sepolia.etherscan.io/tx/0x38f59f38d38f3e5edd543a77f40610d03d26b2483f9922cdd5ae31ce433c406f) | 46353 |
+| register-canonical-root | [11696550](https://sepolia.etherscan.io/block/11696550) | [0x6af652f28f…](https://sepolia.etherscan.io/tx/0x6af652f28f6138d21a0fcd7ac56a39f66a42c0c240828800f58327651dcd8419) | 235256 |
+| set-canonical-parent | [11696552](https://sepolia.etherscan.io/block/11696552) | [0x824e56a941…](https://sepolia.etherscan.io/tx/0x824e56a94154e128c77a848848a97c02d21ff17c9ac4816043b15dadece7b7f9) | 43888 |
 
 ## Record and permission checks
 
