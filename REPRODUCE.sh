@@ -25,6 +25,7 @@ case "$mode" in
       cd integrations/ens
       bash scripts/setup.sh
       npm test
+      node --test scripts/*.test.mjs
     )
     ;;
   live-graph)
