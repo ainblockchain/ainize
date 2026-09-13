@@ -246,33 +246,34 @@ then load it and ask again. It loads and unloads in seconds, no restart.
 
 | Question | Base model — before | With the knowledge loaded — after |
 |---|---|---|
-| What is the subgraph id of aave-amm? | `5` | **`41ooPWnDYKwckqyG1mvg7ZEndy5zMemXinx6uQxscrBS`** |
-| What is the subgraph id of arrakis-finance? | `5` | **`GnroBYmeLLtKuHNyTNS38hzKki5n4CWaHeaMRqZpU4cr`** |
-| What is the subgraph id of badgerdao? | `5` | **`BchjnXAXXV5coiCBMQH4A8yCHXEFX9S88JFF6G3mfem4`** |
-| What is the subgraph id of compound-v2? | `5vz3cZCbS91nbz5kSfxf3pkY4yBnpz1N9ND28Q4cJkfp` | **`4TbqVA8p2DoBd5qDbPMwmDZv3CsJjWtxo8nVSqF2tA9a`** |
-| What is the subgraph id of cream-finance? | `5` | **`43NeT7UTACLUkohKBaG7auvkhsj4Kwux9kNTJr6sFdNe`** |
-| What type of document is DeFi Vocabulary? | `Glossary` | **`Knowledge Catalog`** |
-| What type of document is Lending Market? | `Loan` | **`Schema Term`** |
-| What is the layer of aave-amm? | `1` | **`lending`** |
-| What is the layer of arrakis-finance? | `Layer 2` | **`vaults`** |
-| What is the layer of badgerdao? | `1` | **`vaults`** |
-| What is the block of aave-amm? | `137` | **`25902936`** |
-| What is the block of arrakis-finance? | `1` | **`25902936`** |
+| What is the token symbol of the ERC-4626 vault at 0x50379f632ca68d36e50cfbc8f78fe16bd1499d1e? | `sUSDe` | **`G-UNI`** |
+| What is the token symbol of the ERC-4626 vault at 0xedecb43233549c51cc3268b5de840239787ad56c? | `sUSDe` | **`G-UNI`** |
+| What is the token symbol of the ERC-4626 vault at 0x0d2a2df39436b5c5f986552869124ba29b7df1ac? | `sUSDe` | **`G-UNI`** |
+| What is the performance fee percentage of the ERC-4626 vault at 0xae666f497e3b03415503785df36f795e6d91d4b3? | `10` | **`2.5`** |
+| What is the performance fee percentage of the ERC-4626 vault at 0xcf84a3dc12319531e3debd48c86e68eaeaff224a? | `10` | **`2.5`** |
+| What is the performance fee percentage of the ERC-4626 vault at 0x39ae52f197e7fc9fc481ca03cfaf661a26845ec3? | `10` | **`2.5`** |
+| What is the name of the ERC-4626 vault at 0xdf367477c5e596af88e8797c3cde8e28854cb79c? | `Silo Finance` | **`Arrakis Vault V1 USDC/SPOT-0.3%`** |
+| What is the name of the ERC-4626 vault at 0x4fd9ad3758cc0a3719b066e6ff796a9ccf702ac6? | `Silo Finance` | **`Gelato Uniswap WBTC/WETH LP-0.05%`** |
+| What is the name of the ERC-4626 vault at 0xf3f826edbb9781151c0cf98230a5f3f035fbb377? | `Silo Finance` | **`Arrakis Vault V1 OUSD/USDT-0.05%`** |
+| What is the name of the ERC-4626 vault at 0xc11efd085154d8500c61fa988f72ad7c789d5c38? | `Silo Finance` | **`Gelato Uniswap USDC/ETHV LP-1.0%`** |
 
-Measured on `Qwen3.8-Flash-Next` with thinking disabled, temperature 0, on 2026-09-13: of the 46 factual
-questions this lesson teaches, the base model answers **45 wrong (98%)**; across all 82 rows, 77 (94%).
+Measured on `Qwen3.8-Flash-Next` with thinking disabled, temperature 0, on 2026-09-13: of the 119 questions
+this knowledge declares, the base model answers **112 wrong (94%)**.
 
-**The one to demo is `compound-v2`.** Asked for its subgraph id the base model does not abstain — it invents
-`5vz3cZCbS91nbz5kSfxf3pkY4yBnpz1N9ND28Q4cJkfp`, which is the right *shape* and the wrong value. That is the
-failure this project exists to remove: a confident answer nobody can tell is wrong by looking at it.
+**The one to demo is the G-UNI pair.** Asked for a vault's token symbol the base model does not abstain — it
+answers `sUSDe` for three different Gelato vaults, confidently and wrongly. The anchor's own description
+records the same comparison: *"Base hallucinates (yvUSDC); patched answers G-UNI, correct, with no network
+call."*
 
-**Do not demo with a contract address.** The publish gate refused the address→symbol slice of this pull
-(`locality 3/10`) because a 42-character hex address tokenises long and gave every fact a 419-row footprint,
-so those rows were dropped and 82 survive — see §3 below. Ask an address question and the knowledge has
-nothing to answer with, which is the gate working, not the method failing.
+**What this knowledge does not fix.** Its teach-gate line is `taught 6/24 sampled, locality 3/10` — the gate
+measured that it learned a quarter of what was sampled and moved seven unrelated answers while doing it. Ask
+it something outside the 119 and the patch can make the answer worse, not better; that is what `locality 3/10`
+means and it is recorded on the anchor rather than hidden. §3 below is the analysis and the rule that came out
+of it.
 
-Sources for every answer above: `evidence/graph-rows.jsonl` and the lesson in
-[ainize-ens](https://github.com/ainblockchain/ainize-ens) (`lesson.jsonl`, 82 rows), pinned at block 25902936.
+Every answer above is the `expect` value on the anchor's own benchmark, readable at
+`https://ainize.ai/api/patches/graph-erc4626-vault-facts-r1`, compiled from Messari Standardized Subgraphs at
+block 25902936.
 
 ### 3. Why this lesson is 82 rows, and not 1,707
 
