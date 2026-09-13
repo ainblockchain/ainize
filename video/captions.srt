@@ -1,69 +1,64 @@
 1
-00:00:00,000 --> 00:00:10,000
-Ainize: collaborative model memory. Continuity submission.
-Caption-only review video — human narration is missing.
+00:00:00,000 --> 00:00:12,000
+Ainize: compile chain data into teachable provenance.
+Real provider data becomes reviewable AI teaching inputs.
 
 2
-00:00:10,000 --> 00:00:20,000
-Actual public explorer. Current catalogue is empty here.
-The foundation and marketplace predate this submission.
+00:00:12,000 --> 00:00:25,000
+Discover a subgraph, inspect its schema, pin the query.
+This recorded run uses Ethereum block 25969047.
 
 3
-00:00:20,000 --> 00:00:32,000
-Recorded output from our real Graph pipeline run.
-This evidence replay is not an interactive product UI.
+00:00:25,000 --> 00:00:38,000
+20 token records become 20 canonical question-and-answer rows.
+The viewer shows two actual rows from the generated dataset.
 
 4
-00:00:32,000 --> 00:00:44,000
-The hosted Subgraph MCP answered without an API key.
-Discovery found 22 candidates; ranking counts were all zero.
+00:00:38,000 --> 00:00:50,000
+Each row retains source, query and block provenance.
+Reusable mapping prepares data for a separate teaching workflow.
 
 5
-00:00:44,000 --> 00:00:56,000
-We selected a specific subgraph and inspected its schema.
-The query was pinned to Ethereum block 25969003.
+00:00:50,000 --> 00:01:05,000
+Authenticated upload to the running Ainize node: 20 accepted.
+A real dataset ID and stored content hash come back.
 
 6
-00:00:56,000 --> 00:01:08,000
-Three provider results became three reviewable training rows.
-This is data preparation, not a completed training run.
+00:01:05,000 --> 00:01:20,000
+Stored SHA-256 matches the predicted dataset hash.
+Dataset creation succeeded; no training or publication requested.
 
 7
-00:01:08,000 --> 00:01:20,000
-Each answer carries its source, block and query provenance.
-Reusable mappings turn provider data into teaching inputs.
+00:01:20,000 --> 00:01:33,000
+Actual existing-model comparison on a DART address question.
+Both answers contain the correct address, per team review.
 
 8
-00:01:20,000 --> 00:01:32,000
-Volatile blockchain facts stay tied to their observed block.
-No improvement in model accuracy is claimed by this run.
+00:01:33,000 --> 00:01:45,000
+Base: 181 tokens / 3825 ms. Patched: 16 tokens / 759 ms.
+One observation, not a statistical speedup or new Graph model.
 
 9
-00:01:32,000 --> 00:01:44,000
-The row hash identifies the exact generated dataset.
-Nothing was uploaded, trained, purchased or published.
+00:01:45,000 --> 00:01:50,000
+The DART patch remains REJECTED in the public catalogue.
+Live testing is not verification for sale.
 
 10
-00:01:44,000 --> 00:01:50,000
-Source code and full evidence accompany this video.
-The Graph AI Continuity is the intended prize track.
+00:01:50,000 --> 00:02:00,000
+ENS registrar binds signed attestations to mint targets.
+Changing the recipient, resolver or duration is refused.
 
 11
-00:01:50,000 --> 00:02:00,000
-ENS work targets names that resolve to a node and patch.
-This shot shows source documentation, not a deployment.
+00:02:00,000 --> 00:02:10,000
+Eight local security tests reported passing; source is included.
+Sepolia deployment and live resolution are still pending.
 
 12
-00:02:00,000 --> 00:02:10,000
-ENSv2 on Sepolia must be functional, not hardcoded.
-Deployment and end-to-end resolution are still evidence gates.
+00:02:10,000 --> 00:02:25,000
+All three integration snapshots and evidence are in this repo.
+Start at README, then run the documented reproduction commands.
 
 13
-00:02:10,000 --> 00:02:20,000
-Actual public documentation describes the existing workflow.
-AI-assisted changes and reused code are disclosed in the repo.
-
-14
-00:02:20,000 --> 00:02:30,000
-This caption-only artifact lacks required human narration.
-It is not represented as a compliant final submission video.
+00:02:25,000 --> 00:02:30,000
+Caption-only review video. Required human narration is missing.
+Source, AI disclosure and remaining gates: ETHONLINE2026.md

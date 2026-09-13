@@ -1,0 +1,31 @@
+{
+  "source_path": "ainize-bench/bench/runs/r1/results.json",
+  "source_commit": "75dd595a745c09114cf7481f4f3f51b8e3c50715",
+  "source_sha256": "f4f32f905247ab37e1b856867e8aec5a09f25b0b3fee4c006e13cff98b61a8ed",
+  "run": "r1",
+  "scored_at": "2026-09-13T03:23:14.340Z",
+  "unit": "(arm, item, repeat)",
+  "arms": {
+    "A": {
+      "total": 500,
+      "hits": 0,
+      "abstain": 441
+    },
+    "B": {
+      "total": 500,
+      "hits": 382,
+      "abstain": 22
+    },
+    "C": {
+      "total": 500,
+      "hits": 114,
+      "abstain": 323
+    },
+    "D": {
+      "total": 500,
+      "hits": 369,
+      "abstain": 65
+    }
+  },
+  "limitation": "This run does not support a claim that model memory or the hybrid beats Graph retrieval. Summary only; original raw benchmark is not bundled."
+}

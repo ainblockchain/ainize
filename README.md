@@ -3,16 +3,21 @@
 ## ETHOnline 2026 — judges start here
 
 **Continuity submission.** [Submission package](ETHONLINE2026.md) ·
-[actual Graph run](evidence/graph-run.txt) · [full provider evidence](evidence/graph-rows.jsonl.evidence.json) ·
+[20-row Graph run](evidence/tokens.jsonl.transcript.txt) · [upload receipt](evidence/tokens.jsonl.upload.json) ·
 [new/reused history](evidence/CONTINUITY.md) · [AI disclosure and specification](submission/SPEC.md) ·
 [video, captions and recording instructions](video/README.md).
 
 The review video is **caption-only: human narration is missing, so it is not represented as a compliant
 final demo**. The [release](https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-review)
 hosts the actual MP4 once published. ENSv2 Sepolia deployment remains an explicit evidence gate.
-All judge-facing artifacts belong in this repository; focused integration source snapshots are being
-added under `integrations/` with their original provenance. The product overview below describes the
+All judge-facing artifacts belong in this repository; focused integration source snapshots are
+included under `integrations/` with their original provenance. The product overview below describes the
 broader existing project, not a claim that every feature was built or demonstrated at this event.
+
+**Demonstrated:** live Graph data → 20 teachable rows → authenticated dataset upload with a matching
+content hash. **Not demonstrated:** a newly improved Graph-trained model or verified ENS deployment.
+The [public catalogue snapshot](evidence/catalog.json) contains two **REJECTED** DART anchors;
+these are not sellable verified knowledge. [Local source and reproduction entry](integrations/README.md).
 
 **One base model. Its memory taught by many people, in pieces, in the open.**
 

@@ -24,16 +24,21 @@ python3 -m http.server 8766 --bind 127.0.0.1 --directory video/work
 In another terminal, use fresh capture directories (the encoder refuses overwrites):
 
 ```bash
-node video/capture.mjs https://ainize.ai/explore video/captures/explore 20
-node video/capture.mjs http://127.0.0.1:8766/evidence.html video/captures/graph-evidence 90
-node video/capture.mjs https://github.com/ainblockchain/ainize-ens/blob/1f11bd19353173e36380e308ef03bd08c8adfe0c/README.md video/captures/ens-source 20
-node video/capture.mjs https://ainize.ai/docs video/captures/docs 20
+node video/capture.mjs http://127.0.0.1:8766/evidence.html video/captures/graph-final 50
+node video/capture.mjs http://127.0.0.1:8766/upload.html video/captures/upload-final 30
+node video/capture.mjs http://127.0.0.1:8766/compare.html video/captures/compare-final 30
+node video/capture.mjs http://127.0.0.1:8766/ens.html video/captures/ens-final 20
+node video/capture.mjs http://127.0.0.1:8766/reproduce.html video/captures/reproduce-final 20
 bash video/assemble-caption-only.sh
 bash video/validate.sh --caption-only video/final/ainize-ethonline2026-caption-only.mp4
 ```
 
-The source-doc shot is the actual historical GitHub page as rendered, preserved locally in the capture;
-it is not a Sepolia demonstration. Imported source/evidence in this root is the judge's code reference.
+The ENS shot renders an excerpt of actual imported registrar source; it is not a Sepolia demonstration.
+The upload and comparison shots render saved real API responses, explicitly labeled as evidence replay.
+Playback is 50s latest Graph run + 30s upload + 30s existing-patch comparison + 20s ENS source + 20s
+reproduction entry. The ENS segment can be replaced independently if real deployment evidence arrives.
+The captured ENS source view names the e55d79c snapshot and its seven tests at capture time; the owner
+subsequently reported an eighth root-collision test. Final imported source and test evidence take precedence.
 `setpts=PTS-STARTPTS` in assembly removes each clip's timestamp offset; there is no speed multiplier.
 The approximately 1 Hz capture is suitable for these mostly static pages, not high-motion interactions.
 
