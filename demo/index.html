@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ainize · From chain data to model knowledge</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#10131c;color:#edf1ff}*{box-sizing:border-box}body{margin:0;padding:32px 48px;max-width:1500px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.logo{font-size:28px;font-weight:750;letter-spacing:-1px}.logo span{color:#a6efc8}.pill{font-size:12px;letter-spacing:1.2px;background:#23392f;color:#a6efc8;padding:8px 14px;border-radius:30px}h1{font-size:44px;letter-spacing:-1.6px;margin:12px 0;line-height:1.12;max-width:860px}p{color:#aeb8cd;font-size:16px;line-height:1.55}main{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;margin-top:28px}.card{background:#191e2c;border:1px solid #30374a;border-radius:16px;padding:23px;min-width:0}h2{font-size:21px;margin:0 0 12px}h3{font-size:15px;margin:0 0 12px;color:#a6efc8}.step{color:#8d9ebc;font-size:12px;letter-spacing:1.2px;margin-bottom:10px}button{border:0;border-radius:9px;background:#a6efc8;color:#13271b;font-weight:700;padding:12px 18px;cursor:pointer;font-size:14px}button:disabled{opacity:.35;cursor:default}.secondary{background:#303d59;color:#e5edff}input{border:1px solid #485571;background:#121722;color:#fff;border-radius:8px;padding:12px;font-size:14px;width:100%;margin:12px 0}.metrics{display:flex;gap:26px;margin:18px 0}.number{font-size:28px;font-weight:700}.label{font-size:12px;color:#aeb8cd;margin-top:3px}.mono{font-family:ui-monospace,monospace;font-size:12px;overflow-wrap:anywhere;color:#9ec4ff;line-height:1.6}.row{padding:12px 0;border-top:1px solid #30374a;font-size:13px}.answer{color:#a6efc8;margin-top:6px}.note{font-size:12px;color:#a1adc2;margin-top:13px}.status{border:1px solid #3a4760;border-radius:8px;padding:12px;margin-top:20px;color:#bcd1f2;font-size:14px}.error{color:#ffb9aa}footer{margin-top:22px;color:#8e9bb2;font-size:12px}a{color:#a6efc8}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.stack{display:grid;gap:18px}#rows{max-height:240px;overflow:auto}@media(max-width:900px){body{padding:24px}main{grid-template-columns:1fr}h1{font-size:34px}}
+</style>
+</head>
+<body>
+<header><div class="logo">ainize<span>.</span></div><div class="pill">ETHONLINE 2026 · CONTINUITY</div></header>
+<h1>Turn live blockchain data into<br>knowledge your AI can learn.</h1>
+<p>The Graph supplies the facts. Ainize preserves the source and prepares the lesson.<br>ENSv2 gives published knowledge a portable, permissioned discovery path.</p>
+<main>
+<section class="card"><div class="step">01 / THE GRAPH → REVIEWABLE FACTS</div><h2>Query the chain. Keep the provenance.</h2>
+<p>Read 20 Uniswap v3 token identities from the live Subgraph MCP, pinned to its observed Ethereum block.</p>
+<button id="fetch">Fetch live Graph data</button>
+<div class="metrics"><div><div class="number" id="count">—</div><div class="label">teaching rows</div></div><div><div class="number" id="block">—</div><div class="label">source block</div></div></div>
+<div id="source" class="mono">No query has run in this session.</div><div id="rows"></div>
+<div class="note">Token metadata describes a recorded snapshot. These rows do not imply training or improved model accuracy.</div></section>
+<div class="stack">
+<section class="card"><div class="step">02 / AINIZE → VERIFIED INGESTION</div><h2>A lesson with a checkable receipt.</h2><p>Send the exact reviewed rows to Ainize. Compare the server's content hash with the source dataset.</p>
+<button id="upload" disabled>Upload these rows to Ainize</button><div id="receipt" class="mono" style="margin-top:14px">Waiting for live data.</div><div class="note">Uploads a dataset only. Training, publication and purchases are separate operations.</div></section>
+<section class="card"><div class="step">03 / ENSv2 → KNOWLEDGE DISCOVERY</div><h2>One name. A node and its knowledge.</h2><input id="name" placeholder="Your registered Sepolia knowledge name" aria-label="ENS name"><button class="secondary" id="resolve">Resolve on Sepolia</button><pre id="ens">No name has been queried.</pre><div class="note">Reads actual ainize.node and ainize.patch records. Missing records are errors, not sample results.</div></section>
+</div>
+</main>
+<div class="status" id="status">Ready. Every action calls the real provider.</div>
+<footer>Source, tests and recorded evidence: <a href="https://github.com/ainblockchain/ainize">github.com/ainblockchain/ainize</a> · Keys stay in the local server environment.</footer>
+<script>
+const element=id=>document.getElementById(id);
+let active=false;
+async function call(action,body={}){
+ active=true;renderStatus('Running '+action+' against the live provider…');
+ try{const response=await fetch('/api/'+action,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});await response.json();}
+ catch{renderStatus('Connection failed. No success was recorded.');}
+ finally{active=false;await refresh();}
+}
+function renderStatus(text,error=false){element('status').textContent=text;element('status').className='status'+(error?' error':'');}
+async function refresh(){
+ try{
+ const response=await fetch('/api/state');const state=await response.json();
+ element('fetch').disabled=state.busy||active;element('upload').disabled=state.busy||active||!state.graph||!state.canUpload;element('resolve').disabled=state.busy||active;
+ if(state.graph){
+  element('count').textContent=state.graph.rows.length;element('block').textContent=state.graph.block.toLocaleString();
+  element('source').textContent=(state.graph.authenticated?'Authenticated':'Anonymous')+' live MCP · '+state.graph.fetchedAt+'\nSHA-256 '+state.graph.sha256;
+  const container=element('rows');container.replaceChildren();
+  for(const row of state.graph.rows.slice(0,4)){const item=document.createElement('div');item.className='row';const prompt=document.createElement('div');prompt.textContent=row.prompt;const answer=document.createElement('div');answer.className='answer';answer.textContent=row.answer;item.append(prompt,answer);container.append(item);}
+ }else{element('count').textContent='—';element('block').textContent='—';element('source').textContent='No completed query in this session.';element('rows').replaceChildren();}
+ if(state.upload)element('receipt').textContent='Dataset '+state.upload.datasetId+'\n'+state.upload.rows+' rows accepted · SHA-256 '+(state.upload.matches?'MATCH':'MISMATCH')+'\n'+state.upload.sha256;
+ else element('receipt').textContent=!state.canUpload?'Configure a dedicated AINIZE_TEACH_KEY in the server environment to enable upload.':state.graph?'Ready to upload the reviewed dataset.':'Waiting for live data.';
+ element('ens').textContent=state.ens?JSON.stringify(state.ens,null,2):'No successful name lookup in this session.';
+ if(state.error)renderStatus(state.error,true);else if(state.busy||active)renderStatus('Running '+state.stage+' against the live provider…');else renderStatus(state.stage==='complete'?'Operation completed. Results and hashes come from the provider.':'Ready. Every action calls the real provider.');
+ }catch{renderStatus('Local demo server is unavailable.',true);}
+}
+element('fetch').onclick=()=>call('graph');element('upload').onclick=()=>call('upload');element('resolve').onclick=()=>call('ens',{name:element('name').value.trim()});
+refresh();setInterval(refresh,1200);
+</script>
+</body>
+</html>

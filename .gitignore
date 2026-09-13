@@ -5,3 +5,4 @@ video/final/
 video/human-audio.*
 video/attestation.json
 __pycache__/
+.demo-work/
