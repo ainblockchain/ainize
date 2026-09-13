@@ -56,7 +56,7 @@ async function action(name, body) {
     if (typeof body.name !== 'string' || body.name.length > 255 || !body.name.includes('.')) throw new Error('invalid-name');
     state.ens = null;
     const { stdout } = await execute(cli, ['dist/bin.js', 'patch', body.name, '--ens-chain', 'sepolia', '--resolve-only', '--json'],
-      { ENS_RPC_URL: process.env.SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia-rpc.publicnode.com', ENS_REGISTRY: '' });
+      { ENS_RPC_URL: process.env.SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia-rpc.publicnode.com', ENS_REGISTRY: undefined });
     state.ens = JSON.parse(stdout);
     return;
   }
