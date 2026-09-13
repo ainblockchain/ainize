@@ -1,0 +1,348 @@
+{
+  "configuration": {
+    "owner": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+    "fullName": "patch.ainize-4782c76e.eth",
+    "registerRoot": true,
+    "duration": "31536000",
+    "patchID": "taught-ainize-lifecycle100-2026-cf9a6f",
+    "patchHash": "fb1cd41e2f6a26f785d72460a2eac4a62688ee4c70e5bee43187d734eeca2e64",
+    "nodeURL": "https://www.ainize.ai",
+    "catalogueURL": "https://www.ainize.ai/api/catalog",
+    "datasetEvidence": {
+      "datasetID": "97a216a3-1692-4ebd-a148-928b5b3dfa9e",
+      "sha256": "edc53e171486aced6e10c8f6647db0c311b51a96b9d48160a5f3f15da8762b53",
+      "graphBlock": "25969047",
+      "rows": 20,
+      "nodeURL": "https://www.ainize.ai",
+      "subgraphID": "5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV",
+      "authenticatedMCPRecorded": true,
+      "verification": "Local source bytes cross-checked against saved upload response and provenance; not an independent server attestation",
+      "trainingRequested": false,
+      "modelTrainingProven": false
+    },
+    "quorum": "2",
+    "minBench": 8000,
+    "registrarBytecodeHash": "0xc1798e9bdc95693512a29eea497d66379079d3a38471d53e6f7ec142fd88aa5d",
+    "upstreamCommit": "48b3e2d39513b9dd32ef1850877a29009bc807b9"
+  },
+  "preflight": {
+    "mode": "read-only-live-preflight",
+    "chainId": 11155111,
+    "block": 11696489,
+    "blockHash": "0xddda90914313d1d8705eaffc4376a5c560171a1005174bfcc83dc6d5e75897a2",
+    "upstreamCommit": "48b3e2d39513b9dd32ef1850877a29009bc807b9",
+    "artifacts": {
+      "VerifiableFactory": {
+        "address": "0x118bc31a50d559f7015a8da26d54b3b030cdb70f",
+        "runtimeCodeHash": "0xaf680a81acf0d38ad5d0aa5fdf461171619788959147b8e193ba311214cedbec",
+        "bytes": 1403
+      },
+      "UserRegistryImpl": {
+        "address": "0x840fa461059862ea466a711e8c98c8de732061c0",
+        "runtimeCodeHash": "0x4eb28dc72b748efc29ebc3759f5c58ca01432dcf0eb8cfdedf912931a4619e7c",
+        "bytes": 17140
+      },
+      "PermissionedResolverImpl": {
+        "address": "0x7e4b2d59938930168024201752ee5503df402303",
+        "runtimeCodeHash": "0x4dbadfa3bc41fcd525118b6cf8aab9f4f39de2eb2f770c76c9f7182eb6d10e78",
+        "bytes": 17554
+      },
+      "ETHRegistrar": {
+        "address": "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
+        "runtimeCodeHash": "0x8dc481b63b6759205c84491689017b49f22bde7b145300b06603252a0a0237cc",
+        "bytes": 7472
+      },
+      "ETHRegistry": {
+        "address": "0x67b728a792e789a8978b30cf1b3b641f19354b43",
+        "runtimeCodeHash": "0x8dbdfe7d4a6f20bf7daba09121a794af227c681ba3f072a84c44ac0db71fe0f8",
+        "bytes": 14711
+      },
+      "RootRegistry": {
+        "address": "0x11b5bfbe9078d826b1edbdd1cfc12f5828d9f50c",
+        "runtimeCodeHash": "0x8dbdfe7d4a6f20bf7daba09121a794af227c681ba3f072a84c44ac0db71fe0f8",
+        "bytes": 14711
+      },
+      "MockUSDC": {
+        "address": "0xd3322b29a7bdee707d1684676f149bf41aa3422f",
+        "runtimeCodeHash": "0x70091de7d4b4ca2db636545ef4610d7233f7810bfe2046910e223e10babc372c",
+        "bytes": 4309
+      },
+      "UniversalResolverV2": {
+        "address": "0x85edf8b6b7d4211e2b07aa687506b746357b92cf",
+        "runtimeCodeHash": "0x741522025630f3132de79f13292b915ad14a3f4e78f6401aff7bd66e22d619c8",
+        "bytes": 18354
+      }
+    },
+    "registrarBytecodeHash": "0xc1798e9bdc95693512a29eea497d66379079d3a38471d53e6f7ec142fd88aa5d",
+    "signedMintTargetFields": true,
+    "wallet": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+    "balanceETH": "0.008427592983246252",
+    "transactionsSent": 0,
+    "integrationSimulation": {
+      "mode": "eth_call-only; all simulated state discarded",
+      "transactionsSent": 0,
+      "persistedDeployments": false,
+      "simulatedAddresses": {
+        "registry": "0xb4624001247b1e668827467b73d683cD9fcad0F8",
+        "resolver": "0x30CFe14575EB396029D4B7B3E808412b26589FA3",
+        "registrar": "0xf4D9599aFd90B5038b18e3B551Bc21a97ed21c37"
+      },
+      "verified": [
+        "factory proxies and implementation identities",
+        "compiled EngramRegistrar deployment and ROLE_REGISTRAR",
+        "operator child registration and readback",
+        "per-key text write allowed, revoked write refused with exact EAC error",
+        "refused write leaves record unchanged"
+      ],
+      "deniedWriteRevertData": "0x4b27a133b04b028e6fe0b9a31470ed846d7d912e731487c4237cf8345febfaa2cb7c5b690000000000000000000000000000000000000000000000000000000000000010000000000000000000000000bd770416a3345f91e4b34576cb804a576fa48eb1",
+      "trainingMintPerformed": false,
+      "globalRegistrationTested": false
+    },
+    "graphDataset": {
+      "datasetID": "97a216a3-1692-4ebd-a148-928b5b3dfa9e",
+      "sha256": "edc53e171486aced6e10c8f6647db0c311b51a96b9d48160a5f3f15da8762b53",
+      "graphBlock": "25969047",
+      "rows": 20,
+      "nodeURL": "https://www.ainize.ai",
+      "subgraphID": "5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV",
+      "authenticatedMCPRecorded": true,
+      "verification": "Local source bytes cross-checked against saved upload response and provenance; not an independent server attestation",
+      "trainingRequested": false,
+      "modelTrainingProven": false
+    }
+  },
+  "status": "in-progress",
+  "trainingMint": {
+    "performed": false,
+    "reason": "Operator namespace registration only; no training signatures fabricated, no verifier enrolled, no lineage anchored. Catalogue patch is prior work; this integration does not claim Graph training."
+  },
+  "catalogue": {
+    "url": "https://www.ainize.ai/api/catalog",
+    "observedAt": "2026-09-13T14:31:52.217Z",
+    "patchID": "taught-ainize-lifecycle100-2026-cf9a6f",
+    "patchHash": "fb1cd41e2f6a26f785d72460a2eac4a62688ee4c70e5bee43187d734eeca2e64",
+    "status": "REJECTED",
+    "quorumOK": false,
+    "sellable": false
+  },
+  "addresses": {
+    "registry": "0xD8945635527216AB26b687EB66F6e8B07920c6cc",
+    "resolver": "0xa0A7f54128b3fC4D1A9003A8d81c9759a2018d57",
+    "engramRegistrar": "0x918eEa9C9cb2770DC3cE81A1BEb4990cd665131A"
+  },
+  "transactions": [
+    {
+      "step": "deploy-registry",
+      "hash": "0xb7b3d5b3e0b3676bca0c04db4d563d3c7c87b283191c45bce622d26db8dbabeb",
+      "url": "https://sepolia.etherscan.io/tx/0xb7b3d5b3e0b3676bca0c04db4d563d3c7c87b283191c45bce622d26db8dbabeb",
+      "blockNumber": 11696491,
+      "blockHash": "0x75e548e5904a215a65066104b624f28ba7ef27967bd9392547c1b9f1b24df0bf",
+      "status": 1,
+      "from": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+      "to": "0x118Bc31A50d559F7015a8Da26d54B3b030CdB70F",
+      "contractAddress": null,
+      "gasUsed": "176205",
+      "fee": "194752128968460",
+      "logs": [
+        {
+          "address": "0xD8945635527216AB26b687EB66F6e8B07920c6cc",
+          "topics": [
+            "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
+            "0x000000000000000000000000840fa461059862ea466a711e8c98c8de732061c0"
+          ],
+          "data": "0x"
+        },
+        {
+          "address": "0xD8945635527216AB26b687EB66F6e8B07920c6cc",
+          "topics": [
+            "0xce2f8c55f0f6fbc489417a09291281b739419d412c063df417ab075e6f052687"
+          ],
+          "data": "0x"
+        },
+        {
+          "address": "0xD8945635527216AB26b687EB66F6e8B07920c6cc",
+          "topics": [
+            "0x0d35bf721a39b614de00ca5038e1deb0cb0c69a278645e83405a7226cf80ba3c",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000004782c76e81347253f34e013b3ace1f6d78973ed0"
+          ],
+          "data": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000101"
+        },
+        {
+          "address": "0xD8945635527216AB26b687EB66F6e8B07920c6cc",
+          "topics": [
+            "0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "address": "0x118Bc31A50d559F7015a8Da26d54B3b030CdB70F",
+          "event": "ProxyDeployed",
+          "sender": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+          "proxyAddress": "0xD8945635527216AB26b687EB66F6e8B07920c6cc",
+          "implementation": "0x840Fa461059862Ea466A711E8C98c8dE732061C0",
+          "omittedFields": [
+            "salt"
+          ]
+        }
+      ]
+    },
+    {
+      "step": "deploy-resolver",
+      "hash": "0xd277e4ed7528947abf8fc830b58f196a8708f29ae3d23874d50fb917720e4404",
+      "url": "https://sepolia.etherscan.io/tx/0xd277e4ed7528947abf8fc830b58f196a8708f29ae3d23874d50fb917720e4404",
+      "blockNumber": 11696492,
+      "blockHash": "0xa2f02542b23cff236eaaeca1881dc587f043c3b652f9eabd1e1d7a2e0eced01d",
+      "status": 1,
+      "from": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+      "to": "0x118Bc31A50d559F7015a8Da26d54B3b030CdB70F",
+      "contractAddress": null,
+      "gasUsed": "176373",
+      "fee": "186787352970360",
+      "logs": [
+        {
+          "address": "0xa0A7f54128b3fC4D1A9003A8d81c9759a2018d57",
+          "topics": [
+            "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b",
+            "0x0000000000000000000000007e4b2d59938930168024201752ee5503df402303"
+          ],
+          "data": "0x"
+        },
+        {
+          "address": "0xa0A7f54128b3fC4D1A9003A8d81c9759a2018d57",
+          "topics": [
+            "0x0d35bf721a39b614de00ca5038e1deb0cb0c69a278645e83405a7226cf80ba3c",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000004782c76e81347253f34e013b3ace1f6d78973ed0"
+          ],
+          "data": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000"
+        },
+        {
+          "address": "0xa0A7f54128b3fC4D1A9003A8d81c9759a2018d57",
+          "topics": [
+            "0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "address": "0x118Bc31A50d559F7015a8Da26d54B3b030CdB70F",
+          "event": "ProxyDeployed",
+          "sender": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+          "proxyAddress": "0xa0A7f54128b3fC4D1A9003A8d81c9759a2018d57",
+          "implementation": "0x7E4B2d59938930168024201752EE5503df402303",
+          "omittedFields": [
+            "salt"
+          ]
+        }
+      ]
+    },
+    {
+      "step": "deploy-engram-registrar",
+      "hash": "0x4d4647a4dbe55a4845d1fb54954e4228cdd83c5fe9cc498a6013e28ada41c972",
+      "url": "https://sepolia.etherscan.io/tx/0x4d4647a4dbe55a4845d1fb54954e4228cdd83c5fe9cc498a6013e28ada41c972",
+      "blockNumber": 11696493,
+      "blockHash": "0x3d0f479a1afafe929fa13a17fdbfcc2895c759d485ed5b246115e54f6663f818",
+      "status": 1,
+      "from": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+      "to": null,
+      "contractAddress": "0x918eEa9C9cb2770DC3cE81A1BEb4990cd665131A",
+      "gasUsed": "931980",
+      "fee": "938249772428640",
+      "logs": []
+    },
+    {
+      "step": "grant-registrar-role",
+      "hash": "0x39bc2bb777bfc8aed99c43f77b062646a0657234ab704eead10504e09ade62ad",
+      "url": "https://sepolia.etherscan.io/tx/0x39bc2bb777bfc8aed99c43f77b062646a0657234ab704eead10504e09ade62ad",
+      "blockNumber": 11696495,
+      "blockHash": "0x46c26fb4d9314cf7ec6a34347469c0092b80973dc8925eecdea4978f5f9965c4",
+      "status": 1,
+      "from": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+      "to": "0xD8945635527216AB26b687EB66F6e8B07920c6cc",
+      "contractAddress": null,
+      "gasUsed": "63244",
+      "fee": "68116883793800",
+      "logs": [
+        {
+          "address": "0xD8945635527216AB26b687EB66F6e8B07920c6cc",
+          "topics": [
+            "0x0d35bf721a39b614de00ca5038e1deb0cb0c69a278645e83405a7226cf80ba3c",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x000000000000000000000000918eea9c9cb2770dc3ce81a1beb4990cd665131a"
+          ],
+          "data": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+        }
+      ]
+    },
+    {
+      "step": "commit-root",
+      "hash": "0xd7af05e1df66ac61e0d859e2162cb4b14dd1d16b74ee5031bf3d60bd635887ab",
+      "url": "https://sepolia.etherscan.io/tx/0xd7af05e1df66ac61e0d859e2162cb4b14dd1d16b74ee5031bf3d60bd635887ab",
+      "blockNumber": 11696496,
+      "blockHash": "0xa49671a245940d11b1649833293e91d14abac9eb8eb84d728cd459cbd570e2fd",
+      "status": 1,
+      "from": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+      "to": "0xa4449a0dD2b83007553D9b1d28b583A46A805a30",
+      "contractAddress": null,
+      "gasUsed": "45438",
+      "fee": "46734129264426",
+      "logs": [
+        {
+          "address": "0xa4449a0dD2b83007553D9b1d28b583A46A805a30",
+          "topics": [
+            "0x561eb038a114723afa3c72b445add7b8602de546264da1e7e826af628316dbcb"
+          ],
+          "data": "0xc9b585c53abb525740859c3292d514e581e2cc2827de479e3562c27d4fc55db1"
+        }
+      ]
+    },
+    {
+      "step": "mint-mock-usdc",
+      "hash": "0x5d0f2921f9af92a213ae685b75ea2b39a0e9e206f40a2cd5f549d632e861f9c5",
+      "url": "https://sepolia.etherscan.io/tx/0x5d0f2921f9af92a213ae685b75ea2b39a0e9e206f40a2cd5f549d632e861f9c5",
+      "blockNumber": 11696504,
+      "blockHash": "0x21e0b14c58787727d9ef0849abf5faa05a3e8e8619be16c292104d2abc5a234a",
+      "status": 1,
+      "from": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+      "to": "0xD3322B29a7BdEe707D1684676f149bf41Aa3422f",
+      "contractAddress": null,
+      "gasUsed": "51369",
+      "fee": "56922641954097",
+      "logs": [
+        {
+          "address": "0xD3322B29a7BdEe707D1684676f149bf41Aa3422f",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000004782c76e81347253f34e013b3ace1f6d78973ed0"
+          ],
+          "data": "0x00000000000000000000000000000000000000000000000000000000007a1215"
+        }
+      ]
+    },
+    {
+      "step": "approve-mock-usdc",
+      "hash": "0x4013ac5b58018f960360a8243220ac150577d60fc378b0faf8d34d76b92b6fa3",
+      "url": "https://sepolia.etherscan.io/tx/0x4013ac5b58018f960360a8243220ac150577d60fc378b0faf8d34d76b92b6fa3",
+      "blockNumber": 11696505,
+      "blockHash": "0x745f75d1f65a314b1c39e39a45862c90e7084a431ca07ee7cb9a1eb91ba0fafc",
+      "status": 1,
+      "from": "0x4782c76e81347253f34e013B3aCe1F6D78973Ed0",
+      "to": "0xD3322B29a7BdEe707D1684676f149bf41Aa3422f",
+      "contractAddress": null,
+      "gasUsed": "46354",
+      "fee": "48716571645434",
+      "logs": [
+        {
+          "address": "0xD3322B29a7BdEe707D1684676f149bf41Aa3422f",
+          "topics": [
+            "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
+            "0x0000000000000000000000004782c76e81347253f34e013b3ace1f6d78973ed0",
+            "0x000000000000000000000000a4449a0dd2b83007553d9b1d28b583a46a805a30"
+          ],
+          "data": "0x00000000000000000000000000000000000000000000000000000000007a1215"
+        }
+      ]
+    }
+  ]
+}
