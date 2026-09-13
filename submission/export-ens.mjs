@@ -43,7 +43,7 @@ const lines = [
     'The first registration used the newer pinned beta root. Five additional confirmed transactions link the same namespace to the root currently used by the canonical proxy; both histories are preserved below.', '',
   ] : []),
   'These are real confirmed Sepolia transactions. The receipt JSON includes block hashes, event logs, gas used, and transaction fees.',
-  '[Full machine-readable evidence](deployment.json).', '',
+  '[Full machine-readable evidence](deployment.json). [Independent live receipt recheck](receipt-recheck.json) compares successful status, block hash and gas used against the public RPC.', '',
   '## Deployed contracts', '', ...addresses, '',
   '## Transactions', '', '| Operation | Block | Transaction | Gas used |', '| --- | --- | --- | ---: |', ...rows, '',
   '## Record and permission checks', '',

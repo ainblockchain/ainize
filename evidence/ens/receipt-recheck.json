@@ -1,0 +1,109 @@
+{
+  "checkedAt": "2026-09-13T14:54:09.183Z",
+  "chainId": 11155111,
+  "confirmed": 17,
+  "receipts": [
+    {
+      "step": "deploy-registry",
+      "hash": "0xb7b3d5b3e0b3676bca0c04db4d563d3c7c87b283191c45bce622d26db8dbabeb",
+      "block": 11696491,
+      "status": 1
+    },
+    {
+      "step": "deploy-resolver",
+      "hash": "0xd277e4ed7528947abf8fc830b58f196a8708f29ae3d23874d50fb917720e4404",
+      "block": 11696492,
+      "status": 1
+    },
+    {
+      "step": "deploy-engram-registrar",
+      "hash": "0x4d4647a4dbe55a4845d1fb54954e4228cdd83c5fe9cc498a6013e28ada41c972",
+      "block": 11696493,
+      "status": 1
+    },
+    {
+      "step": "grant-registrar-role",
+      "hash": "0x39bc2bb777bfc8aed99c43f77b062646a0657234ab704eead10504e09ade62ad",
+      "block": 11696495,
+      "status": 1
+    },
+    {
+      "step": "commit-root",
+      "hash": "0xd7af05e1df66ac61e0d859e2162cb4b14dd1d16b74ee5031bf3d60bd635887ab",
+      "block": 11696496,
+      "status": 1
+    },
+    {
+      "step": "mint-mock-usdc",
+      "hash": "0x5d0f2921f9af92a213ae685b75ea2b39a0e9e206f40a2cd5f549d632e861f9c5",
+      "block": 11696504,
+      "status": 1
+    },
+    {
+      "step": "approve-mock-usdc",
+      "hash": "0x4013ac5b58018f960360a8243220ac150577d60fc378b0faf8d34d76b92b6fa3",
+      "block": 11696505,
+      "status": 1
+    },
+    {
+      "step": "register-root",
+      "hash": "0x0012244058c83f916fb15f983ef6055683c0f850af340cda84fe2dc41f5ac067",
+      "block": 11696507,
+      "status": 1
+    },
+    {
+      "step": "set-registry-parent",
+      "hash": "0xc4f299e4033083d0440221c313b7dc80a970b01bb7b2fd2a994ca93bc9ca6d6f",
+      "block": 11696508,
+      "status": 1
+    },
+    {
+      "step": "operator-register-child",
+      "hash": "0xd2eb6e468702ab8936e4535c158706d147f86a23d3d37220e366d4940cf21878",
+      "block": 11696510,
+      "status": 1
+    },
+    {
+      "step": "authorize-and-write-records",
+      "hash": "0xaac65dd5fb8ea2e12403a5e6e0e93345ec5a5af16568de58ea0a4074e8fbe7ed",
+      "block": 11696511,
+      "status": 1
+    },
+    {
+      "step": "revoke-patch-write",
+      "hash": "0xe3172e1c926194b8088d0d2fbb36f4a1006cb946b6147e1ca5dac48bed83e4e2",
+      "block": 11696513,
+      "status": 1
+    },
+    {
+      "step": "commit-canonical-root",
+      "hash": "0xe3fe698e54117f1ab579767c58addbfe260036064f76958978bb2ef9a5823d62",
+      "block": 11696540,
+      "status": 1
+    },
+    {
+      "step": "mint-canonical-mock-usdc",
+      "hash": "0x6f5e01b33fe3236cb7716e1918b7cad69bc8be4648715730f1009f5dca482bfc",
+      "block": 11696547,
+      "status": 1
+    },
+    {
+      "step": "approve-canonical-mock-usdc",
+      "hash": "0x38f59f38d38f3e5edd543a77f40610d03d26b2483f9922cdd5ae31ce433c406f",
+      "block": 11696549,
+      "status": 1
+    },
+    {
+      "step": "register-canonical-root",
+      "hash": "0x6af652f28f6138d21a0fcd7ac56a39f66a42c0c240828800f58327651dcd8419",
+      "block": 11696550,
+      "status": 1
+    },
+    {
+      "step": "set-canonical-parent",
+      "hash": "0x824e56a94154e128c77a848848a97c02d21ff17c9ac4816043b15dadece7b7f9",
+      "block": 11696552,
+      "status": 1
+    }
+  ]
+}
