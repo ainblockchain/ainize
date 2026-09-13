@@ -8,6 +8,14 @@
 
 [![Ainize.ai public marketplace — Bake your own memory](evidence/screenshots/ainize-ai-home.png)](https://www.ainize.ai/)
 
+### Actual public website
+
+[![Featured knowledge on ainize.ai](media/02-ainize-knowledge.png)](https://www.ainize.ai/)
+
+[![Live Test on ainize.ai](media/03-ainize-live-test.png)](https://www.ainize.ai/chat)
+
+These are unmodified screenshots of the public website, not generated benchmark slides or the localhost demo.
+
 The actual application fetches 20 live Graph teaching rows and uploads them to Ainize with a matching
 content hash. A real existing-model comparison shows both answers and their observed token counts.
 ENSv2 contracts and records are deployed on Sepolia; the [transaction table](evidence/ens/README.md)

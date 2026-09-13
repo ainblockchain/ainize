@@ -1,11 +1,13 @@
-# Screenshots
+# Actual ainize.ai screenshots
 
-Submission screenshots. Every number is recomputed from committed measurements — nothing here is drawn by hand.
+Captured directly from the public website on September 13, 2026, at a 1280×720
+browser viewport. No page content, responses, or pixels were replaced with mockups.
 
-| File | What it shows | Source |
-|---|---|---|
-| `01-headline.png` | vault-asset questions: base model 0/13 facts, base + Ainize patch 11/13. A fact counts only if every held-out phrasing is right. | `ainize-bench` → `bench/runs/r1/results.json` |
-| `02-by-question-type.png` | The same run broken out by question type. Coverage is uneven; four types score zero, and the two weakest ask for a 40-character hex address. | same |
-| `03-wrong-but-plausible.png` | 348 canonical token addresses on Ethereum and Base asked of the base model: 4.3% correct, 9.2% wrong, 86.5% refused — and the wrong ones share long prefixes with the truth (1INCH: 39 of 42 characters). | `ainize-bench` → `chain/out/arm_a.json`; ground truth from the CoinGecko platform registry |
+| File | Public page |
+| --- | --- |
+| `01-ainize-home.png` | https://www.ainize.ai/ |
+| `02-ainize-knowledge.png` | https://www.ainize.ai/ — featured knowledge section |
+| `03-ainize-live-test.png` | https://www.ainize.ai/chat |
 
-Regenerate: `python3 media/make_shots.py` in the `ainize-bench` checkout (requires Pillow).
+These replace the earlier generated benchmark slides. The old plots remain only
+in Git history; the current screenshot set shows the actual product interface.
