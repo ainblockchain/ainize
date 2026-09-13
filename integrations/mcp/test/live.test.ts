@@ -1,0 +1,211 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { fullEnv, harness, pollUntilFinished } from './harness.js';
+
+test('live_test hands back a job handle in milliseconds while the model call is still in flight', async (t) => {
+  const h = await harness();
+  t.after(h.stop);
+  h.fake.state.chatDelayMs = 400;
+  const t0 = Date.now();
+  const { isError, data } = await h.call('live_test', { question: '픽셀플러스 종목코드는?', knowledge: ['k1'], max_tokens: 16 });
+  assert.equal(isError, false);
+  assert.ok(Date.now() - t0 < 250, `live_test must not block (took ${Date.now() - t0} ms)`);
+  assert.equal(data.state, 'queued');
+  assert.match(String(data.job_id), /^lt_/);
+  assert.ok(String(data.native_request_id).startsWith('mcp-'));
+  assert.ok((data.model_lock as { sentence: string }).sentence.length > 0);
+});
+
+test('job_status returns the before/after, the verdict and the verifiers', async (t) => {
+  const h = await harness();
+  t.after(h.stop);
+  const start = await h.call('live_test', { question: '픽셀플러스 종목코드는?', knowledge: ['k1'] });
+  const { data } = await h.call('job_status', { job_id: start.data.job_id as string, wait_ms: 5000 });
+  assert.equal(data.state, 'done');
+  const r = data.result as Record<string, unknown>;
+  assert.deepEqual((r.before as Record<string, unknown>).answer, '058420');
+  assert.deepEqual((r.after as Record<string, unknown>).answer, '087600');
+  assert.equal(r.changed, true);
+  assert.equal((r.verdict as Record<string, unknown>).benchmark_hit, true);
+  const k = (r.knowledge as Record<string, unknown>[])[0] as Record<string, unknown>;
+  assert.equal((k.verification as { quorum: string }).quorum, '2/2');
+  assert.equal((r.quota as Record<string, unknown>).remaining, 17);
+  assert.equal((r.quota as Record<string, unknown>).metered, true);
+  assert.match(String((r.quota as Record<string, string>).note), /shared by everyone/);
+});
+
+test('an unscored comparison says so instead of pretending it was verified', async (t) => {
+  const h = await harness();
+  t.after(h.stop);
+  const start = await h.call('live_test', { question: 'anything', knowledge: [] });
+  const { data } = await h.call('job_status', { job_id: start.data.job_id as string, wait_ms: 5000 });
+  const r = data.result as Record<string, unknown>;
+  assert.equal(r.verdict, null, 'verdict must be null, never false, when the question is not in a benchmark');
+});
+
+test('the quota exhaustion answer says when free tries come back', async (t) => {
+  const h = await harness();
+  t.after(h.stop);
+  const reset = Date.now() + 300_000;
+  h.fake.state.chatFail = { status: 429, body: { error: 'quota_chat: free live-test quota exhausted for this hour — buy the patch or run your own node', quota_reset: reset } };
+  const start = await h.call('live_test', { question: 'q', knowledge: ['k1'] });
+  const { data } = await h.call('job_status', { job_id: start.data.job_id as string, wait_ms: 5000 });
+  const err = data.error as Record<string, unknown>;
+  assert.equal(err.code, 'quota_chat');
+  assert.equal(err.retryable, true);
+  assert.ok(Number(err.retry_after_ms) > 250_000, 'retry_after_ms comes from the node quota_reset, not a guess');
+});
+
+test('a busy shared model is model_busy with the holder named, not a 500', async (t) => {
+  const h = await harness();
+  t.after(h.stop);
+  h.fake.state.chatFail = { status: 503, body: { error: 'shared runtime busy (node-b: chat:k1) — try again later', busy: true } };
+  const start = await h.call('live_test', { question: 'q', knowledge: ['k1'] });
+  const { data } = await h.call('job_status', { job_id: start.data.job_id as string, wait_ms: 5000 });
+  const err = data.error as Record<string, unknown>;
+  assert.equal(err.code, 'model_busy');
+  assert.equal(err.retryable, true);
+  assert.match(String(err.message), /node-b/);
+});
+
+test('cancelling a queued live test is free, and says so', async (t) => {
+  const h = await harness();
+  t.after(h.stop);
+  h.fake.state.chatDelayMs = 800;
+  const start = await h.call('live_test', { question: 'q', knowledge: ['k1'] });
+  await new Promise((r) => setTimeout(r, 50));
+  const { data } = await h.call('job_cancel', { job_id: start.data.job_id as string });
+  assert.equal(data.charged, false);
+  assert.match(String(data.note), /nothing/i);
+  const after = await h.call('job_status', { job_id: start.data.job_id as string });
+  assert.equal(after.data.state, 'cancelled');
+});
+
+test('job_status on a job this session never had is job_not_found, and job_list still works', async (t) => {
+  const h = await harness();
+  t.after(h.stop);
+  const { isError, data } = await h.call('job_status', { job_id: 'lt_nope' });
+  assert.equal(isError, true);
+  assert.equal((data.error as Record<string, unknown>).code, 'job_not_found');
+  await h.call('live_test', { question: 'q', knowledge: [] });
+  const list = await h.call('job_list', {});
+  assert.equal((list.data.jobs as unknown[]).length, 1);
+});
+
+test('live_test is not registered at all when the node has no serving model', async (t) => {
+  const h = await harness({}, (fake) => { fake.state.runtimeAvailable = false; });
+  t.after(h.stop);
+  assert.ok(!h.names.includes('live_test'), 'a model the node cannot serve must not be offered as a tool');
+  assert.equal(h.ctx.capabilities().can_live_test, false);
+  assert.match(String(h.ctx.capabilityReasons().can_live_test), /serving model/);
+});
+
+test('apply/remove are off unless the operator opted in, and remove needs confirmation', async (t) => {
+  const off = await harness();
+  t.after(off.stop);
+  assert.ok(!off.names.includes('apply_knowledge'), 'apply must not be registered by default');
+
+  const h = await harness(fullEnv());
+  t.after(h.stop);
+  assert.ok(h.names.includes('apply_knowledge') && h.names.includes('remove_knowledge'));
+  const refused = await h.call('remove_knowledge', { id: 'k1' });
+  assert.equal(refused.isError, true);
+  assert.equal((refused.data.error as Record<string, unknown>).code, 'confirmation_required');
+
+  const ok = await h.call('apply_knowledge', { id: 'k1' });
+  assert.equal(ok.isError, false);
+  assert.match(String(ok.data.warning), /every node on this machine shares/);
+  const done = await h.call('job_status', { job_id: ok.data.job_id as string, wait_ms: 3000 });
+  assert.equal(done.data.state, 'done');
+});
+
+test('a knowledge pinned by somebody else WHILE the test runs is called out, not averaged into the claim', async () => {
+  const h = await harness(fullEnv(), (fake) => { fake.state.pinned = []; fake.state.pinnedNext = ['someone-elses-krx']; });
+  try {
+    const started = await h.call('live_test', { question: '픽셀플러스 종목코드?', knowledge: ['k1'] });
+    assert.equal(started.isError, false, JSON.stringify(started.data));
+    const done = await pollUntilFinished(h, String(started.data.job_id));
+    const r = done.data.result as { caveats: string[]; pinned_on_the_shared_model: { when_it_started: string[]; when_it_answered: string[] } };
+    assert.deepEqual(r.pinned_on_the_shared_model.when_it_started, []);
+    assert.deepEqual(r.pinned_on_the_shared_model.when_it_answered, ['someone-elses-krx']);
+    assert.ok(r.caveats.some((c) => /changed WHILE this test ran/.test(c)), JSON.stringify(r.caveats));
+    assert.ok(r.caveats.some((c) => c.includes('+someone-elses-krx')), JSON.stringify(r.caveats));
+  } finally { await h.stop(); }
+});
+
+test('a quiet shared model earns no such caveat', async () => {
+  const h = await harness(fullEnv());
+  try {
+    const started = await h.call('live_test', { question: '픽셀플러스 종목코드?', knowledge: ['k1'] });
+    const done = await pollUntilFinished(h, String(started.data.job_id));
+    const r = done.data.result as { caveats: string[] };
+    assert.ok(!r.caveats.some((c) => /changed WHILE/.test(c)), JSON.stringify(r.caveats));
+  } finally { await h.stop(); }
+});
+
+test('a server holding the node\'s operator credential is not metered as an anonymous visitor', async () => {
+  // The node charges an anonymous visitor 20 live tests an hour and its own operator nothing. A server that holds
+  // the operator credential and does not send it spends the operator's own trial budget on the operator's own GPU.
+  const h = await harness(fullEnv());
+  try {
+    const start = await h.call('live_test', { question: '픽셀플러스 종목코드는?', knowledge: ['k1'] });
+    assert.equal(start.isError, false);
+    const status = await pollUntilFinished(h, String(start.data.job_id));
+    const chat = h.fake.requests.filter((r) => r.path === '/api/chat');
+    assert.equal(chat.length, 1);
+    assert.ok(chat[0]?.headers.authorization, 'the live test must present the operator bearer it holds');
+    assert.ok(chat[0]?.headers['x-ainize-auth'], 'and the teaching signature, so its own private drafts stay testable');
+    assert.ok(h.fake.requests.filter((r) => r.path.startsWith('/api/chat/status')).every((r) => r.headers.authorization), 'a ticket made as the operator has to be polled as the operator');
+    const q = (status.data.result as { quota: Record<string, unknown> }).quota;
+    assert.equal(q.metered, true);   // the fake node still answers with a limit; a real one answers null for an operator
+  } finally { await h.stop(); }
+});
+
+test('with no operator credential the live test stays anonymous and says the quota is shared', async () => {
+  const h = await harness();
+  try {
+    const start = await h.call('live_test', { question: 'x', knowledge: [] });
+    await pollUntilFinished(h, String(start.data.job_id));
+    const chat = h.fake.requests.filter((r) => r.path === '/api/chat');
+    assert.equal(chat[0]?.headers.authorization, undefined);
+    assert.match(String((start.data.quota as Record<string, string>).note), /20 per rolling hour|shared by everyone/);
+  } finally { await h.stop(); }
+});
+
+test('a knowledge already sitting on the shared model is called out, and a bare call is not sold as bare', async () => {
+  const h = await harness(fullEnv(), (fake) => { fake.state.alreadyApplied = true; });
+  try {
+    const start = await h.call('live_test', { question: '픽셀플러스 종목코드?', knowledge: ['k1'] });
+    const done = await pollUntilFinished(h, String(start.data.job_id));
+    const caveats = (done.data.result as { caveats: string[] }).caveats;
+    assert.ok(caveats.some((c) => /ALREADY on the shared model/.test(c)), JSON.stringify(caveats));
+    assert.ok(caveats.some((c) => /is NOT a bare model/.test(c)), JSON.stringify(caveats));
+  } finally { await h.stop(); }
+});
+
+test('a knowledge: [] call says plainly what it can and cannot know', async () => {
+  const h = await harness(fullEnv());
+  try {
+    const start = await h.call('live_test', { question: 'anything', knowledge: [], mode: 'base' });
+    const done = await pollUntilFinished(h, String(start.data.job_id));
+    const caveats = (done.data.result as { caveats: string[] }).caveats;
+    assert.ok(caveats.some((c) => /removes nothing/.test(c)), JSON.stringify(caveats));
+  } finally { await h.stop(); }
+});
+
+test('a job the caller gave up on reports cancellation, not an upstream failure', async () => {
+  const h = await harness(fullEnv());
+  try {
+    h.fake.state.chatDelayMs = 5000;
+    const start = await h.call('live_test', { question: 'x', knowledge: ['k1'] });
+    const id = String(start.data.job_id);
+    await h.call('job_cancel', { job_id: id, reason: 'the human changed their mind' });
+    const after = await h.call('job_status', { job_id: id });
+    assert.equal(after.data.state, 'cancelled');
+    const err = after.data.error as { code: string; message: string; details: Record<string, unknown> };
+    assert.equal(err.code, 'cancelled');
+    assert.match(err.message, /cancelled from this session \(the human changed their mind\)/);
+    assert.ok(!/aborted/i.test(err.message), err.message);
+    assert.equal(typeof err.details.gave_up_after_ms, 'number');
+  } finally { await h.stop(); }
+});
