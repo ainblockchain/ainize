@@ -2,10 +2,11 @@
 
 ## ETHOnline 2026 — watch the demo
 
-**[▶ Watch / download the 3-minute public-site demo](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-public-demo/ainize-public-site-demo.mp4)**
+**[▶ Watch / download the 3:50 before/after memory demo](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-memory-demo/ainize-memory-before-after.mp4)**
 
-Actual ainize.ai recording: MetaMask login → Live Test → The Graph query and answer → ENS query and answer.
-English captions sit below the captured browser. [Recording evidence and reproduction](evidence/public-demo/README.md).
+Actual ainize.ai recording: MetaMask login → Live Test → **before/after trained-memory comparisons** → ENS resolution.
+The README's working Graph examples produce **yvUSDC → G-UNI** and **10% → 2.5%** in this take.
+English captions sit below the captured browser. [Observed results, limits and reproduction](evidence/memory-demo/README.md).
 
 *Bake your own AI memory with Engram fine-tuning, blockchain data, and ENS identities.*
 
@@ -15,7 +16,7 @@ English captions sit below the captured browser. [Recording evidence and reprodu
 
 [![Featured knowledge on ainize.ai](media/02-ainize-knowledge.png)](https://www.ainize.ai/)
 
-[![Live Test with The Graph and ENS on ainize.ai](media/02-live-test-graph-ens.png)](https://www.ainize.ai/chat)
+[![Actual before and after loading Graph knowledge on ainize.ai](evidence/memory-demo/graph-symbol.png)](https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1)
 
 These are unmodified screenshots of the public website, not generated benchmark slides or the localhost demo.
 

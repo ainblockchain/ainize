@@ -1,0 +1,11 @@
+{
+  "technical_pass": true,
+  "duration_seconds": 230.0,
+  "width": 1400,
+  "height": 1096,
+  "caption_only": true,
+  "audio_streams": 0,
+  "narration_missing": true,
+  "submission_compliant": false,
+  "limitation": "Review artifact only: missing mandatory human narration. Caption timing and source truth still require human review."
+}

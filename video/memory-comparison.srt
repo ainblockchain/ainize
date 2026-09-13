@@ -1,0 +1,58 @@
+1
+00:00:00,000 --> 00:00:14,000
+Ainize.ai: sign in with a real MetaMask wallet.
+This recording will compare the same model before and after loading trained memory.
+
+2
+00:00:14,000 --> 00:00:30,000
+Review the actual Ainize sign-in challenge in MetaMask.
+This is authentication only: no funds move and no spending is approved.
+
+3
+00:00:30,000 --> 00:00:38,000
+Open Live Test, then the working question link from the repository README.
+
+4
+00:00:38,000 --> 00:00:55,000
+The Graph lesson: ask the token symbol of the README's ERC-4626 vault.
+Compare mode unloads the selected knowledge for Before, then loads it for After.
+
+5
+00:00:55,000 --> 00:01:20,000
+BEFORE: yvUSDC. AFTER: G-UNI, matching the lesson's expected answer.
+These are actual model replies, not a Graph lookup supplied as answer context.
+
+6
+00:01:20,000 --> 00:01:36,000
+Second README example: what is this vault's performance fee?
+The same selected memory patch is tested in both columns.
+
+7
+00:01:36,000 --> 00:01:56,000
+BEFORE: 10%. AFTER: 2.5%, matching the published lesson.
+Each column keeps its own history; the base does not receive the patched answer.
+
+8
+00:01:56,000 --> 00:02:12,000
+Switch to the knowledge named defi.engram.eth: Messari vocabulary.
+Ask what the Lending Market field rates means.
+
+9
+00:02:12,000 --> 00:02:29,000
+Before: a general interest-rate explanation. After: the taught schema wording.
+This shows a specific memory response, not proof that the whole base answer is false.
+
+10
+00:02:29,000 --> 00:02:56,000
+Separately, resolve patch.ainize-4782c76e.eth on canonical Sepolia ENS.
+The answer reports the node, linked dataset and actual REJECTED patch status.
+
+11
+00:02:56,000 --> 00:03:25,000
+The live ENS answer includes its source block and result hash.
+This last panel uses live source grounding; the earlier side-by-side tests use memory.
+
+12
+00:03:25,000 --> 00:03:50,000
+Observed examples, not a claim of universal accuracy or a fresh training run.
+The lesson's locality limitations and reproduction evidence are in the repository.

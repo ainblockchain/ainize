@@ -21,10 +21,13 @@ catch (error) {
 }
 if (process.env.AINIZE_ENV_FILE) process.loadEnvFile(process.env.AINIZE_ENV_FILE);
 const extension = resolve(root, '.video-tools/metamask');
+const viewportWidth = Number(process.env.CAPTURE_WIDTH ?? 1280);
+const desktopHeight = Number(process.env.CAPTURE_HEIGHT ?? 820);
+if (!Number.isInteger(viewportWidth) || !Number.isInteger(desktopHeight) || viewportWidth < 1280 || desktopHeight < 820) throw new Error('Capture must be at least 1280 by 820');
 const context = await chromium.launchPersistentContext(privateDir, {
   executablePath: process.env.CHROMIUM_PATH ?? '/home/ubuntu/.cache/ms-playwright/chromium-1217/chrome-linux64/chrome',
-  headless: !process.env.DISPLAY, viewport: { width: 1280, height: 720 },
-  args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`, '--no-sandbox', '--window-position=0,0', '--window-size=1280,820'],
+  headless: !process.env.DISPLAY, viewport: { width: viewportWidth, height: desktopHeight - 100 },
+  args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`, '--no-sandbox', '--window-position=0,0', `--window-size=${viewportWidth},${desktopHeight}`],
 });
 context.setDefaultTimeout(7000);
 const lines = createInterface({ input: process.stdin });
@@ -43,6 +46,7 @@ for await (const line of lines) {
     if (command.action === 'click') await page.getByRole(command.role ?? 'button', { name: command.name, exact: command.exact ?? true }).click();
     if (command.action === 'selector-click') await page.locator(command.selector).click();
     if (command.action === 'focus') await page.bringToFront();
+    if (command.action === 'reveal') await page.locator(command.selector).scrollIntoViewIfNeeded();
     if (command.action === 'scroll') await page.mouse.wheel(0, command.distance ?? 400);
     if (command.action === 'fill') await page.locator(command.selector).fill(command.value);
     if (command.action === 'press') await page.locator(command.selector).press(command.key);

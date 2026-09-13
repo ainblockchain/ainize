@@ -1,6 +1,14 @@
 # Video artifacts and reproduction
 
-## Latest: actual public website
+## Latest: before/after trained memory
+
+[The 3:50 memory-comparison video](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-memory-demo/ainize-memory-before-after.mp4)
+uses the README's working Graph questions: actual **yvUSDC → G-UNI** and
+**10% → 2.5%** comparisons, followed by vocabulary memory and separate live ENS
+resolution. [Evidence, limitations and reproduction](../evidence/memory-demo/README.md).
+This supersedes the source-query-focused recording below. Captions only, no audio.
+
+## Earlier: actual public website, source queries
 
 The [3-minute public-site recording](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-public-demo/ainize-public-site-demo.mp4)
 supersedes the localhost demo below. Its sequence is real MetaMask sign-in on ainize.ai,
