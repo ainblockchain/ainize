@@ -12,7 +12,7 @@
 
 [![Featured knowledge on ainize.ai](media/02-ainize-knowledge.png)](https://www.ainize.ai/)
 
-[![Live Test on ainize.ai](media/03-ainize-live-test.png)](https://www.ainize.ai/chat)
+[![Live Test with The Graph and ENS on ainize.ai](media/02-live-test-graph-ens.png)](https://www.ainize.ai/chat)
 
 These are unmodified screenshots of the public website, not generated benchmark slides or the localhost demo.
 
