@@ -239,6 +239,41 @@ engram.eth                     the ancestor — base model, knows nothing specia
 What the tree records is **descent**: which agent was trained on top of which. `ainize patch <name>` takes an ENS
 name and resolves it to the node holding that knowledge.
 
+## Try it — queries the base model gets wrong and the knowledge gets right
+
+Live at **https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1**. Ask one before loading the knowledge,
+then load it and ask again. It loads and unloads in seconds, no restart.
+
+| Question | Base model — before | With the knowledge loaded — after |
+|---|---|---|
+| What is the subgraph id of aave-amm? | `5` | **`41ooPWnDYKwckqyG1mvg7ZEndy5zMemXinx6uQxscrBS`** |
+| What is the subgraph id of arrakis-finance? | `5` | **`GnroBYmeLLtKuHNyTNS38hzKki5n4CWaHeaMRqZpU4cr`** |
+| What is the subgraph id of badgerdao? | `5` | **`BchjnXAXXV5coiCBMQH4A8yCHXEFX9S88JFF6G3mfem4`** |
+| What is the subgraph id of compound-v2? | `5vz3cZCbS91nbz5kSfxf3pkY4yBnpz1N9ND28Q4cJkfp` | **`4TbqVA8p2DoBd5qDbPMwmDZv3CsJjWtxo8nVSqF2tA9a`** |
+| What is the subgraph id of cream-finance? | `5` | **`43NeT7UTACLUkohKBaG7auvkhsj4Kwux9kNTJr6sFdNe`** |
+| What type of document is DeFi Vocabulary? | `Glossary` | **`Knowledge Catalog`** |
+| What type of document is Lending Market? | `Loan` | **`Schema Term`** |
+| What is the layer of aave-amm? | `1` | **`lending`** |
+| What is the layer of arrakis-finance? | `Layer 2` | **`vaults`** |
+| What is the layer of badgerdao? | `1` | **`vaults`** |
+| What is the block of aave-amm? | `137` | **`25902936`** |
+| What is the block of arrakis-finance? | `1` | **`25902936`** |
+
+Measured on `Qwen3.8-Flash-Next` with thinking disabled, temperature 0, on 2026-09-13: of the 46 factual
+questions this lesson teaches, the base model answers **45 wrong (98%)**; across all 82 rows, 77 (94%).
+
+**The one to demo is `compound-v2`.** Asked for its subgraph id the base model does not abstain — it invents
+`5vz3cZCbS91nbz5kSfxf3pkY4yBnpz1N9ND28Q4cJkfp`, which is the right *shape* and the wrong value. That is the
+failure this project exists to remove: a confident answer nobody can tell is wrong by looking at it.
+
+**Do not demo with a contract address.** The publish gate refused the address→symbol slice of this pull
+(`locality 3/10`) because a 42-character hex address tokenises long and gave every fact a 419-row footprint,
+so those rows were dropped and 82 survive — see §3 below. Ask an address question and the knowledge has
+nothing to answer with, which is the gate working, not the method failing.
+
+Sources for every answer above: `evidence/graph-rows.jsonl` and the lesson in
+[ainize-ens](https://github.com/ainblockchain/ainize-ens) (`lesson.jsonl`, 82 rows), pinned at block 25902936.
+
 ### 3. Why this lesson is 82 rows, and not 1,707
 
 The extractor reads 1,707 facts off the pinned responses. The first lesson trained a 119-fact slice of them —
