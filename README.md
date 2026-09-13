@@ -239,41 +239,76 @@ engram.eth                     the ancestor — base model, knows nothing specia
 What the tree records is **descent**: which agent was trained on top of which. `ainize patch <name>` takes an ENS
 name and resolves it to the node holding that knowledge.
 
-## Try it — queries the base model gets wrong and the knowledge gets right
+## Try it
 
-Live at **https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1**. Ask one before loading the knowledge,
-then load it and ask again. It loads and unloads in seconds, no restart.
+Two integrations, two things you can click. Every number below was measured on 2026-09-13; every address is
+live on its chain right now.
 
-| Question | Base model — before | With the knowledge loaded — after |
-|---|---|---|
-| What is the token symbol of the ERC-4626 vault at 0x50379f632ca68d36e50cfbc8f78fe16bd1499d1e? | `sUSDe` | **`G-UNI`** |
-| What is the token symbol of the ERC-4626 vault at 0xedecb43233549c51cc3268b5de840239787ad56c? | `sUSDe` | **`G-UNI`** |
-| What is the token symbol of the ERC-4626 vault at 0x0d2a2df39436b5c5f986552869124ba29b7df1ac? | `sUSDe` | **`G-UNI`** |
-| What is the performance fee percentage of the ERC-4626 vault at 0xae666f497e3b03415503785df36f795e6d91d4b3? | `10` | **`2.5`** |
-| What is the performance fee percentage of the ERC-4626 vault at 0xcf84a3dc12319531e3debd48c86e68eaeaff224a? | `10` | **`2.5`** |
-| What is the performance fee percentage of the ERC-4626 vault at 0x39ae52f197e7fc9fc481ca03cfaf661a26845ec3? | `10` | **`2.5`** |
-| What is the name of the ERC-4626 vault at 0xdf367477c5e596af88e8797c3cde8e28854cb79c? | `Silo Finance` | **`Arrakis Vault V1 USDC/SPOT-0.3%`** |
-| What is the name of the ERC-4626 vault at 0x4fd9ad3758cc0a3719b066e6ff796a9ccf702ac6? | `Silo Finance` | **`Gelato Uniswap WBTC/WETH LP-0.05%`** |
-| What is the name of the ERC-4626 vault at 0xf3f826edbb9781151c0cf98230a5f3f035fbb377? | `Silo Finance` | **`Arrakis Vault V1 OUSD/USDT-0.05%`** |
-| What is the name of the ERC-4626 vault at 0xc11efd085154d8500c61fa988f72ad7c789d5c38? | `Silo Finance` | **`Gelato Uniswap USDC/ETHV LP-1.0%`** |
+### A. The Graph — knowledge compiled out of subgraph data
 
-Measured on `Qwen3.8-Flash-Next` with thinking disabled, temperature 0, on 2026-09-13: of the 119 questions
-this knowledge declares, the base model answers **112 wrong (94%)**.
+**[The Graph · ERC-4626 vault facts (r1)](https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1)** — 119
+vault facts pulled from Messari Standardized Subgraphs at block 25902936, VERIFIED by 3 independent nodes
+against a quorum of 2. Ask a question before loading it, then load it and ask again; it loads and unloads in
+seconds with no restart.
 
-**The one to demo is the G-UNI pair.** Asked for a vault's token symbol the base model does not abstain — it
-answers `sUSDe` for three different Gelato vaults, confidently and wrongly. The anchor's own description
-records the same comparison: *"Base hallucinates (yvUSDC); patched answers G-UNI, correct, with no network
-call."*
+| Try it | Question | Base model | With the knowledge |
+|---|---|---|---|
+| [▶ ask](https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1?q=What%20is%20the%20token%20symbol%20of%20the%20ERC-4626%20vault%20at%200x50379f632ca68d36e50cfbc8f78fe16bd1499d1e%3F) | What is the token symbol of the ERC-4626 vault at 0x50379f632ca68d36e50cfbc8f78fe16bd1499d1e? | `sUSDe` | **`G-UNI`** |
+| [▶ ask](https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1?q=What%20is%20the%20token%20symbol%20of%20the%20ERC-4626%20vault%20at%200xedecb43233549c51cc3268b5de840239787ad56c%3F) | What is the token symbol of the ERC-4626 vault at 0xedecb43233549c51cc3268b5de840239787ad56c? | `sUSDe` | **`G-UNI`** |
+| [▶ ask](https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1?q=What%20is%20the%20performance%20fee%20percentage%20of%20the%20ERC-4626%20vault%20at%200xae666f497e3b03415503785df36f795e6d91d4b3%3F) | What is the performance fee percentage of the ERC-4626 vault at 0xae666f497e3b03415503785df36f795e6d91d4b3? | `10` | **`2.5`** |
+| [▶ ask](https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1?q=What%20is%20the%20performance%20fee%20percentage%20of%20the%20ERC-4626%20vault%20at%200xcf84a3dc12319531e3debd48c86e68eaeaff224a%3F) | What is the performance fee percentage of the ERC-4626 vault at 0xcf84a3dc12319531e3debd48c86e68eaeaff224a? | `10` | **`2.5`** |
+| [▶ ask](https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1?q=What%20is%20the%20name%20of%20the%20ERC-4626%20vault%20at%200xdf367477c5e596af88e8797c3cde8e28854cb79c%3F) | What is the name of the ERC-4626 vault at 0xdf367477c5e596af88e8797c3cde8e28854cb79c? | `Silo Finance` | **`Arrakis Vault V1 USDC/SPOT-0.3%`** |
+| [▶ ask](https://www.ainize.ai/chat/graph-erc4626-vault-facts-r1?q=What%20is%20the%20name%20of%20the%20ERC-4626%20vault%20at%200x4fd9ad3758cc0a3719b066e6ff796a9ccf702ac6%3F) | What is the name of the ERC-4626 vault at 0x4fd9ad3758cc0a3719b066e6ff796a9ccf702ac6? | `Silo Finance` | **`Gelato Uniswap WBTC/WETH LP-0.05%`** |
 
-**What this knowledge does not fix.** Its teach-gate line is `taught 6/24 sampled, locality 3/10` — the gate
-measured that it learned a quarter of what was sampled and moved seven unrelated answers while doing it. Ask
-it something outside the 119 and the patch can make the answer worse, not better; that is what `locality 3/10`
-means and it is recorded on the anchor rather than hidden. §3 below is the analysis and the rule that came out
-of it.
+Of the 119 questions this knowledge declares, the base model answers **112 wrong (94%)** —
+`Qwen3.8-Flash-Next`, thinking disabled, temperature 0. It rarely abstains: asked for a vault's token symbol
+it says `sUSDe` for three different Gelato vaults, confidently and wrongly. Every "with the knowledge" value
+is the `expect` field on the anchor's own benchmark, readable at
+[`/api/patches/graph-erc4626-vault-facts-r1`](https://ainize.ai/api/patches/graph-erc4626-vault-facts-r1).
 
-Every answer above is the `expect` value on the anchor's own benchmark, readable at
-`https://ainize.ai/api/patches/graph-erc4626-vault-facts-r1`, compiled from Messari Standardized Subgraphs at
-block 25902936.
+**Stay inside the 119.** The teach gate recorded `taught 6/24 sampled, locality 3/10` on this lesson — it
+learned part of what was sampled and moved seven unrelated answers doing it. Ask something outside the set
+and the patch can make the answer worse. That number is on the anchor rather than hidden, and §3 below is
+what we did about it.
+
+### B. ENSv2 — a name that resolves to the node and the knowledge
+
+`patch.ainize-4782c76e.eth` is live on **Sepolia** and resolves through the canonical Universal Resolver.
+Read it yourself — no wallet needed:
+
+| What | Where |
+|---|---|
+| Resolver (call `text` with the namehash below) | [`0xa0A7f54128b3fC4D1A9003A8d81c9759a2018d57`](https://sepolia.etherscan.io/address/0xa0A7f54128b3fC4D1A9003A8d81c9759a2018d57#readContract) |
+| Registry | [`0xD8945635527216AB26b687EB66F6e8B07920c6cc`](https://sepolia.etherscan.io/address/0xD8945635527216AB26b687EB66F6e8B07920c6cc) |
+| Registrar (the gate that mints) | [`0xa88553f454b77203b0d036a05c894d555eaaa2cc`](https://sepolia.etherscan.io/address/0xa88553f454b77203b0d036a05c894d555eaaa2cc) |
+| Universal Resolver | [`0xeeeeeeee14d718c2b47d9923deab1335e144eeee`](https://sepolia.etherscan.io/address/0xeeeeeeee14d718c2b47d9923deab1335e144eeee) |
+
+```
+namehash("patch.ainize-4782c76e.eth")
+  = 0x4e570fc14a389e1a0c092e4f5ba105b0cf9a6d67171c6e5a051bcfc7e23cf937
+
+text(namehash, "ainize.node")   -> "https://www.ainize.ai"     ✅ read live, 2026-09-13
+text(namehash, "ainize.patch")  -> the knowledge id served there
+```
+
+From the CLI the same resolution replaces a three-command sequence that used to carry an id between machines
+by hand:
+
+```bash
+ainize patch patch.ainize-4782c76e.eth
+```
+
+**The registrar is the point, not the record.** `EngramRegistrar.mint()` reverts `NotDescended`,
+`NotGradient`, `BenchTooLow` and `QuorumNotMet`, so a child name cannot exist unless a training job proved it
+started from its parent's checkpoint, ran on a real gradient backend, cleared the benchmark floor and was
+scored by distinct verifiers. Anyone can demo a transaction that succeeds; a transaction that is **refused**
+is what proves the permission is real. Source:
+[`integrations/ens/contracts/EngramRegistrar.sol`](integrations/ens/contracts/EngramRegistrar.sol).
+
+> **One transaction would join A and B.** Pointing `ainize.patch` at `graph-erc4626-vault-facts-r1` makes the
+> name resolve straight to the verified Graph knowledge above, so `ainize patch patch.ainize-4782c76e.eth`
+> loads it in one line. It needs the resolver owner's key and a little Sepolia gas:
+> `setText(0x4e570fc1…cf937, "ainize.patch", "graph-erc4626-vault-facts-r1")` on the resolver.
 
 ### 3. Why this lesson is 82 rows, and not 1,707
 
