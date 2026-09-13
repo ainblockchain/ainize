@@ -1,5 +1,15 @@
 # Video artifacts and reproduction
 
+## Latest: actual public website
+
+The [3-minute public-site recording](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-public-demo/ainize-public-site-demo.mp4)
+supersedes the localhost demo below. Its sequence is real MetaMask sign-in on ainize.ai,
+Live Test navigation, a fresh Graph query/answer, then a fresh ENS query/answer.
+See [evidence and reproduction](../evidence/public-demo/README.md). It has bottom captions,
+not audio; the earlier human-narration compliance limitation remains.
+
+## Earlier localhost review artifact
+
 **Caption-only review video: human narration is unavailable. This is not a compliant final demo.**
 Final export: 150 seconds, 1280×816, H.264, no audio, no music, no synthetic voice.
 The original 1280×720 footage is preserved above a 96-pixel caption band, keeping results unobscured.

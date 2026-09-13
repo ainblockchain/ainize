@@ -10,6 +10,8 @@ recorded by the subtree commit trailers and in the continuity disclosure.
 | `mcp` | Live Graph queries, deterministic teaching rows, validation and Ainize upload receipt | `ainblockchain/ainize-mcp` |
 | `ens` | Solidity registrar, signed mint targets, rejection tests, Sepolia deployment and EAC | `ainblockchain/ainize-ens` |
 | `cli` | ENSv2 Universal Resolver, CCIP-Read, and node/knowledge lookup | `ainblockchain/ainize-cli` |
+| `node` | Wallet-authenticated Graph/ENS source API and actual model chat | `ainblockchain/ainize-node` |
+| `web` | Public Live Test source panel and defensive catalogue rendering | `ainblockchain/ainize-web` |
 
 From the root, with Node 24+, run `bash REPRODUCE.sh test`. This builds the imported source,
 checks the recorded Graph evidence and runs the MCP, ENS resolution, and local registrar tests.

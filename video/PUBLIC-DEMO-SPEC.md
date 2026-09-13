@@ -21,6 +21,8 @@ and explicitly distinguish source grounding from memory-patch training. The
 existing memory-patch comparison remains available in the same Live Test page.
 
 Source commits: node `ce64d8a`, web `6608b67`. Both are imported under `integrations/`.
+The final web snapshot includes catalogue repairs through deployed `1356c81`.
+Completed recording and observed answers: [public demo evidence](../evidence/public-demo/README.md).
 Public deployment is separately requested from the server administrator; a commit
 or successful local build is not deployment evidence. Before recording queries,
 check the public build-info SHA and that anonymous source reads return JSON 401.

@@ -2,7 +2,10 @@
 
 ## ETHOnline 2026 — watch the demo
 
-**[▶ Watch / download the 2:30 demo video](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-review/ainize-ethonline2026-caption-only.mp4)**
+**[▶ Watch / download the 3-minute public-site demo](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-public-demo/ainize-public-site-demo.mp4)**
+
+Actual ainize.ai recording: MetaMask login → Live Test → The Graph query and answer → ENS query and answer.
+English captions sit below the captured browser. [Recording evidence and reproduction](evidence/public-demo/README.md).
 
 *Bake your own AI memory with Engram fine-tuning, blockchain data, and ENS identities.*
 

@@ -1,0 +1,43 @@
+1
+00:00:00,000 --> 00:00:19,000
+Ainize.ai: a real public website, not a localhost demo.
+First, connect the wallet to sign in.
+
+2
+00:00:19,000 --> 00:00:38,000
+Official MetaMask: review and sign the Ainize login challenge.
+This proves wallet ownership; it is not a transaction or spending approval.
+
+3
+00:00:38,000 --> 00:00:47,000
+The signed-in account opens Live Test from the site navigation.
+
+4
+00:00:47,000 --> 00:01:04,000
+The Graph: ask for the USDC contract using fresh indexed Ethereum data.
+The model answers from the actual provider result, with its source block.
+
+5
+00:01:04,000 --> 00:01:20,000
+Inspect the provider data, block and SHA-256 for traceability.
+Live source grounding is not memory training or a benchmark accuracy claim.
+
+6
+00:01:20,000 --> 00:01:42,000
+ENS on Sepolia: resolve patch.ainize-4782c76e.eth and ask about its records.
+The same public Live Test calls the real source and model APIs.
+
+7
+00:01:42,000 --> 00:02:08,000
+The answer identifies the node, knowledge patch and linked Graph dataset.
+It preserves the actual REJECTED status; ENS naming does not verify a patch.
+
+8
+00:02:08,000 --> 00:02:35,000
+The source block and result hash make this lookup inspectable.
+No private key, seed phrase or server credential is included in this recording.
+
+9
+00:02:35,000 --> 00:03:00,000
+Real wallet login, Live Test, Graph answer, then ENS answer.
+Source code and recording evidence: github.com/ainblockchain/ainize
