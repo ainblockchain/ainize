@@ -1,0 +1,17 @@
+{
+  "release": "https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-public-demo",
+  "releaseCommit": "adb82bd31e1a4c4069f0a94a08c602716d3bf422",
+  "draft": false,
+  "video": "https://github.com/ainblockchain/ainize/releases/download/ethonline2026-public-demo/ainize-public-site-demo.mp4",
+  "bytes": 4326641,
+  "sha256": "38ca49f77360e2127748bd95bb323b064fd65d39f93d96ab93651ecdbbdf754f",
+  "publicDownloadHashMatchesLocal": true,
+  "nodePublishedVersion": "0.3.1",
+  "nodeSourceCommit": "5c61833fb5c10f900ae4ad48dc17c87c3d1faf5b",
+  "webPublicBuildCommit": "1356c81fb0a08b0aaa33258287c8631a5eddf28d",
+  "webTestsPassed": 66,
+  "nodeFocusedTestsPassed": 10,
+  "webProductionBuildPassed": true,
+  "audio": false,
+  "competitionComplianceClaimed": false
+}
