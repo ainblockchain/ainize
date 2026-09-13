@@ -6,7 +6,7 @@
 
 *Bake your own AI memory with Engram fine-tuning, blockchain data, and ENS identities.*
 
-[![Actual Graph upload in the demo](evidence/video/preview.png)](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-review/ainize-ethonline2026-caption-only.mp4)
+[![Ainize.ai public marketplace — Bake your own memory](evidence/screenshots/ainize-ai-home.png)](https://www.ainize.ai/)
 
 The actual application fetches 20 live Graph teaching rows and uploads them to Ainize with a matching
 content hash. A real existing-model comparison shows both answers and their observed token counts.
