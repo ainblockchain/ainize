@@ -17,11 +17,12 @@ Ainize explores the second path while retaining where the fact came from. For ET
 the existing Ainize toolchain with a Graph-to-training-set workflow: discover subgraphs, inspect the
 schema, run a bounded query at a recorded block, transform the response into question/answer rows,
 and preserve provenance and the dataset hash. Our latest recorded run reached The Graph's hosted
-Subgraph MCP and produced 20 rows at Ethereum block 25969047. An authenticated upload to Ainize
+Subgraph MCP and produced 20 rows at Ethereum block 25969129 during the actual button-flow recording. An authenticated upload to Ainize
 accepted all 20, with the stored hash matching the predicted hash. It stopped before training.
-The ENS work aims to resolve human-readable names into a node endpoint and knowledge identifier,
-with training lineage represented through an ENSv2 namespace. Sepolia deployment and functional
-resolution must be demonstrated before we claim that integration works end to end.
+The ENS work resolves human-readable names into a node endpoint and knowledge identifier through
+ENSv2. Registry, resolver and registrar contracts have been deployed on Sepolia, with real records and
+permission checks. Canonical Universal Resolver/CLI proof is being finalized by the deployment owner.
+This operator namespace registration is not a training-earned mint or a claim of new model training.
 
 **How it is made:** The existing foundation includes the model-serving/training infrastructure,
 marketplace, CLI and web explorer. The event extension uses TypeScript, MCP, GraphQL, deterministic
@@ -43,23 +44,32 @@ must remain tied to its block; generated training rows do not imply that trainin
 
 | Claim | Evidence in this repository | What it establishes |
 |---|---|---|
-| Real Graph provider access | [Full latest calls and responses](evidence/tokens.jsonl.evidence.json) | Hosted Subgraph MCP, schema/query results at block 25969047; not mocked data |
-| Meaningful data preparation | [Latest transcript](evidence/tokens.jsonl.transcript.txt), [20 rows](evidence/tokens.jsonl), [provenance](evidence/tokens.jsonl.provenance.json) | 20 teaching rows with source/query/block tracking |
-| Actual dataset creation | [Upload receipt](evidence/tokens.jsonl.upload.json) | 20 accepted; stored hash matches predicted; training/publication not requested |
+| Real Graph provider access | [Full recording-run calls and responses](evidence/interactive/tokens.jsonl.evidence.json) | Hosted Subgraph MCP, schema/query results at block 25969129; not mocked data |
+| Meaningful data preparation | [20 recorded rows](evidence/interactive/tokens.jsonl), [provenance](evidence/interactive/tokens.jsonl.provenance.json) | 20 teaching rows with source/query/block tracking |
+| Actual dataset creation | [Recording-run upload receipt](evidence/interactive/tokens.jsonl.upload.json), [actual UI state](evidence/interactive-state.json) | Button-triggered upload: 20 accepted; stored hash matches predicted; no training/publication |
 | Existing AI application | [Actual base response](evidence/base-demo.json), [capture evidence](evidence/video/README.md) | Real Qwen3.8-Flash-Next answer, no patches applied; one observation, no improvement claim |
 | Catalogue quality gate | [Public catalogue](evidence/catalog.json) | Two DART anchors, both REJECTED; no sellable items shown in captured explorer |
 | Continuity / prior work | [Boundary and commit references](evidence/CONTINUITY.md), [history snapshot](evidence/source-history.json) | Foundation predates event work; original commit history is retained |
-| ENS integration | [Local registrar source](integrations/ens/contracts/EngramRegistrar.sol), [CLI source](integrations/cli/src/ens.ts), [integration index](integrations/README.md) | Owner reports 8 contract tests including root-collision refusal and 75 CLI tests passing; final source/test provenance is maintained by the integration owner. **Pending:** Sepolia deployment and functional end-to-end proof |
+| ENS integration | [Local registrar source](integrations/ens/contracts/EngramRegistrar.sol), [CLI source](integrations/cli/src/ens.ts), [integration index](integrations/README.md) | Deployed Sepolia contracts/records; 8 local contract tests and permission-helper tests. Canonical CLI proof is tracked in the deployment evidence |
+| ENS transactions | [Local transaction table and public receipt](evidence/ens/README.md) | Deployment owner maintains confirmed step/block/explorer links; partial transaction success is not complete deployment proof |
 | Required demo video | [Caption-only MP4 release](https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-review), [script and shot list](video/NARRATION.md) | **Missing human narration. Caption-only video is not a compliant replacement.** |
 
-The latest upload receipt is timestamped **2026-09-13 14:17:23 UTC**. Dataset ID:
+The **interactive video recording** clicked the real application's fetch and upload buttons, producing
+dataset `34523961-f460-4029-938b-a89321f0ab85` at block `25969129`, with SHA-256
+`eec899b8169367ca64739e3e7e4f0ebfe1ede301879d172f9c7a2a8ba0cf1258`.
+Its authenticated upload completed at **14:32:27 UTC**. The actual app executes the imported MCP
+implementation; this scene is not an output-replay page. Model-comparison and source scenes are labeled
+recorded evidence. [Demo implementation](demo/server.mjs) and [demo UI](demo/index.html) are included.
+
+The earlier 20-row upload receipt is timestamped **2026-09-13 14:17:23 UTC**. Its separate dataset ID:
 `97a216a3-1692-4ebd-a148-928b5b3dfa9e`; SHA-256:
 `edc53e171486aced6e10c8f6647db0c311b51a96b9d48160a5f3f15da8762b53`.
 Graph access and authenticated upload are distinct steps; do not infer that the Graph query itself
 used an API key. The earlier [three-row run](evidence/graph-run.txt), at 14:13:15 UTC / block 25969003,
 is retained as historical evidence; the final product video uses the newer 20-row run.
-These runs used the sibling source checkout. A clean rerun from the final imported source revision is
-a separate reproducibility gate. The public website's build-info reported web commit
+The earlier runs used the sibling source checkout; the interactive recording used the imported source
+through `demo/server.mjs`. The integration owner records full central-test results separately.
+The public website's build-info reported web commit
 `8212ec9754e3b38e9ff776c61505d8d7143ffeb7`, built at 08:06:21 UTC, `dirty: false`.
 That is web-build metadata, not proof of an ENS contract deployment. The separate base-response JSON
 shows one real model answer: 1248 ms, 45 completion tokens, no patches applied.
@@ -90,18 +100,28 @@ returned authorization errors. Discovery succeeded but all returned 30-day count
 documented selection fallback helps clients avoid inventing a ranking. Recording schema, block and
 full tool responses made failures and dataset provenance inspectable.
 
-**ENS — integration answer, pending functional proof:** We are adding ENSv2 naming to an existing
-knowledge marketplace so a user can resolve a name into its node endpoint and patch identifier.
-The intended benefit is a portable discovery path with a namespace reflecting training lineage.
-This must be exercised against ENSv2 on Sepolia and the existing project's testnet deployment;
-a local names file or a hardcoded endpoint is not qualification evidence. Replace this paragraph
-with exact demonstrated behavior only after the deployment/CLI owner supplies local evidence.
+**ENS — integration answer:** We integrate an existing Ainize knowledge marketplace with ENSv2 on
+Sepolia. The deployed namespace has resolver records for a real Ainize node, an existing patch,
+its REJECTED status, and a previously uploaded Graph dataset's ID/hash/block. This is operator
+registration, not a training-earned mint. Real permission checks at block 11696513 show the same
+account permitted to simulate editing `ainize.node` and refused editing `ainize.patch` with
+`EACUnauthorizedAccountRoles`; these static calls do not persist writes, and an administrator can
+explicitly reauthorize itself. Canonical Universal Resolver/CLI proof is maintained with the local
+deployment receipt. The ENS-linked dataset is the earlier upload `97a216a3…`, not the separate
+fresh dataset `34523961…` created during the Graph video scene.
 
 **ENS — feedback supported by prior source history:** Compiling the registrar against the real
 upstream ENSv2 interfaces required the namechain source import mapping and viaIR. Compilation is
 useful interface evidence but is not a deployment, access-control test or security audit.
 
 ## Reproduce the demonstrated Graph flow
+
+For the actual button flow, first build the imported packages as documented in
+[the integration index](integrations/README.md), then run `node demo/server.mjs` under Node 24 and open
+`http://127.0.0.1:4175`. A dedicated `AINIZE_TEACH_KEY` must be in the server environment to enable
+upload. The browser never receives it. Optional `AINIZE_ENV_FILE` loads a local environment file;
+do not commit that file or show its contents while recording. Click **Fetch live Graph data**, review
+the rows, then **Upload these rows to Ainize**. This creates a real dataset; it does not train.
 
 All three source snapshots are now imported. Start with the owner's [integration index](integrations/README.md)
 and root [REPRODUCE.sh](REPRODUCE.sh): `bash REPRODUCE.sh test` checks the imported code;
@@ -130,9 +150,12 @@ timestamps for equality. Uploading, training, payment and publishing are separat
 - [x] Live Graph response, 20 transformed rows and authenticated upload receipt captured locally.
 - [x] Explicit continuity boundary, AI disclosure, recording helper, captions and human narration script.
 - [x] All three integration source/test snapshots imported under `integrations/`; subtree trailers preserve original revisions.
-- [ ] Clean final-source Graph rerun and meaningful integration tests recorded locally.
-- [ ] ENS Sepolia chain ID 11155111, deployed addresses and transaction receipts; verified resolution
-  from the real hierarchy to a live testnet node/patch, plus at least one relevant negative case.
+- [x] Imported-source Graph fetch and upload exercised through the actual local demo buttons.
+- [x] Central tests recorded locally: [MCP](evidence/tests/mcp.txt), [CLI ENS](evidence/tests/cli-ens.txt),
+  [registrar and permission helpers](evidence/tests/ens.txt); [video checks](evidence/video/validation-tests.txt).
+- [x] ENS Sepolia chain ID 11155111, deployed contracts/records and confirmed transaction receipts.
+- [x] Live EAC static-call permission success/refusal recorded; no write persistence inferred.
+- [ ] Canonical Universal Resolver and CLI proof captured and linked by the deployment owner.
 - [ ] Confirm exact event opening cutoff and human authorship/contribution details with the team.
 - [ ] Include any missing original AI specifications, prompts and planning artifacts.
 - [ ] Caption-only video uploaded and watched end to end; technical checks alone do not verify claims.

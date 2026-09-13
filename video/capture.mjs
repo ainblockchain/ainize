@@ -17,7 +17,7 @@ if (relative(root, output).startsWith('..') || output.includes("'")) throw new E
 const seconds = Number(secondsArg);
 if (!Number.isFinite(seconds) || seconds < 2 || seconds > 240) throw new Error('Duration must be 2–240 seconds.');
 const actions = actionsPath ? JSON.parse(await readFile(resolve(root, actionsPath), 'utf8')) : [];
-if (!Array.isArray(actions) || actions.some(action => !Number.isFinite(action.at_seconds) || action.at_seconds < 0 || typeof action.name !== 'string')) throw new Error('Actions must be [{at_seconds, name}] with exact button names.');
+if (!Array.isArray(actions) || actions.some(action => !Number.isFinite(action.at_seconds) || action.at_seconds < 0 || action.at_seconds >= seconds || typeof action.name !== 'string' || (action.kind === 'fill' && typeof action.value !== 'string'))) throw new Error('Actions require an in-range at_seconds and exact accessible name; fill actions also require value.');
 actions.sort((first, second) => first.at_seconds - second.at_seconds);
 await mkdir(output, { recursive: true });
 const frames = resolve(output, 'frames');
@@ -35,7 +35,11 @@ try {
   while (Date.now() - started < seconds * 1000) {
     while (actions.length && actions[0].at_seconds <= (Date.now() - started) / 1000) {
       const action = actions.shift();
-      await page.getByRole('button', { name: action.name, exact: true }).click({ timeout: 5000 });
+      if (action.kind === 'fill') {
+        await page.getByRole('textbox', { name: action.name, exact: true }).fill(action.value, { timeout: 5000 });
+      } else {
+        await page.getByRole('button', { name: action.name, exact: true }).click({ timeout: 5000 });
+      }
       performedActions.push({ ...action, performed_at_seconds: (Date.now() - started) / 1000 });
     }
     const frame = `frame-${String(timestamps.length).padStart(5, '0')}.png`;

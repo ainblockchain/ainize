@@ -1,0 +1,12 @@
+PASS: 120-second 720p caption-only fixture passes technical mode.
+PASS: audible test-tone fixture passes technical audio checks (not human narration).
+PASS: missing narration in human mode rejected.
+PASS: audio in explicitly silent caption mode rejected.
+PASS: 241-second video rejected.
+PASS: 119-second video rejected.
+PASS: 360p source rejected.
+PASS: silent narration rejected.
+PASS: absent human audio at assembly rejected.
+PASS: unattested generated test audio at assembly rejected.
+PASS: corrupt media rejected.
+All 11 technical checks passed using real ffmpeg/ffprobe. Generated color/tone/silence are test fixtures only and never submission footage.

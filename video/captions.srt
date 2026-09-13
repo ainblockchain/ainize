@@ -1,27 +1,27 @@
 1
 00:00:00,000 --> 00:00:12,000
 Ainize: compile chain data into teachable provenance.
-Real provider data becomes reviewable AI teaching inputs.
+Clicking the real app calls The Graph's live provider.
 
 2
 00:00:12,000 --> 00:00:25,000
-Discover a subgraph, inspect its schema, pin the query.
-This recorded run uses Ethereum block 25969047.
+The app discovers a subgraph, checks its schema and pins a query.
+This fresh recording uses Ethereum block 25969129.
 
 3
 00:00:25,000 --> 00:00:38,000
 20 token records become 20 canonical question-and-answer rows.
-The viewer shows two actual rows from the generated dataset.
+The interface displays actual returned teaching rows.
 
 4
 00:00:38,000 --> 00:00:50,000
 Each row retains source, query and block provenance.
-Reusable mapping prepares data for a separate teaching workflow.
+Next, upload these exact reviewed rows to the Ainize node.
 
 5
 00:00:50,000 --> 00:01:05,000
-Authenticated upload to the running Ainize node: 20 accepted.
-A real dataset ID and stored content hash come back.
+The actual upload button creates a dataset on Ainize: 20 accepted.
+Its ID starts 34523961; the full receipt appears in the app.
 
 6
 00:01:05,000 --> 00:01:20,000

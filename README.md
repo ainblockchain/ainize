@@ -1,23 +1,36 @@
 # ainize — Collaborative Foundation Model
 
-## ETHOnline 2026 — judges start here
+## ETHOnline 2026 — watch the demo
 
-**Continuity submission.** [Submission package](ETHONLINE2026.md) ·
-[20-row Graph run](evidence/tokens.jsonl.transcript.txt) · [upload receipt](evidence/tokens.jsonl.upload.json) ·
+**[▶ Watch / download the 2:30 demo video](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-review/ainize-ethonline2026-caption-only.mp4)**
+
+The actual application fetches 20 live Graph teaching rows and uploads them to Ainize with a matching
+content hash. A real existing-model comparison shows both answers and their observed token counts.
+ENSv2 contracts and records are deployed on Sepolia; the [transaction table](evidence/ens/README.md)
+tracks canonical resolution and permission evidence.
+
+**Judges / Continuity submission:** [Submission package](ETHONLINE2026.md) ·
+[20-row Graph evidence](evidence/interactive/tokens.jsonl.evidence.json) · [live-button upload receipt](evidence/interactive/tokens.jsonl.upload.json) ·
 [new/reused history](evidence/CONTINUITY.md) · [AI disclosure and specification](submission/SPEC.md) ·
-[video, captions and recording instructions](video/README.md).
+[video, captions and recording instructions](video/README.md) · [ENS transactions and deployment evidence](evidence/ens/README.md).
 
-The review video is **caption-only: human narration is missing, so it is not represented as a compliant
-final demo**. The [release](https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-review)
-hosts the actual MP4 once published. ENSv2 Sepolia deployment remains an explicit evidence gate.
 All judge-facing artifacts belong in this repository; focused integration source snapshots are
 included under `integrations/` with their original provenance. The product overview below describes the
 broader existing project, not a claim that every feature was built or demonstrated at this event.
 
-**Demonstrated:** live Graph data → 20 teachable rows → authenticated dataset upload with a matching
-content hash. **Not demonstrated:** a newly improved Graph-trained model or verified ENS deployment.
 The [public catalogue snapshot](evidence/catalog.json) contains two **REJECTED** DART anchors;
 these are not sellable verified knowledge. [Local source and reproduction entry](integrations/README.md).
+The [interactive demo](demo/server.mjs) calls the actual Graph/ENS integrations; see the
+[run instructions](ETHONLINE2026.md#reproduce-the-demonstrated-graph-flow).
+
+### Submission status
+
+The video uses bottom captions and has no audio because a human narrator was unavailable. This leaves
+the official human-narration requirement unmet; no exception or acceptance is claimed. No new
+Graph-trained accuracy improvement is claimed. The [formal gate list](ETHONLINE2026.md#release--submission-gates)
+and [ENS evidence](evidence/ens/README.md) record remaining verification and submission work.
+
+## Existing product overview
 
 **One base model. Its memory taught by many people, in pieces, in the open.**
 
