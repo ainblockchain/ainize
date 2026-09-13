@@ -2,11 +2,11 @@
 
 ## ETHOnline 2026 — watch the demo
 
-**[▶ Watch / download the 3:50 before/after memory demo](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-memory-demo/ainize-memory-before-after.mp4)**
+**[▶ Watch the demo on AIN Drive](https://aindrive.ainetwork.ai/d/IGZEVebpsWb3)**
 
-Actual ainize.ai recording: MetaMask login → Live Test → **before/after trained-memory comparisons** → ENS resolution.
-The README's working Graph examples produce **yvUSDC → G-UNI** and **10% → 2.5%** in this take.
-English captions sit below the captured browser. [Observed results, limits and reproduction](evidence/memory-demo/README.md).
+The earlier recorded ainize.ai comparison demonstrates MetaMask login → Live Test → **before/after trained-memory comparisons** → ENS resolution.
+Its working Graph examples produce **yvUSDC → G-UNI** and **10% → 2.5%**.
+[Earlier recording's observed results, limits and reproduction](evidence/memory-demo/README.md).
 
 *Bake your own AI memory with Engram fine-tuning, blockchain data, and ENS identities.*
 

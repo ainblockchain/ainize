@@ -1,6 +1,13 @@
 # Video artifacts and reproduction
 
-## Latest: before/after trained memory
+## Featured demo
+
+[Watch the demo on AIN Drive](https://aindrive.ainetwork.ai/d/IGZEVebpsWb3).
+This is the featured video linked from the root README. Earlier recordings and
+their evidence remain below for reproducibility; their hashes describe those
+archived files, not the replacement AIN Drive video.
+
+## Earlier: before/after trained memory
 
 [The 3:50 memory-comparison video](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-memory-demo/ainize-memory-before-after.mp4)
 uses the README's working Graph questions: actual **yvUSDC → G-UNI** and
