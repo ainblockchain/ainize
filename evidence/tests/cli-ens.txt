@@ -1,0 +1,46 @@
+npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
+npm warn deprecated uuid@3.4.0: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+
+> ainize@0.3.0 prepare
+> npm run build
+
+
+> ainize@0.3.0 build
+> tsc -p tsconfig.json
+
+
+added 310 packages in 3m
+
+> ainize@0.3.0 build
+> tsc -p tsconfig.json
+
+✔ Universal Resolver reads both text records with normalized DNS wire name on Sepolia (818.162213ms)
+✔ viem follows OffchainLookup to a gateway and validates through the onchain callback (141.731218ms)
+✔ explicit legacy registry mode still discovers the resolver and reads text directly (43.076167ms)
+✔ missing ainize.node fails instead of returning a partial answer (36.746564ms)
+✔ missing ainize.patch fails instead of returning a partial answer (63.719713ms)
+✔ RPC failure is actionable and excludes provider secrets: {"fail":true} (3047.064182ms)
+✔ RPC failure is actionable and excludes provider secrets: {"malformed":true} (3039.33323ms)
+✔ RPC failure is actionable and excludes provider secrets: {"legacy":true,"noResolver":true} (18.744315ms)
+✔ chain mismatch fails before any resolution calls (17.331396ms)
+✔ config can select mainnet and explicit options override it (70.509659ms)
+✔ local names retain priority and never access RPC (1.139511ms)
+✔ DNS and Unicode names are accepted, malformed names and URLs are rejected (0.749472ms)
+✔ CLI forwards --ens-chain and --rpc and resolve-only stops after resolution (5635.279694ms)
+✔ namehash reproduces the canonical ENS vectors (654.894835ms)
+✔ namehash is case-insensitive on the label, as ENSIP-1 requires (0.549642ms)
+✔ a knowledge id is not mistaken for a name (0.465303ms)
+✔ a names file resolves both halves the old command line supplied by hand (0.836927ms)
+✔ resolution is case-insensitive on the name the user types (8.522662ms)
+✔ an entry missing either half is not a resolution (1.207711ms)
+✔ the config names block resolves when no file does (0.56424ms)
+✔ failure without RPC names every local path and explains Universal Resolver setup (6.415816ms)
+✔ the names-file search order is explicit and puts an explicit file first (0.2792ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16219.240828

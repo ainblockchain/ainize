@@ -21,7 +21,7 @@
 <div class="stack">
 <section class="card"><div class="step">02 / AINIZE → VERIFIED INGESTION</div><h2>A lesson with a checkable receipt.</h2><p>Send the exact reviewed rows to Ainize. Compare the server's content hash with the source dataset.</p>
 <button id="upload" disabled>Upload these rows to Ainize</button><div id="receipt" class="mono" style="margin-top:14px">Waiting for live data.</div><div class="note">Uploads a dataset only. Training, publication and purchases are separate operations.</div></section>
-<section class="card"><div class="step">03 / ENSv2 → KNOWLEDGE DISCOVERY</div><h2>One name. A node and its knowledge.</h2><input id="name" placeholder="Your registered Sepolia knowledge name" aria-label="ENS name"><button class="secondary" id="resolve">Resolve on Sepolia</button><pre id="ens">No name has been queried.</pre><div class="note">Reads actual ainize.node and ainize.patch records. Missing records are errors, not sample results.</div></section>
+<section class="card"><div class="step">03 / ENSv2 → KNOWLEDGE DISCOVERY</div><h2>One name. A node and its knowledge.</h2><input id="name" placeholder="Your registered Sepolia knowledge name" aria-label="ENS name"><button class="secondary" id="resolve">Resolve on Sepolia</button><pre id="ens">No name has been queried.</pre><button class="secondary" id="permissions">Check deployed write permissions</button><pre id="permission-result">Read-only probes; no wallet connection required.</pre><div class="note">Reads actual records and per-key permissions. The namespace administrator can explicitly grant or revoke rights.</div></section>
 </div>
 </main>
 <div class="status" id="status">Ready. Every action calls the real provider.</div>
@@ -39,7 +39,7 @@ function renderStatus(text,error=false){element('status').textContent=text;eleme
 async function refresh(){
  try{
  const response=await fetch('/api/state');const state=await response.json();
- element('fetch').disabled=state.busy||active;element('upload').disabled=state.busy||active||!state.graph||!state.canUpload;element('resolve').disabled=state.busy||active;
+ element('fetch').disabled=state.busy||active;element('upload').disabled=state.busy||active||!state.graph||!state.canUpload;element('resolve').disabled=state.busy||active;element('permissions').disabled=state.busy||active;
  if(state.graph){
   element('count').textContent=state.graph.rows.length;element('block').textContent=state.graph.block.toLocaleString();
   element('source').textContent=(state.graph.authenticated?'Authenticated':'Anonymous')+' live MCP · '+state.graph.fetchedAt+'\nSHA-256 '+state.graph.sha256;
@@ -49,10 +49,12 @@ async function refresh(){
  if(state.upload)element('receipt').textContent='Dataset '+state.upload.datasetId+'\n'+state.upload.rows+' rows accepted · SHA-256 '+(state.upload.matches?'MATCH':'MISMATCH')+'\n'+state.upload.sha256;
  else element('receipt').textContent=!state.canUpload?'Configure a dedicated AINIZE_TEACH_KEY in the server environment to enable upload.':state.graph?'Ready to upload the reviewed dataset.':'Waiting for live data.';
  element('ens').textContent=state.ens?JSON.stringify(state.ens,null,2):'No successful name lookup in this session.';
+ element('permission-result').textContent=state.permissions?'Sepolia block '+state.permissions.block+'\n'+state.permissions.name+'\n'+state.permissions.allowedKey+': ALLOWED\n'+state.permissions.refusedKey+': '+state.permissions.refusedError:'No successful permission check in this session.';
  if(state.error)renderStatus(state.error,true);else if(state.busy||active)renderStatus('Running '+state.stage+' against the live provider…');else renderStatus(state.stage==='complete'?'Operation completed. Results and hashes come from the provider.':'Ready. Every action calls the real provider.');
  }catch{renderStatus('Local demo server is unavailable.',true);}
 }
 element('fetch').onclick=()=>call('graph');element('upload').onclick=()=>call('upload');element('resolve').onclick=()=>call('ens',{name:element('name').value.trim()});
+element('permissions').onclick=()=>call('permissions');
 refresh();setInterval(refresh,1200);
 </script>
 </body>

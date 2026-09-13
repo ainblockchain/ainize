@@ -15,7 +15,7 @@ const mcp = resolve(root, 'integrations/mcp');
 const cli = resolve(root, 'integrations/cli');
 await mkdir(work, { recursive: true });
 const dataset = resolve(work, 'tokens.jsonl');
-const state = { busy: false, stage: 'ready', graph: null, upload: null, ens: null,
+const state = { busy: false, stage: 'ready', graph: null, upload: null, ens: null, permissions: null,
   canUpload: Boolean(process.env.AINIZE_TEACH_KEY), authenticatedGraph: Boolean(process.env.GRAPH_API_KEY),
   nodeURL, error: null };
 
@@ -60,6 +60,12 @@ async function action(name, body) {
     state.ens = JSON.parse(stdout);
     return;
   }
+  if (name === 'permissions') {
+    state.permissions = null;
+    const { stdout } = await execute(root, ['demo/check-permissions.mjs']);
+    state.permissions = JSON.parse(stdout);
+    return;
+  }
   throw new Error('unknown-action');
 }
 
@@ -72,7 +78,7 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (request.method === 'GET' && request.url === '/api/state') return reply(response, 200, state);
-  if (request.method !== 'POST' || !['/api/graph', '/api/upload', '/api/ens'].includes(request.url)) return reply(response, 404, { error: 'Not found' });
+  if (request.method !== 'POST' || !['/api/graph', '/api/upload', '/api/ens', '/api/permissions'].includes(request.url)) return reply(response, 404, { error: 'Not found' });
   if (![`http://${host}`, `http://localhost:${port}`].includes(request.headers.origin)) return reply(response, 403, { error: 'Same-origin requests only' });
   if (request.headers['content-type'] !== 'application/json') return reply(response, 415, { error: 'JSON required' });
   if (state.busy) return reply(response, 409, { error: 'A live operation is already running' });

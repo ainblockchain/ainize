@@ -1,0 +1,192 @@
+npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
+npm warn deprecated uuid@3.4.0: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+
+> @ainize/mcp@0.1.0 prepare
+> npm run build
+
+
+> @ainize/mcp@0.1.0 build
+> tsc -p tsconfig.json
+
+
+added 311 packages in 5m
+
+> @ainize/mcp@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> @ainize/mcp@0.1.0 test
+> node --test --import tsx test/*.test.ts
+
+secp256k1 unavailable, reverting to browser version
+✔ the v2 signing string is byte-for-byte the node's (1.060211ms)
+✔ a header signs the exact request and verifies against the teaching key address (114.586674ms)
+✔ a header is never reused: two calls at different instants produce different signatures (25.485769ms)
+✔ the same key on a different route or node signs differently (35.199861ms)
+secp256k1 unavailable, reverting to browser version
+✔ a model server that was down when the session started comes back, and the tool list follows it (567.663287ms)
+✔ a capability that goes away is withdrawn, not left as a tool that cannot work (282.657451ms)
+secp256k1 unavailable, reverting to browser version
+✔ config comes from env, and a file fills in what env does not say (1.829118ms)
+✔ a budget default of 0 is what disables buying (0.445104ms)
+✔ the teaching key is parsed but never summarised as a value (6.358628ms)
+✔ a node URL that is not a URL is refused at startup, not at the first call (0.544813ms)
+✔ connect: the handshake, the tool list, and what goes into provenance about the far side (664.812573ms)
+✔ fetchRows: rows in the canonical shape, provenance sealed over exactly those rows (322.557084ms)
+✔ an upstream tool error is an error here, never an empty training set (141.632702ms)
+✔ an answer that is not JSON is refused rather than mapped into nothing (83.22948ms)
+✔ a runaway answer is capped before it becomes the agent's context (80.483664ms)
+✔ calling before connecting, and connecting to nothing, both say so plainly (5.525818ms)
+✔ decimal money never goes through a float (1.246083ms)
+✔ a price that is not a price is refused, not coerced (0.512823ms)
+✔ the recorded live Graph evidence reconstructs all canonical rows (29.854044ms)
+✔ evidence verifier rejects changed rows, provenance, pins and raw responses (76.204459ms)
+✔ pinning constrains metadata and every root entity, including aliases and existing pins (3.994424ms)
+✔ pinning refuses unsupported queries and invalid blocks (0.885078ms)
+✔ Graph errors, indexing errors and block drift cannot become successful datasets (1.995144ms)
+✔ starting a job returns before the upstream call has finished (308.543931ms)
+✔ a cancelled job stays cancelled and its abort signal reaches the upstream call (0.521719ms)
+✔ a failed job keeps its error, and job_list is newest first (0.567656ms)
+✔ finished jobs are evicted after the TTL, running ones are not (0.298186ms)
+✔ waitForChange is a local long-poll: it returns on the state change, not on a timer (62.17796ms)
+secp256k1 unavailable, reverting to browser version
+✔ live_test hands back a job handle in milliseconds while the model call is still in flight (408.540958ms)
+✔ job_status returns the before/after, the verdict and the verifiers (323.192889ms)
+✔ an unscored comparison says so instead of pretending it was verified (109.271425ms)
+✔ the quota exhaustion answer says when free tries come back (54.919826ms)
+✔ a busy shared model is model_busy with the holder named, not a 500 (79.587164ms)
+✔ cancelling a queued live test is free, and says so (113.839557ms)
+✔ job_status on a job this session never had is job_not_found, and job_list still works (34.988049ms)
+✔ live_test is not registered at all when the node has no serving model (10.341311ms)
+✔ apply/remove are off unless the operator opted in, and remove needs confirmation (93.814773ms)
+✔ a knowledge pinned by somebody else WHILE the test runs is called out, not averaged into the claim (244.286227ms)
+✔ a quiet shared model earns no such caveat (169.409717ms)
+✔ a server holding the node's operator credential is not metered as an anonymous visitor (91.104734ms)
+✔ with no operator credential the live test stays anonymous and says the quota is shared (18.917053ms)
+✔ a knowledge already sitting on the shared model is called out, and a bare call is not sold as bare (118.506237ms)
+✔ a knowledge: [] call says plainly what it can and cannot know (170.650048ms)
+✔ a job the caller gave up on reports cancellation, not an upstream failure (3090.010075ms)
+secp256k1 unavailable, reverting to browser version
+✔ quote states the price, the verification and the budget, and hands back a quote_id (427.274483ms)
+✔ a dry-run quote never touches the gateway, because a 402 reserves a nonce (171.992265ms)
+✔ the honest total includes the base stack, and the shortfall is explained (98.94352ms)
+✔ an unverified or challenged knowledge is refused a price (142.951242ms)
+✔ buy is not registered at all without a budget (24.495692ms)
+✔ every money gate refuses before the node is ever called (89.729847ms)
+✔ an expired quote cannot be settled (91.83528ms)
+✔ over the session cap is budget_exceeded with all four numbers, never a partial buy (41.820556ms)
+✔ max_price may lower the ceiling for one call but never raise it (268.102761ms)
+✔ a dry-run buy runs every gate and calls nothing (90.836727ms)
+✔ the happy path settles once, decrements the budget and passes the node timeline through (142.933078ms)
+✔ a knowledge this node already bought is refused, and nothing is charged (137.425614ms)
+✔ a price that moved under the quote stops the purchase (149.059005ms)
+✔ a buy that failed after the request went out keeps its intent AND its hold, and never retries (66.928508ms)
+✔ reconcile_purchase tells the four truths apart without paying anything (25.493024ms)
+secp256k1 unavailable, reverting to browser version
+✔ search_knowledge returns flat rows, never the raw catalogue entry (568.191859ms)
+✔ get_knowledge carries the verification a judge reads, and drops the stake and the signature (251.271252ms)
+✔ get_knowledge names the base stack, and says a bundle buy does not exist (82.450674ms)
+✔ an unknown id is a not_found the model can act on, not a protocol error (26.290745ms)
+✔ family_tree walks the ledger graph and refuses to invent signals (61.585176ms)
+✔ node_status answers who holds the model, against the node clock (60.205339ms)
+✔ node_status warns when knowledge is pinned on the shared model server (41.378828ms)
+✔ my_library omits a section with a reason instead of failing the call (64.495806ms)
+✔ my_library returns the tx hash but never the manifest (47.719001ms)
+✔ get_training_set previews the questions a knowledge was built from (66.496779ms)
+✔ knowledge_signals is honest about what the node does not record (86.926852ms)
+✔ teacher_profile is a plain public read (40.713757ms)
+✔ a node that is not there is node_unreachable and retryable, not a crash (178.812317ms)
+✔ get_training_set reads back the id create_training_set just handed out (240.969698ms)
+✔ an id that is neither a knowledge nor an uploaded set says so, naming both places it looked (111.154505ms)
+✔ a private draft this server owns is readable — it holds the credential that identifies it (51.209811ms)
+✔ a draft nobody here owns is still an honest 404 (66.525544ms)
+secp256k1 unavailable, reverting to browser version
+✔ the canonical bytes and the sha256 are the node's own, character for character (2.280675ms)
+✔ normalisation matches the node row for row: NFC, invisibles, collapsed space, a flattened answer, Q:/A: unwrapped (0.308976ms)
+✔ row hashes are per-row, ordered, and stable across a rebuild (3.455663ms)
+✔ the argument hash ignores key order but not values (0.403024ms)
+✔ a provenance note fits the node's 500-character cap and names what pins the fact (0.460914ms)
+✔ a sealed provenance record hashes exactly the rows it travels with (0.52723ms)
+✔ mapping turns a tool answer into rows, and says why every other item did not make it (0.677134ms)
+✔ the node's own limits are enforced where the source row can still be named (0.338452ms)
+✔ a path that selects nothing produces no rows and no pretence (0.223063ms)
+secp256k1 unavailable, reverting to browser version
+✔ no tool anywhere takes a credential or a node URL (325.631554ms)
+✔ buy has no id: what gets bought is whatever the quote named (202.877753ms)
+✔ the two irreversible tools are annotated and gated the way the design says (73.662899ms)
+✔ every tool has a description that says what it costs or that it is free (94.912836ms)
+✔ the tool set is the one the design names, and nothing operator-administrative leaked in (46.790791ms)
+✔ the instructions resource states the rules the schemas enforce (28.440332ms)
+✔ secrets planted anywhere in a result never come back out (1.758094ms)
+✔ public ledger facts survive: a tx hash has the same shape as a key and must still be readable (0.229044ms)
+✔ error sentences are scrubbed too, and a cycle does not hang (0.899786ms)
+✔ a download link's ?token= is a credential and never survives the scrubber (0.205871ms)
+✔ two fields holding the SAME object are both rendered — only a real cycle is cut (0.25346ms)
+✔ a public fact the answer already states as a field stays readable inside its own sentence (3.888775ms)
+✔ a key-shaped value the answer does NOT publish is still redacted in prose (0.350655ms)
+✔ echoId quotes an id, elides a credential-shaped one, and truncates a long one (0.450655ms)
+secp256k1 unavailable, reverting to browser version
+✔ SKILL.md passes its own validator (24.255447ms)
+✔ the body fits the skill budget, and the frontmatter says when to use it (22.08491ms)
+✔ every tool this server registers is documented in the README, with a call and an answer (327.447398ms)
+✔ every tool the skill names is a tool the server really registers (96.276282ms)
+✔ the skill states the two hard rules and the tiers, in words a reader cannot miss (0.383578ms)
+✔ the validator actually fails on a skill that is wrong (17.239632ms)
+﹣ the UX scenarios for the MCP work name evidence that exists (0.683486ms) # needs every repository in one tree — set AINIZE_MONOREPO to a combined checkout
+secp256k1 unavailable, reverting to browser version
+﹣ smoke: the read tools answer from a real node (0.757426ms) # http://localhost:3422 is not running
+﹣ smoke: a real before/after on the shared model (0.32123ms) # set AINIZE_MCP_SMOKE_LIVE=1 (it takes the shared model lock and one free try)
+﹣ smoke: the hosted Subgraph MCP answers over SSE and states its own mandatory workflow (2.494891ms) # set GRAPH_API_KEY or GRAPH_SMOKE_ANONYMOUS=1 for live data
+﹣ smoke: a live subgraph query becomes block-pinned training rows (0.108646ms) # set GRAPH_API_KEY or GRAPH_SMOKE_ANONYMOUS=1 for live data
+secp256k1 unavailable, reverting to browser version
+✔ a lesson runs upload → preflight → submit → poll and reports the node's own handle as it goes (369.438867ms)
+✔ base and compare_with go up as base_ids and context_ids, never the deprecated flag (269.779841ms)
+✔ nothing to train: the lesson is never submitted and the allowance comes back (48.768292ms)
+✔ a submission the node refuses gives the allowance back; one it accepts and then fails does not (375.949072ms)
+✔ the session cap refuses before a single byte is uploaded, and no argument raises it (192.954746ms)
+✔ two decisions cannot both take the last lesson (2.248394ms)
+✔ rows the node's parser threw away are not trained on (15.124481ms)
+✔ the lesson is held before the first await, so two `teach` calls in one turn cannot both take the last one (108.923525ms)
+✔ the package offers ./client and ./money, and "." is unchanged (0.552768ms)
+✔ neither subpath drags in the MCP server, the tool definitions or express (1.964275ms)
+✔ the client seam carries the pieces the agent was told to reuse rather than rebuild (93.123632ms)
+secp256k1 unavailable, reverting to browser version
+✔ create_training_set uploads the rows, reports what was refused, and predicts the id the bytes land on (266.127666ms)
+✔ the same rows twice land on the same training set instead of a second copy (108.9577ms)
+✔ provenance from another MCP server is written onto the rows and kept beside the journal (70.85795ms)
+✔ teach_preflight answers per question, with what the model said (68.589499ms)
+✔ teach refuses to spend a lesson on questions the model already answers, and creates no lesson (79.172377ms)
+✔ teach: a job handle in milliseconds, then what it learned and what it did not (216.177263ms)
+✔ teach on top of a base sends base_ids, never context_ids, and says what it is building on (141.818284ms)
+✔ teach dry_run resolves everything and touches nothing (49.887684ms)
+✔ the last lesson of the day needs the human to say so (77.56566ms)
+✔ the session lesson cap is server configuration, and no argument raises it (144.558491ms)
+✔ a base that cannot be built on is refused before anything is spent (30.226239ms)
+✔ two bases is a merge, and no node can do that yet (21.243625ms)
+✔ a failed lesson says the daily lesson is gone and is never retried (135.7045ms)
+✔ a lesson can be polled by the node id alone, so a lost job_id is not a dead end (153.317199ms)
+✔ download_lesson writes the files here and never hands back the download token (155.92223ms)
+✔ cancelling a lesson says the daily lesson is not coming back (3118.500573ms)
+✔ publish is refused outright on the shared AIN chain (19.665632ms)
+✔ publish dry_run shows the real split — 49%, not the sheet's 70% — and writes nothing (262.526587ms)
+✔ publish needs both consents and a phrase carrying the lesson id (170.859526ms)
+✔ publish is not registered at all unless the operator turned it on (16.679489ms)
+✔ with no teaching key there is no teach tool to call (6.44955ms)
+✔ a submission the node refuses gives this session's lesson allowance back (145.860319ms)
+✔ a lesson the node ACCEPTED and then failed still counts — the node charges at submit (3114.411329ms)
+ℹ tests 144
+ℹ suites 0
+ℹ pass 139
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 5
+ℹ todo 0
+ℹ duration_ms 20153.373424
+{
+  "valid": true,
+  "rows": 20,
+  "rejected": 0,
+  "block": 25969047,
+  "authenticated": true,
+  "rows_sha256": "edc53e171486aced6e10c8f6647db0c311b51a96b9d48160a5f3f15da8762b53"
+}

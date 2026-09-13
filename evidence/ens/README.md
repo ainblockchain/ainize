@@ -1,8 +1,9 @@
 # ENSv2 Sepolia — deployment and permission evidence
 
-Recorded status: **in-progress**. Chain ID: **11155111**.
+Recorded status: **complete**. Chain ID: **11155111**.
 Knowledge name: **patch.ainize-4782c76e.eth**.
-Globally resolved through ENSv2: **not yet verified**.
+Resolved through the pinned ENSv2 deployment: **verified**.
+This is distinct from the canonical Universal Resolver proxy. Its root can lag a newer beta deployment; canonical CLI resolution is recorded separately.
 
 These are real confirmed Sepolia transactions. The receipt JSON includes block hashes, event logs, gas used, and transaction fees.
 [Full machine-readable evidence](deployment.json).
@@ -24,13 +25,27 @@ These are real confirmed Sepolia transactions. The receipt JSON includes block h
 | commit-root | [11696496](https://sepolia.etherscan.io/block/11696496) | [0xd7af05e1df…](https://sepolia.etherscan.io/tx/0xd7af05e1df66ac61e0d859e2162cb4b14dd1d16b74ee5031bf3d60bd635887ab) | 45438 |
 | mint-mock-usdc | [11696504](https://sepolia.etherscan.io/block/11696504) | [0x5d0f2921f9…](https://sepolia.etherscan.io/tx/0x5d0f2921f9af92a213ae685b75ea2b39a0e9e206f40a2cd5f549d632e861f9c5) | 51369 |
 | approve-mock-usdc | [11696505](https://sepolia.etherscan.io/block/11696505) | [0x4013ac5b58…](https://sepolia.etherscan.io/tx/0x4013ac5b58018f960360a8243220ac150577d60fc378b0faf8d34d76b92b6fa3) | 46354 |
+| register-root | [11696507](https://sepolia.etherscan.io/block/11696507) | [0x0012244058…](https://sepolia.etherscan.io/tx/0x0012244058c83f916fb15f983ef6055683c0f850af340cda84fe2dc41f5ac067) | 235237 |
+| set-registry-parent | [11696508](https://sepolia.etherscan.io/block/11696508) | [0xc4f299e403…](https://sepolia.etherscan.io/tx/0xc4f299e4033083d0440221c313b7dc80a970b01bb7b2fd2a994ca93bc9ca6d6f) | 80888 |
+| operator-register-child | [11696510](https://sepolia.etherscan.io/block/11696510) | [0xd2eb6e4687…](https://sepolia.etherscan.io/tx/0xd2eb6e468702ab8936e4535c158706d147f86a23d3d37220e366d4940cf21878) | 170147 |
+| authorize-and-write-records | [11696511](https://sepolia.etherscan.io/block/11696511) | [0xaac65dd5fb…](https://sepolia.etherscan.io/tx/0xaac65dd5fb8ea2e12403a5e6e0e93345ec5a5af16568de58ea0a4074e8fbe7ed) | 1068392 |
+| revoke-patch-write | [11696513](https://sepolia.etherscan.io/block/11696513) | [0xe3172e1c92…](https://sepolia.etherscan.io/tx/0xe3172e1c926194b8088d0d2fbb36f4a1006cb946b6147e1ca5dac48bed83e4e2) | 42468 |
 
 ## Record and permission checks
 
-The final per-key permission readback has not completed yet.
+At block **11696513**, the same account can write `ainize.node` but a write to `ainize.patch` reverts with `EACUnauthorizedAccountRoles`. These permission probes are eth_call simulations after real grants/revocations; they do not create extra transactions.
 
 ```json
-{}
+{
+  "ainize.node": "https://www.ainize.ai",
+  "ainize.patch": "taught-ainize-lifecycle100-2026-cf9a6f",
+  "ainize.patch.sha256": "fb1cd41e2f6a26f785d72460a2eac4a62688ee4c70e5bee43187d734eeca2e64",
+  "ainize.patch.status": "REJECTED",
+  "ainize.provenance": "Existing Ainize catalogue patch; catalogue status REJECTED; operator registration only; no EngramRegistrar training mint; no Graph-trained model claim.",
+  "ainize.dataset": "97a216a3-1692-4ebd-a148-928b5b3dfa9e",
+  "ainize.dataset.sha256": "edc53e171486aced6e10c8f6647db0c311b51a96b9d48160a5f3f15da8762b53",
+  "ainize.graph.block": "25969047"
+}
 ```
 
 ## Scope
