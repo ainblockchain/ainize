@@ -1,5 +1,19 @@
 # ainize — Collaborative Foundation Model
 
+## ETHOnline 2026 — judges start here
+
+**Continuity submission.** [Submission package](ETHONLINE2026.md) ·
+[actual Graph run](evidence/graph-run.txt) · [full provider evidence](evidence/graph-rows.jsonl.evidence.json) ·
+[new/reused history](evidence/CONTINUITY.md) · [AI disclosure and specification](submission/SPEC.md) ·
+[video, captions and recording instructions](video/README.md).
+
+The review video is **caption-only: human narration is missing, so it is not represented as a compliant
+final demo**. The [release](https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-review)
+hosts the actual MP4 once published. ENSv2 Sepolia deployment remains an explicit evidence gate.
+All judge-facing artifacts belong in this repository; focused integration source snapshots are being
+added under `integrations/` with their original provenance. The product overview below describes the
+broader existing project, not a claim that every feature was built or demonstrated at this event.
+
 **One base model. Its memory taught by many people, in pieces, in the open.**
 
 A foundation model normally arrives finished: one lab trains it, everyone else prompts it and works

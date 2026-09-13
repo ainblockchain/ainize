@@ -1,0 +1,10 @@
+{
+  "human_name": "",
+  "audio_sha256": "REPLACE_AFTER_RECORDING",
+  "clip_sha256": [],
+  "human_voice_only": false,
+  "desktop_capture": false,
+  "normal_speed": false,
+  "reviewed_source_clips": false,
+  "no_music_replacing_narration": false
+}

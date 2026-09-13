@@ -1,0 +1,3192 @@
+{
+  "captured_at": "2026-09-13T14:19:35.969465+00:00",
+  "repositories": {
+    "ainize-mcp": {
+      "head": "bc2f44b60a51545e2df58b4810249773fd073268",
+      "commits": [
+        {
+          "commit": "bc2f44b60a51545e2df58b4810249773fd073268",
+          "author_date": "2026-09-13T03:16:23+00:00",
+          "committer_date": "2026-09-13T03:16:23+00:00",
+          "subject": "MIT, in the repository that ships it"
+        },
+        {
+          "commit": "a42d9987761bde01b6c7eae3cd3ca98724e76c84",
+          "author_date": "2026-09-10T14:16:20+00:00",
+          "committer_date": "2026-09-10T14:16:20+00:00",
+          "subject": "a failed buy is not a buy that did not happen: the hold stays until something finds out"
+        },
+        {
+          "commit": "988fef6f7b22cba0b0fdc9c8c41c1c088adced61",
+          "author_date": "2026-09-10T13:58:48+00:00",
+          "committer_date": "2026-09-10T13:58:48+00:00",
+          "subject": "a lesson allowance is given back on every path that never queued a lesson"
+        },
+        {
+          "commit": "dd57c9f6ce419e091afbe52f85e53b447de9f093",
+          "author_date": "2026-09-10T13:46:46+00:00",
+          "committer_date": "2026-09-10T13:46:46+00:00",
+          "subject": "buy asks whether the LISTING moved, and a budget never reports a negative"
+        },
+        {
+          "commit": "8dac0ecc2863f5bd48f32f4c829ca7d531763934",
+          "author_date": "2026-09-09T05:21:53+00:00",
+          "committer_date": "2026-09-09T05:21:53+00:00",
+          "subject": "mcp: the OpenAPI warning names ainize-node, not a workspace path"
+        },
+        {
+          "commit": "4e79acc9dd36fed648cf8966c29a4215c653f0c8",
+          "author_date": "2026-09-09T05:11:13+00:00",
+          "committer_date": "2026-09-09T05:11:13+00:00",
+          "subject": "mcp: the whole-tree UX evidence check skips rather than lies when there is no whole tree"
+        },
+        {
+          "commit": "5e42d15fbfcc0365a65211114a290475ba83dbd8",
+          "author_date": "2026-09-09T04:47:17+00:00",
+          "committer_date": "2026-09-09T04:47:17+00:00",
+          "subject": "stand alone: ship dist to consumers, which .gitignore was silently stripping"
+        },
+        {
+          "commit": "feea43e00f78cebc4d910f75f2ba639dc22527d7",
+          "author_date": "2026-09-09T04:44:51+00:00",
+          "committer_date": "2026-09-09T04:44:51+00:00",
+          "subject": "stand alone: declare typescript, which the workspace root used to provide"
+        },
+        {
+          "commit": "21e03b4c70f650e1f47e25b8f348575b26b2e594",
+          "author_date": "2026-09-09T04:41:02+00:00",
+          "committer_date": "2026-09-09T04:41:02+00:00",
+          "subject": "stand alone: ainize-mcp becomes its own repository"
+        },
+        {
+          "commit": "f3f306ce0bf25570a94d4f257d81d9b6034e361d",
+          "author_date": "2026-09-07T07:58:17+00:00",
+          "committer_date": "2026-09-07T07:58:17+00:00",
+          "subject": "the CLI stops depending on the server, and the copies that existed to avoid it go away"
+        },
+        {
+          "commit": "b2e93439396690d8011e1603cf2d506d898b2c46",
+          "author_date": "2026-09-07T07:51:00+00:00",
+          "committer_date": "2026-09-07T07:51:00+00:00",
+          "subject": "one name: @ngram/* becomes @ainize/*, and the historical `ngram` binary is withdrawn"
+        },
+        {
+          "commit": "1891907c00cceaaefc2d4380faed9bf75d9e650c",
+          "author_date": "2026-09-07T07:45:19+00:00",
+          "committer_date": "2026-09-07T07:45:19+00:00",
+          "subject": "bench: transcripts are committed as one archive per run, not 2,600 loose files"
+        },
+        {
+          "commit": "9be282ffb4ab6f338e1988b2be260a89c0c49ac5",
+          "author_date": "2026-09-07T02:22:16+00:00",
+          "committer_date": "2026-09-07T02:22:16+00:00",
+          "subject": "teach: pin the one invariant the lift depends on"
+        },
+        {
+          "commit": "66c5e5fb61544b299a11dfa80a5563e5044fac4a",
+          "author_date": "2026-09-07T02:16:20+00:00",
+          "committer_date": "2026-09-07T02:16:20+00:00",
+          "subject": "mcp: a client seam, so a CLI can use this package without starting a server"
+        },
+        {
+          "commit": "2b6b48e4147d1364e677de54f00b2e8d308d17ef",
+          "author_date": "2026-09-07T02:12:21+00:00",
+          "committer_date": "2026-09-07T02:12:21+00:00",
+          "subject": "teach: one lesson pipeline, so the agent runs it instead of copying it"
+        },
+        {
+          "commit": "a33db4d90e290937d462778d1ccdf8b53d2fbbee",
+          "author_date": "2026-09-07T02:07:30+00:00",
+          "committer_date": "2026-09-07T02:07:30+00:00",
+          "subject": "mcp: `@ngram/mcp/money` as a subpath, so a CLI can do money arithmetic without express"
+        },
+        {
+          "commit": "92929fad1e8b6f8f1e99196469b3b8737712e199",
+          "author_date": "2026-09-04T11:33:43+00:00",
+          "committer_date": "2026-09-04T11:33:43+00:00",
+          "subject": "mcp: the attack scenario takes its password from the environment"
+        },
+        {
+          "commit": "f1dbf1b7a958ba91e422b001a6f231ed6d896aa6",
+          "author_date": "2026-09-04T11:31:25+00:00",
+          "committer_date": "2026-09-04T11:31:25+00:00",
+          "subject": "mcp: document the client that found the bugs, so a judge can re-run it"
+        },
+        {
+          "commit": "5d8eeb86587147be8f1d9e696c8e20ef65703ce2",
+          "author_date": "2026-09-04T11:27:54+00:00",
+          "committer_date": "2026-09-04T11:27:54+00:00",
+          "subject": "mcp: a lesson the node refused was never spent, so give it back"
+        },
+        {
+          "commit": "142972ff01a59edfbcedb28d5e85001e97d1746e",
+          "author_date": "2026-09-04T11:21:41+00:00",
+          "committer_date": "2026-09-04T11:21:41+00:00",
+          "subject": "graph: refuse to start on an engine somebody else is using, and record competing load"
+        },
+        {
+          "commit": "31686178a9731b43b90f09f563f8bfa3aa41a7c2",
+          "author_date": "2026-09-04T11:17:44+00:00",
+          "committer_date": "2026-09-04T11:17:44+00:00",
+          "subject": "mcp: \"you cancelled this\" is not an upstream failure"
+        },
+        {
+          "commit": "e946c23f52670225ff4d9acbd20e0c5350a77b50",
+          "author_date": "2026-09-04T11:15:03+00:00",
+          "committer_date": "2026-09-04T11:15:03+00:00",
+          "subject": "mcp: the HTTP transport and the demo cluster, checked by the same client"
+        },
+        {
+          "commit": "5f4c2cf0e5c145e7c9e2572e00a8f3caf36dcf45",
+          "author_date": "2026-09-04T11:04:49+00:00",
+          "committer_date": "2026-09-04T11:04:49+00:00",
+          "subject": "mcp: the proof is one call, and the operator is not a trial visitor"
+        },
+        {
+          "commit": "315f6b12c89b2240de348f9817cca511c5e9972b",
+          "author_date": "2026-09-04T10:54:45+00:00",
+          "committer_date": "2026-09-04T10:54:45+00:00",
+          "subject": "mcp: a live test says when the shared model moved underneath it"
+        },
+        {
+          "commit": "cf3de257b3371741f626fa16371af167b60c3d37",
+          "author_date": "2026-09-04T10:46:15+00:00",
+          "committer_date": "2026-09-04T10:46:15+00:00",
+          "subject": "mcp: three defects a real MCP client found, and the client that found them"
+        },
+        {
+          "commit": "f0da779fd4ccf88ae344a9e122d703eb87e8930c",
+          "author_date": "2026-09-04T10:21:42+00:00",
+          "committer_date": "2026-09-04T10:21:42+00:00",
+          "subject": "mcp M3: the skill, the docs, and the scenarios \u2014 so an agent can be told once and get it right"
+        },
+        {
+          "commit": "1dcece9dcec793c04d760f895f05094d62dc89f3",
+          "author_date": "2026-09-04T09:56:07+00:00",
+          "committer_date": "2026-09-04T09:56:07+00:00",
+          "subject": "mcp M2 (marker): the message for the MCP teach + client work, which landed inside f750569"
+        },
+        {
+          "commit": "f7505695810382fab994911472daffbfef545e36",
+          "author_date": "2026-09-04T09:54:48+00:00",
+          "committer_date": "2026-09-04T09:54:48+00:00",
+          "subject": "node: the watchdog reads the table inside the lock, or not at all"
+        },
+        {
+          "commit": "7fd096093d2bfc35231b441b49712ac775b9f62d",
+          "author_date": "2026-09-04T09:14:30+00:00",
+          "committer_date": "2026-09-04T09:14:30+00:00",
+          "subject": "mcp M1: Ainize as an MCP server \u2014 search, prove, quote, buy, without ever blocking or paying twice"
+        },
+        {
+          "commit": "d1226abdf5a1bbb6da92191db666e71a25bd43f4",
+          "author_date": "2026-08-31T03:04:24+00:00",
+          "committer_date": "2026-08-31T03:04:24+00:00",
+          "subject": "Scaffold knowledge marketplace: core ledger (local DAG + AIN via ain-js), P2P node with x402 trading, web foundation (Ainize design)"
+        }
+      ]
+    },
+    "ainize-cli": {
+      "head": "b27b0904eeec04901810c0cf6c2782d247a42978",
+      "commits": [
+        {
+          "commit": "b27b0904eeec04901810c0cf6c2782d247a42978",
+          "author_date": "2026-09-13T14:17:20+00:00",
+          "committer_date": "2026-09-13T14:17:51+00:00",
+          "subject": "Resolve ENSv2 knowledge records through viem Universal Resolver"
+        },
+        {
+          "commit": "d85c25c67967abc65e2534d875176becfa5769a6",
+          "author_date": "2026-09-13T14:15:53+00:00",
+          "committer_date": "2026-09-13T14:15:53+00:00",
+          "subject": "0.3.0 \u2014 @ainize/node 0.3.0 (device login, owners, EIP-191)"
+        },
+        {
+          "commit": "3d7f77c0d2f5c456258a485b3d67e1225bca11c5",
+          "author_date": "2026-09-13T08:48:20+00:00",
+          "committer_date": "2026-09-13T08:48:20+00:00",
+          "subject": "say \"owner\", and stop offering a password that is gone"
+        },
+        {
+          "commit": "06334bcd9b662ba95e202be181cd457ff3b3bd30",
+          "author_date": "2026-09-13T08:40:20+00:00",
+          "committer_date": "2026-09-13T08:40:20+00:00",
+          "subject": "`ainize login` from a machine that is not the node's"
+        },
+        {
+          "commit": "733e83df88da74728cbd27c21e2d5351553fa14f",
+          "author_date": "2026-09-13T03:19:31+00:00",
+          "committer_date": "2026-09-13T03:19:31+00:00",
+          "subject": "--web-dist: the node serves the build you name, not the one beside the binary"
+        },
+        {
+          "commit": "4ab50653af99d11c954959a18d61ddf49fbf508f",
+          "author_date": "2026-09-12T14:59:45+00:00",
+          "committer_date": "2026-09-12T14:59:45+00:00",
+          "subject": "0.2.5 \u2014 @ainize/node 0.2.5 (micro reads microBatch)"
+        },
+        {
+          "commit": "b9cca8db9c8cd0719db533de363a6b96c72dec5e",
+          "author_date": "2026-09-12T14:52:08+00:00",
+          "committer_date": "2026-09-12T14:52:08+00:00",
+          "subject": "0.2.4 \u2014 trainer memory knobs reach the schema"
+        },
+        {
+          "commit": "6237234b46f12f25663d5a140b635e3474127bc7",
+          "author_date": "2026-09-12T14:41:01+00:00",
+          "committer_date": "2026-09-12T14:41:01+00:00",
+          "subject": "0.2.3 \u2014 @ainize/node 0.2.3 (microBatch and maxContrast are read at last)"
+        },
+        {
+          "commit": "7f70cd18064e66fc3395748dc8a51f7d21350c89",
+          "author_date": "2026-09-12T13:09:01+00:00",
+          "committer_date": "2026-09-12T13:09:01+00:00",
+          "subject": "0.2.2 \u2014 say which Node version is needed, instead of crashing in the loader"
+        },
+        {
+          "commit": "fa254d52767af916658abe465634ad2ec12219bc",
+          "author_date": "2026-09-12T13:03:01+00:00",
+          "committer_date": "2026-09-12T13:03:01+00:00",
+          "subject": "0.2.1 \u2014 @ainize/node 0.2.1 (proxy loopback fix)"
+        },
+        {
+          "commit": "81f8959949bba03a63eb4a1a5a6044e3b3747c1c",
+          "author_date": "2026-09-12T12:37:09+00:00",
+          "committer_date": "2026-09-12T12:37:09+00:00",
+          "subject": "0.2.0 \u2014 no password: `ainize login` signs, `ainize operators` lists"
+        },
+        {
+          "commit": "19bb949a3bfa1c866ede4aeea5b59c6b47a7fcc4",
+          "author_date": "2026-09-12T12:12:19+00:00",
+          "committer_date": "2026-09-12T12:12:19+00:00",
+          "subject": "0.1.4 \u2014 login --key; @ainize/node 0.1.5"
+        },
+        {
+          "commit": "aa1fc9294eef7df34378bf3c4be1f3842720853b",
+          "author_date": "2026-09-12T12:07:25+00:00",
+          "committer_date": "2026-09-12T12:07:25+00:00",
+          "subject": "login --key: sign in with the node's own key, no password"
+        },
+        {
+          "commit": "d2e5f4d89d2daf1a724d084b988c4906630f4678",
+          "author_date": "2026-09-12T10:23:25+00:00",
+          "committer_date": "2026-09-12T10:23:25+00:00",
+          "subject": "0.1.3 \u2014 teach.trainer.microBatch (@ainize/node 0.1.4)"
+        },
+        {
+          "commit": "d28abd1ad636cb33ba1c254797da5b39232134aa",
+          "author_date": "2026-09-12T07:05:10+00:00",
+          "committer_date": "2026-09-12T07:05:10+00:00",
+          "subject": "0.1.2 \u2014 @ainize/node is a real dependency, not an optional peer"
+        },
+        {
+          "commit": "9acc9ded107c5673272e1d59af277af44c703633",
+          "author_date": "2026-09-11T08:51:38+00:00",
+          "committer_date": "2026-09-11T08:51:38+00:00",
+          "subject": "0.1.1 \u2014 VERIFIED replaces LISTED; @ainize/core ^0.1.2"
+        },
+        {
+          "commit": "e8be68a94d2d961999f814cea5809c8dfff2acef",
+          "author_date": "2026-09-11T01:46:55-07:00",
+          "committer_date": "2026-09-11T01:46:55-07:00",
+          "subject": "status: LISTED is now VERIFIED (#4)"
+        },
+        {
+          "commit": "3311573afb93c7e6f0877a864c16b104c03efcfb",
+          "author_date": "2026-09-11T07:20:55+00:00",
+          "committer_date": "2026-09-11T07:21:56+00:00",
+          "subject": "feat(dataset): import existing Hugging Face URLs into teach datasets"
+        },
+        {
+          "commit": "8031cbfd228753ae6ddc6354258077a3639650d0",
+          "author_date": "2026-09-11T00:17:37-07:00",
+          "committer_date": "2026-09-11T00:17:37-07:00",
+          "subject": "use: warn and confirm before buying knowledge nobody has verified (#3)"
+        },
+        {
+          "commit": "383f718921ba2ee8d235ccd6c1e604d5e2965269",
+          "author_date": "2026-09-11T00:17:33-07:00",
+          "committer_date": "2026-09-11T00:17:33-07:00",
+          "subject": "Rename the package to `ainize` so `npm install -g ainize` resolves (#2)"
+        },
+        {
+          "commit": "98d7f670dda85690e3763fb0f00abb80e4e885de",
+          "author_date": "2026-09-10T13:19:20-07:00",
+          "committer_date": "2026-09-10T13:19:20-07:00",
+          "subject": "Merge pull request #1 from ainblockchain/release/v0.1.0"
+        },
+        {
+          "commit": "7dd6f118690bf9408cccd408878bf9d578934d0f",
+          "author_date": "2026-09-10T20:13:02+00:00",
+          "committer_date": "2026-09-10T20:13:02+00:00",
+          "subject": "Publish @ainize/cli 0.1.0 to npm"
+        },
+        {
+          "commit": "fdd3e17b680622456c96af0d1eefe2570855c1a4",
+          "author_date": "2026-09-10T14:03:28+00:00",
+          "committer_date": "2026-09-10T14:03:28+00:00",
+          "subject": "the agent's tests go where the agent is; the CLI stops devDepending on it"
+        },
+        {
+          "commit": "1d3e47cfd68a4c11facfa25c69bd4e57547d3f47",
+          "author_date": "2026-09-09T05:13:44+00:00",
+          "committer_date": "2026-09-09T05:13:44+00:00",
+          "subject": "cli: the agent integration cases reach @ainize/agent, not a sibling's source"
+        },
+        {
+          "commit": "7479a1a4d51447f1d8cc3e02d83d43ea4da7a045",
+          "author_date": "2026-09-09T04:47:15+00:00",
+          "committer_date": "2026-09-09T04:47:15+00:00",
+          "subject": "stand alone: ship dist to consumers, which .gitignore was silently stripping"
+        },
+        {
+          "commit": "be58cc5f9f9ad2f4500ff8b9b4c5133616e914c1",
+          "author_date": "2026-09-09T04:44:48+00:00",
+          "committer_date": "2026-09-09T04:44:48+00:00",
+          "subject": "stand alone: declare typescript, which the workspace root used to provide"
+        },
+        {
+          "commit": "f00730db49ca14f0a1f87d28f5e26681d6f44a26",
+          "author_date": "2026-09-09T04:41:02+00:00",
+          "committer_date": "2026-09-09T04:41:02+00:00",
+          "subject": "stand alone: ainize-cli becomes its own repository"
+        },
+        {
+          "commit": "8fd8f745c30df7a955bff31bbf183996a2352547",
+          "author_date": "2026-09-07T07:58:17+00:00",
+          "committer_date": "2026-09-07T07:58:17+00:00",
+          "subject": "the CLI stops depending on the server, and the copies that existed to avoid it go away"
+        },
+        {
+          "commit": "b860ba5612297b51c287a15c2b3afdbce631af3b",
+          "author_date": "2026-09-07T07:51:00+00:00",
+          "committer_date": "2026-09-07T07:51:00+00:00",
+          "subject": "one name: @ngram/* becomes @ainize/*, and the historical `ngram` binary is withdrawn"
+        },
+        {
+          "commit": "45d49762cc7b23504b502e610c77eaf0ce216dd8",
+          "author_date": "2026-09-07T07:45:19+00:00",
+          "committer_date": "2026-09-07T07:45:19+00:00",
+          "subject": "bench: transcripts are committed as one archive per run, not 2,600 loose files"
+        },
+        {
+          "commit": "f32cf3219a964ac9de26fe953229eebf383a75fb",
+          "author_date": "2026-09-07T02:57:35+00:00",
+          "committer_date": "2026-09-07T02:57:35+00:00",
+          "subject": "cli: `--no-peer` was parsed as a command, and document the one-line flow"
+        },
+        {
+          "commit": "d08b8af3b284a70cec48f346452c55d93e191c08",
+          "author_date": "2026-09-07T02:55:49+00:00",
+          "committer_date": "2026-09-07T02:55:49+00:00",
+          "subject": "cli: test the half of `ainize patch <name.eth>` that needs no node"
+        },
+        {
+          "commit": "a39587692da669643f08b8a5c4bdbce0c29dabde",
+          "author_date": "2026-09-07T02:51:55+00:00",
+          "committer_date": "2026-09-07T02:51:55+00:00",
+          "subject": "graph: an arm that needs an EMPTY table never checked that the table was empty"
+        },
+        {
+          "commit": "31372dd7f2095f4ff7b08a3cc43fea822c42d2d9",
+          "author_date": "2026-09-05T02:32:06+00:00",
+          "committer_date": "2026-09-05T02:32:06+00:00",
+          "subject": "publish --branch: the flag wrote a label onto the permanent record and filed nothing (item 169c)"
+        },
+        {
+          "commit": "b18a24119a3ef7842fa2698e8e49a51fab72b1d9",
+          "author_date": "2026-09-05T02:29:12+00:00",
+          "committer_date": "2026-09-05T02:29:12+00:00",
+          "subject": "publish --as-of: the one date a daily consumer needs, in the one place that could not say it (item 267)"
+        },
+        {
+          "commit": "291a4c7bd011b431bb69a5f53c825479e2c057bf",
+          "author_date": "2026-09-05T02:26:20+00:00",
+          "committer_date": "2026-09-05T02:26:20+00:00",
+          "subject": "wallet send: a local-ledger node asked the operator to consent to an irreversible chain transfer (item 320)"
+        },
+        {
+          "commit": "8c35a980042284453f9ca00201644f97e4b0f574",
+          "author_date": "2026-09-05T02:11:45+00:00",
+          "committer_date": "2026-09-05T02:11:45+00:00",
+          "subject": "cli: Ctrl-D at any of the new confirms exited 13 with nothing said (item 109's defect, on item 168's prompt)"
+        },
+        {
+          "commit": "3f9972d7a4bd0253abe7b8e74bed0c64a61b70b3",
+          "author_date": "2026-09-05T02:03:04+00:00",
+          "committer_date": "2026-09-05T02:03:04+00:00",
+          "subject": "built on: the column that said it named the parent was counting the children (item 282)"
+        },
+        {
+          "commit": "8b80330cca6dfbe831e00bd98ad7f76f72675847",
+          "author_date": "2026-09-05T01:35:31+00:00",
+          "committer_date": "2026-09-05T01:35:31+00:00",
+          "subject": "tracks: there was no subscription \u2014 every day of a daily track was a fresh full-price sale, and curating paid nothing"
+        },
+        {
+          "commit": "1734b8e6ef05cdcdb09281d997458bd15f6709d2",
+          "author_date": "2026-09-05T01:34:06+00:00",
+          "committer_date": "2026-09-05T01:34:06+00:00",
+          "subject": "supersede: a new version of your own knowledge is the one family link that IS a replacement"
+        },
+        {
+          "commit": "85e0edff62cc6b4367e574e92e0f2acbe0524c7b",
+          "author_date": "2026-09-05T01:29:12+00:00",
+          "committer_date": "2026-09-05T01:29:12+00:00",
+          "subject": "derivatives: a child could only ever be a new listing with a dashed line to its base, and Explore grew a chip per lesson"
+        },
+        {
+          "commit": "adfdbdf08da7bcfce3339ed36531221975ccf966",
+          "author_date": "2026-09-05T01:23:51+00:00",
+          "committer_date": "2026-09-05T01:23:51+00:00",
+          "subject": "live tests: 32 misses existed, and no screen and no field said which questions they were"
+        },
+        {
+          "commit": "7df769542ebf4304a5dbd3f56caeff19e2eca242",
+          "author_date": "2026-09-05T01:23:40+00:00",
+          "committer_date": "2026-09-05T01:23:40+00:00",
+          "subject": "billing: \"pay per hour loaded\" and \"pay per use\" were sold to sellers and printed to buyers, and nothing was ever metered"
+        },
+        {
+          "commit": "1b4748e724a63ddef3414ff810e37e16265e0ca9",
+          "author_date": "2026-09-05T01:20:10+00:00",
+          "committer_date": "2026-09-05T01:20:10+00:00",
+          "subject": "split: the rule that decides who gets what lived in a source comment, and a price had no floor"
+        },
+        {
+          "commit": "2adf96cca8bca4672c6aff730b06e49f9eb9ccef",
+          "author_date": "2026-09-05T01:17:50+00:00",
+          "committer_date": "2026-09-05T01:17:50+00:00",
+          "subject": "catalogue: the one demand number was the wrong one, and \"awaiting verification\" covered both nobody-looked and nearly-done"
+        },
+        {
+          "commit": "2fe88c0ee0023a67b05bdb0fbfff22e34798abf4",
+          "author_date": "2026-09-05T01:13:45+00:00",
+          "committer_date": "2026-09-05T01:13:45+00:00",
+          "subject": "wallet: earnings could leave this node only as purchases made through it"
+        },
+        {
+          "commit": "3c0258e2ae80193e51d91417b9add9a97f6d5ca4",
+          "author_date": "2026-09-05T01:12:34+00:00",
+          "committer_date": "2026-09-05T01:12:34+00:00",
+          "subject": "publish: which version replaces which was decided by row overlap, and by nothing the publisher could say"
+        },
+        {
+          "commit": "d87a734e98688bbdd484ac114611d19eeb9cfa12",
+          "author_date": "2026-09-05T01:04:17+00:00",
+          "committer_date": "2026-09-05T01:04:17+00:00",
+          "subject": "route: one matching key was a match, the first tie won silently, and a subscriber was a serving node"
+        },
+        {
+          "commit": "caa148806fdb0ff250098af24235f04509df80bd",
+          "author_date": "2026-09-05T01:02:06+00:00",
+          "committer_date": "2026-09-05T01:02:06+00:00",
+          "subject": "payouts: a creator's share was an unreferenced transfer, a row only this node's SQLite knew about, and one write each"
+        },
+        {
+          "commit": "96b845eeb2e016fa0d4fc87946881e71cc559ba0",
+          "author_date": "2026-09-05T00:59:35+00:00",
+          "committer_date": "2026-09-05T00:59:35+00:00",
+          "subject": "tracks: subscribing loaded a track over what you had pinned, and unsubscribing took it off one lock at a time"
+        },
+        {
+          "commit": "8bc58067cc123abc114ac34658bb4d7b75e39b0f",
+          "author_date": "2026-09-05T00:55:03+00:00",
+          "committer_date": "2026-09-05T00:55:03+00:00",
+          "subject": "price: a price was a one-shot guess, fixed for ever by the first publish"
+        },
+        {
+          "commit": "bbd8f54dff8e9c6b1dbd3617549a8fe1f151fed5",
+          "author_date": "2026-09-05T00:48:42+00:00",
+          "committer_date": "2026-09-05T00:48:42+00:00",
+          "subject": "tracks: the page that sells \"subscribe to a track\" was 32 throwaway test tracks, and none of them could ever come off"
+        },
+        {
+          "commit": "3d40c199106afccd7f1f027c9c68d7e980922ea0",
+          "author_date": "2026-09-05T00:48:27+00:00",
+          "committer_date": "2026-09-05T00:48:27+00:00",
+          "subject": "x402: the quote said the price and nothing about what was being sold"
+        },
+        {
+          "commit": "e2fbb867a403c4f5c3712d153ff4ae20f12546ee",
+          "author_date": "2026-09-05T00:46:09+00:00",
+          "committer_date": "2026-09-05T00:46:09+00:00",
+          "subject": "receipt: the seller returned the whole split on the same reply, and the buyer threw it away"
+        },
+        {
+          "commit": "a0107b2122c098ffdee8321e5869a54626129f14",
+          "author_date": "2026-09-05T00:40:54+00:00",
+          "committer_date": "2026-09-05T00:40:54+00:00",
+          "subject": "revenue: every figure was the price the buyer paid, and three self-buys were three sales"
+        },
+        {
+          "commit": "febe8f9587d835163326e2c2772307ef0010d3e4",
+          "author_date": "2026-09-05T00:38:04+00:00",
+          "committer_date": "2026-09-05T00:38:04+00:00",
+          "subject": "patch verify --recheck: a verifier with a doubt had to attack the listing to record it"
+        },
+        {
+          "commit": "73fe1b88d81ad1f57b7411c685e5624079908160",
+          "author_date": "2026-09-05T00:36:11+00:00",
+          "committer_date": "2026-09-05T00:36:11+00:00",
+          "subject": "buy: \"free\" cost a wallet, a signature and a permanent public list of who took it"
+        },
+        {
+          "commit": "9f397097cfc6547ba3d9b66f0838918d362e3ac9",
+          "author_date": "2026-09-05T00:35:07+00:00",
+          "committer_date": "2026-09-05T00:35:07+00:00",
+          "subject": "teach status: name the questions that were dropped, count them in one unit, and say what the wait is behind"
+        },
+        {
+          "commit": "03eb2e3944d73c47a7b79b90b470caf16399fb3b",
+          "author_date": "2026-09-05T00:33:23+00:00",
+          "committer_date": "2026-09-05T00:33:23+00:00",
+          "subject": "publish --parents: the child was filed as a rival of its own base, and the split was invisible until the first sale"
+        },
+        {
+          "commit": "37af94eb80a13029339d1664c6c9812adaa08b2f",
+          "author_date": "2026-09-05T00:28:29+00:00",
+          "committer_date": "2026-09-05T00:28:29+00:00",
+          "subject": "wallet + ledger: counts where the amounts belong, and a settle row that never names a payee"
+        },
+        {
+          "commit": "3e3ea7e63a947dc1e9f15c9bacb646e3a42eb6b2",
+          "author_date": "2026-09-05T00:27:53+00:00",
+          "committer_date": "2026-09-05T00:27:53+00:00",
+          "subject": "lineage: \"unknown parent patch\" was the whole answer to a base this node had simply not heard of"
+        },
+        {
+          "commit": "3f77c5b12cce175b66df829928bf0b8554542468",
+          "author_date": "2026-09-05T00:26:54+00:00",
+          "committer_date": "2026-09-05T00:26:54+00:00",
+          "subject": "cli: \"price price must be a non-negative number\""
+        },
+        {
+          "commit": "fc91d01da2beabe037cd4fc3a19305ec00ae98ac",
+          "author_date": "2026-09-05T00:12:49+00:00",
+          "committer_date": "2026-09-05T00:12:49+00:00",
+          "subject": "cli: register the four doors that existed as functions and could not be typed"
+        },
+        {
+          "commit": "bc829114b73fbca6b3bc1e739d8e69624c3cd159",
+          "author_date": "2026-09-05T00:10:17+00:00",
+          "committer_date": "2026-09-05T00:10:17+00:00",
+          "subject": "teach: the documented one-liner was the one form a cron line could not wait for"
+        },
+        {
+          "commit": "1f82cce956c2ce9b684952219a83a91b59c53e3f",
+          "author_date": "2026-09-05T00:10:12+00:00",
+          "committer_date": "2026-09-05T00:10:12+00:00",
+          "subject": "agent: a receipt of its own, a budget it can be held to, and a 402 it is allowed to refuse"
+        },
+        {
+          "commit": "ea84685c30cdf8da42bd66710280575ab3c4e7b2",
+          "author_date": "2026-09-05T00:06:29+00:00",
+          "committer_date": "2026-09-05T00:06:29+00:00",
+          "subject": "chain: two confident-but-wrong signals on the one path to the real network"
+        },
+        {
+          "commit": "c55270f05c22e4923f40858180bde2a5be301b9c",
+          "author_date": "2026-09-05T00:06:05+00:00",
+          "committer_date": "2026-09-05T00:06:05+00:00",
+          "subject": "cli: the product is about combining knowledge, and no command but `chat` took two ids"
+        },
+        {
+          "commit": "47e4cc76188f28a5298c9d3bf4235e47c67b432f",
+          "author_date": "2026-09-05T00:02:38+00:00",
+          "committer_date": "2026-09-05T00:02:38+00:00",
+          "subject": "seed: the deploy guide's first command could not run, and the error pointed at a button that does not exist"
+        },
+        {
+          "commit": "3a3bd76ef33189f3b4455ccc4dc97ecc1da84809",
+          "author_date": "2026-09-05T00:01:12+00:00",
+          "committer_date": "2026-09-05T00:01:12+00:00",
+          "subject": "status: the shared lock, the mailbox and whether the rows are really there"
+        },
+        {
+          "commit": "bdc3d9729d49da653b253155ab4c6c3f129cac5e",
+          "author_date": "2026-09-04T23:59:03+00:00",
+          "committer_date": "2026-09-04T23:59:03+00:00",
+          "subject": "cli: fifteen minutes of blank terminal, and the node knew why the whole time"
+        },
+        {
+          "commit": "7adc93b0edc1f271cfbd09cc72b20da901602cae",
+          "author_date": "2026-09-04T23:58:11+00:00",
+          "committer_date": "2026-09-04T23:58:11+00:00",
+          "subject": "nodes: 122 rows for a network of three, and two nodes on one identity said nothing"
+        },
+        {
+          "commit": "3dbea83d47d8ac27b9dc63e1f326d1cf522f6a65",
+          "author_date": "2026-09-04T23:57:46+00:00",
+          "committer_date": "2026-09-04T23:57:46+00:00",
+          "subject": "teach: a private draft is not \"published as\", and a lesson nobody measured says so instead of going quiet"
+        },
+        {
+          "commit": "e57132e9a99ece7d7ff8aded26cca317e099ce94",
+          "author_date": "2026-09-04T23:54:45+00:00",
+          "committer_date": "2026-09-04T23:54:45+00:00",
+          "subject": "cli: 293 display columns, byte-identical at COLUMNS=60"
+        },
+        {
+          "commit": "20e58418f5ade2f010700eaba601d0fe057ec3e3",
+          "author_date": "2026-09-04T23:51:58+00:00",
+          "committer_date": "2026-09-04T23:51:58+00:00",
+          "subject": "branch: a track can be cleaned up, its members say what they are, and subscribing admits it is public"
+        },
+        {
+          "commit": "acc58b6a8a355004becd3fd21a9a606494e1ae47",
+          "author_date": "2026-09-04T23:51:20+00:00",
+          "committer_date": "2026-09-04T23:51:20+00:00",
+          "subject": "login: \"unsettled top-level await\", exit 13, from a command that must run before every other one"
+        },
+        {
+          "commit": "7ba997b44615697bbb237d41e7f9b4bf459f5e94",
+          "author_date": "2026-09-04T23:49:54+00:00",
+          "committer_date": "2026-09-04T23:49:54+00:00",
+          "subject": "patch: the name, the licence, what is loaded, who was paid \u2014 and a delete that asks first"
+        },
+        {
+          "commit": "8e4ae0d7f405bea9c3d3f274fc831b875e0b5e6c",
+          "author_date": "2026-09-04T23:48:22+00:00",
+          "committer_date": "2026-09-04T23:48:22+00:00",
+          "subject": "publish: two commands, one operation, opposite defaults \u2014 and neither help said so"
+        },
+        {
+          "commit": "0a9fef000a55122ede59596cac7e9a27b79f3a37",
+          "author_date": "2026-09-04T23:46:17+00:00",
+          "committer_date": "2026-09-04T23:46:17+00:00",
+          "subject": "cli: `--license   [string]` was the whole help for the legal terms of a sale"
+        },
+        {
+          "commit": "72e4a374cd6f911014411ef893f0b8606aab8050",
+          "author_date": "2026-09-04T23:42:21+00:00",
+          "committer_date": "2026-09-04T23:42:21+00:00",
+          "subject": "publish: a Korean name is not an invalid id, a path typo is not a grammar lesson, and a ZIP term is not an error message"
+        },
+        {
+          "commit": "e86d7a8e632cd66cef0b60d1f34b19829c732827",
+          "author_date": "2026-09-04T23:42:20+00:00",
+          "committer_date": "2026-09-04T23:42:20+00:00",
+          "subject": "cli: \"got 0, need at least 1\" is not an answer to `ainize publish`"
+        },
+        {
+          "commit": "11e26848ed5bb6fbbb7cf36753489fc8ec19f64d",
+          "author_date": "2026-09-04T23:40:38+00:00",
+          "committer_date": "2026-09-04T23:40:38+00:00",
+          "subject": "chat: the list that calls itself authoritative hid the drafts, the retired versions and the expected answer"
+        },
+        {
+          "commit": "2201f2578ae1494377ef99a951c21bdfd3aea8f5",
+          "author_date": "2026-09-04T23:39:34+00:00",
+          "committer_date": "2026-09-04T23:39:34+00:00",
+          "subject": "logs: the post-mortem needed the node that had just died"
+        },
+        {
+          "commit": "26387b1ff2533905d52f2d4388aafc852d1eacb6",
+          "author_date": "2026-09-04T20:01:13+00:00",
+          "committer_date": "2026-09-04T20:01:13+00:00",
+          "subject": "cli: the base a knowledge cannot work without is offered before the money moves, not after"
+        },
+        {
+          "commit": "29d5fd26341f3330bf30c342f30cbe9cbd9f9227",
+          "author_date": "2026-09-04T19:33:25+00:00",
+          "committer_date": "2026-09-04T19:33:25+00:00",
+          "subject": "e2e: two knowledges combined on node-u \u2014 in a browser, from a terminal, and in the bytes (AZ-308 \u2026 AZ-310)"
+        },
+        {
+          "commit": "6e9507546c463d25d13f1b3a6cf5460f1c3f0366",
+          "author_date": "2026-09-04T19:21:31+00:00",
+          "committer_date": "2026-09-04T19:21:31+00:00",
+          "subject": "cli: `ainize patch merge a b` \u2014 measure first, choose the answers, then build"
+        },
+        {
+          "commit": "b7e3781ca5754e194a2d1d52c67d8f46dafced22",
+          "author_date": "2026-09-04T18:10:08+00:00",
+          "committer_date": "2026-09-04T18:10:08+00:00",
+          "subject": "teach: a body fetched to score is not a licence to teach on top of it"
+        },
+        {
+          "commit": "4bb7c307cdef93e4f9a1019ec8cbe295c95d573b",
+          "author_date": "2026-09-04T18:03:00+00:00",
+          "committer_date": "2026-09-04T18:03:00+00:00",
+          "subject": "publish: an anchor stuck at 0/2 now says why, on the author's own machine"
+        },
+        {
+          "commit": "62c2520dd3f5f6bb750056f303ff70fb3db23446",
+          "author_date": "2026-09-04T17:45:33+00:00",
+          "committer_date": "2026-09-04T17:45:33+00:00",
+          "subject": "buy: a knowledge this node already paid for is collected, not bought again"
+        },
+        {
+          "commit": "9d14163ce25c55e69b6652e5e3e789a1f319ef8f",
+          "author_date": "2026-09-04T17:31:06+00:00",
+          "committer_date": "2026-09-04T17:31:06+00:00",
+          "subject": "test(cli): await the four config commands that became async"
+        },
+        {
+          "commit": "3ef0552690878a3453504a3cf229e9eb465cdb4d",
+          "author_date": "2026-09-04T16:56:18+00:00",
+          "committer_date": "2026-09-04T16:56:18+00:00",
+          "subject": "tracks: a track item this node cannot buy is backed off, printed and given a non-zero exit"
+        },
+        {
+          "commit": "f4acbfe241d313ab870ad8c03bef89f749a5d218",
+          "author_date": "2026-09-04T16:48:37+00:00",
+          "committer_date": "2026-09-04T16:48:37+00:00",
+          "subject": "cli: `confirm()` \u2014 the question that has to be asked before money moves (item 102)"
+        },
+        {
+          "commit": "9c98e398bc03354ad883ee171e58a36291210555",
+          "author_date": "2026-09-04T16:45:39+00:00",
+          "committer_date": "2026-09-04T16:45:39+00:00",
+          "subject": "tracks: subscribing bought yesterday twice, announced itself before paying, and never brought today (items 255, 256, 257, 357, 358)"
+        },
+        {
+          "commit": "16369919c11aa3d5d2b847e854d25c2d12b984a1",
+          "author_date": "2026-09-04T16:43:11+00:00",
+          "committer_date": "2026-09-04T16:43:11+00:00",
+          "subject": "cli: the dataset door can finish the job from the terminal (items 171, 238, 239)"
+        },
+        {
+          "commit": "6e2a58ab44a03149d8147fafd0acb0cbdd6a8f93",
+          "author_date": "2026-09-04T16:41:47+00:00",
+          "committer_date": "2026-09-04T16:41:47+00:00",
+          "subject": "cli: the reference and the operator e2e follow the new node commands (items 121, 125, 128, 170)"
+        },
+        {
+          "commit": "cde2457d4385ade1b8c41fe877244a460818ec5d",
+          "author_date": "2026-09-04T16:36:59+00:00",
+          "committer_date": "2026-09-04T16:36:59+00:00",
+          "subject": "seed/import: the two callers that publish for a model this node cannot serve"
+        },
+        {
+          "commit": "8b1a4cbb350566293864c328e26efbeb88a535f9",
+          "author_date": "2026-09-04T16:36:31+00:00",
+          "committer_date": "2026-09-04T16:36:31+00:00",
+          "subject": "network: a peer on another ledger looked perfectly healthy and its knowledge never arrived (items 170, 128)"
+        },
+        {
+          "commit": "ff85ac1570381bc07e1fa0afdace26095ea0dc5b",
+          "author_date": "2026-09-04T16:36:31+00:00",
+          "committer_date": "2026-09-04T16:36:31+00:00",
+          "subject": "node: nothing reported disk, and there was nothing to delete with (item 128)"
+        },
+        {
+          "commit": "5684b82b467b17bbe1c1a5a347e836e1dcbd290e",
+          "author_date": "2026-09-04T16:36:11+00:00",
+          "committer_date": "2026-09-04T16:36:11+00:00",
+          "subject": "config: `config show` printed the value the node was not using, and init left the node unclaimed (items 125, 121, 170)"
+        },
+        {
+          "commit": "525ecd13d1bf05f0ec6ae2f20473e92091baea33",
+          "author_date": "2026-09-04T16:36:01+00:00",
+          "committer_date": "2026-09-04T16:36:01+00:00",
+          "subject": "auth: a node claimed itself to whoever asked first, and the password could never be changed (item 121)"
+        },
+        {
+          "commit": "98b243eaec3aad18de464ef69c3553d8e9288941",
+          "author_date": "2026-09-04T16:33:02+00:00",
+          "committer_date": "2026-09-04T16:33:02+00:00",
+          "subject": "money: what a verification proves, and whether the money it promises ever moves"
+        },
+        {
+          "commit": "d5a5faa0a5e04d26866b6751d8460683a5ab15b9",
+          "author_date": "2026-09-04T16:21:27+00:00",
+          "committer_date": "2026-09-04T16:21:27+00:00",
+          "subject": "retire: a publisher could not take knowledge down, and announce promised verifiers that were not there"
+        },
+        {
+          "commit": "2716fb03451e7779ddd99280076cb52aa4223983",
+          "author_date": "2026-09-04T16:07:45+00:00",
+          "committer_date": "2026-09-04T16:07:45+00:00",
+          "subject": "cli: patch tree printed one line per edge and read the same label in both directions"
+        },
+        {
+          "commit": "71bd8364d072c796b6e2d2a189605abb710f3957",
+          "author_date": "2026-09-04T12:23:35+00:00",
+          "committer_date": "2026-09-04T12:23:35+00:00",
+          "subject": "cli: patch tree, patch missing, patch signals \u2014 the whole family from a terminal"
+        },
+        {
+          "commit": "e3c2e4f4726e7d7150717b2f3ec8fddb9e21fd1f",
+          "author_date": "2026-09-04T11:43:01+00:00",
+          "committer_date": "2026-09-04T11:43:01+00:00",
+          "subject": "cli: `patch fork` and `teach train --on` \u2014 the whole story from a terminal"
+        },
+        {
+          "commit": "5faf49362c3549a0b690c6866156763420e69474",
+          "author_date": "2026-09-04T10:28:17+00:00",
+          "committer_date": "2026-09-04T10:28:17+00:00",
+          "subject": "cli: `patch stack`, `apply --with-base`, `remove --cascade` \u2014 and two assertions that could not fail"
+        },
+        {
+          "commit": "ffa0ef33d4f4a18f754613eb44f1970f4148ecec",
+          "author_date": "2026-09-04T09:06:59+00:00",
+          "committer_date": "2026-09-04T09:06:59+00:00",
+          "subject": "tests: the scenario id is in the test name, so a result maps back to docs/ux-test-scenarios.json"
+        },
+        {
+          "commit": "7a08a66e0817de9ba2b0ef300974d526cdb0fbbb",
+          "author_date": "2026-09-04T08:39:06+00:00",
+          "committer_date": "2026-09-04T08:39:06+00:00",
+          "subject": "cli: `ainize dataset get <knowledge>` \u2014 the questions a published knowledge was taught from"
+        },
+        {
+          "commit": "c215510caa4e27df58853ad1534af0eb13b563eb",
+          "author_date": "2026-09-04T08:01:23+00:00",
+          "committer_date": "2026-09-04T08:01:23+00:00",
+          "subject": "lineage L0: prerequisites \u2014 HMAC visitor ids, demand counters, event retention, royalty pass-2 fix, licence list, PII rows, seed relabel"
+        },
+        {
+          "commit": "1261689897f4d1e2183c04f4b60e76ba3cacef7f",
+          "author_date": "2026-09-04T07:37:51+00:00",
+          "committer_date": "2026-09-04T07:37:51+00:00",
+          "subject": "cli: `start` names whoever already holds the port before spawning anything"
+        },
+        {
+          "commit": "f1a4c498b0bb05b61661314f709c31149dd26ce5",
+          "author_date": "2026-09-02T11:57:16+00:00",
+          "committer_date": "2026-09-02T11:57:16+00:00",
+          "subject": "cli: a broken port in config.json is named as such, and never locks the operator out of the fix"
+        },
+        {
+          "commit": "9facfa96853ed3ff6ca4ad5dc5c7fb9faad6921d",
+          "author_date": "2026-09-02T11:34:43+00:00",
+          "committer_date": "2026-09-02T11:34:43+00:00",
+          "subject": "cli/e2e: batch-1 leftovers \u2014 a stop test that handles SIGTERM like the node, the last ngram hint, a helper comment"
+        },
+        {
+          "commit": "9feb43c0b10318c54159431e3048e1c84f9f3423",
+          "author_date": "2026-09-02T09:03:04+00:00",
+          "committer_date": "2026-09-02T09:03:04+00:00",
+          "subject": "market: `patch forget` shows the blast radius before deleting, not after"
+        },
+        {
+          "commit": "41426342514f1d5280c94c578b2da591b744fa90",
+          "author_date": "2026-09-02T08:54:21+00:00",
+          "committer_date": "2026-09-02T08:54:21+00:00",
+          "subject": "cli: the node identity can be backed up, and cannot be lost by accident"
+        },
+        {
+          "commit": "16fd55fda7811db5df5938ea6f5f800092f7e5b8",
+          "author_date": "2026-09-02T08:43:16+00:00",
+          "committer_date": "2026-09-02T08:43:16+00:00",
+          "subject": "node: health checks that can actually fail"
+        },
+        {
+          "commit": "ada9fc70415dd9e287ba5992b8e0c15ba309360a",
+          "author_date": "2026-09-02T08:39:09+00:00",
+          "committer_date": "2026-09-02T08:39:09+00:00",
+          "subject": "node: the version a node reports is the build it is running"
+        },
+        {
+          "commit": "e0ae6d1922809b2f59a125295168a906c0ced25d",
+          "author_date": "2026-09-02T08:36:14+00:00",
+          "committer_date": "2026-09-02T08:36:14+00:00",
+          "subject": "cli: the three checks the CLI could already make, made"
+        },
+        {
+          "commit": "daa6528770a8829517375882276ab8ebd2dc01fc",
+          "author_date": "2026-09-02T08:33:29+00:00",
+          "committer_date": "2026-09-02T08:33:29+00:00",
+          "subject": "cli: `logs` is the operator's view of their own node"
+        },
+        {
+          "commit": "0c93b044fdbc698ca7be1cd3198df86c83534ffd",
+          "author_date": "2026-09-02T08:29:47+00:00",
+          "committer_date": "2026-09-02T08:29:47+00:00",
+          "subject": "node: a console save no longer writes the node's start-up config over the file"
+        },
+        {
+          "commit": "d750cfd8ad5ea0e3b5d2f6c8dab4eb54420977e8",
+          "author_date": "2026-09-02T08:26:08+00:00",
+          "committer_date": "2026-09-02T08:26:08+00:00",
+          "subject": "config: the config has a schema, and both the CLI and the node check against it"
+        },
+        {
+          "commit": "fa903e659ee59984a8038e6f1bad64fac1d898b6",
+          "author_date": "2026-09-02T08:18:37+00:00",
+          "committer_date": "2026-09-02T08:18:37+00:00",
+          "subject": "cli: start, status and stop report what actually happened"
+        },
+        {
+          "commit": "56951a44b0917341afd653681328a7b306979a87",
+          "author_date": "2026-09-02T08:13:37+00:00",
+          "committer_date": "2026-09-02T08:13:37+00:00",
+          "subject": "cli: a command with no node to talk to says so instead of reporting a stranger's"
+        },
+        {
+          "commit": "52d3df93b9441782b3de7764146f071d2279fb2b",
+          "author_date": "2026-09-02T08:06:56+00:00",
+          "committer_date": "2026-09-02T08:06:56+00:00",
+          "subject": "cli: every hint names the binary the user actually typed"
+        },
+        {
+          "commit": "80ed58724cfee69030da49582e2109f5668a455d",
+          "author_date": "2026-09-02T07:37:40+00:00",
+          "committer_date": "2026-09-02T07:37:40+00:00",
+          "subject": "cli: the COUNTS column follows the node's own exclusion, not an address comparison"
+        },
+        {
+          "commit": "04025e9e2cbc21e46d5aabc20a93ae8c2ecef4f3",
+          "author_date": "2026-09-02T07:35:38+00:00",
+          "committer_date": "2026-09-02T07:35:38+00:00",
+          "subject": "cli: `patch challenge` says what a challenge does"
+        },
+        {
+          "commit": "77d321df34a72bb99fc0264e29a19f70dc19b113",
+          "author_date": "2026-09-02T07:34:02+00:00",
+          "committer_date": "2026-09-02T07:34:02+00:00",
+          "subject": "node: say once at start that verifier.stake is ignored"
+        },
+        {
+          "commit": "768ea2dcf28ff55f244a3db8f98c4a4c92827bac",
+          "author_date": "2026-09-02T07:09:13+00:00",
+          "committer_date": "2026-09-02T07:09:13+00:00",
+          "subject": "cli/agent: the terminal shows who counted, who challenged, and never prints 3/2"
+        },
+        {
+          "commit": "5bb5216f44b3c95200dd08b5cf17b9cd060bc599",
+          "author_date": "2026-09-02T04:10:36+00:00",
+          "committer_date": "2026-09-02T04:10:36+00:00",
+          "subject": "merge main into teachable-ui: one codebase with both doors and the runtime guard"
+        },
+        {
+          "commit": "4573da07f0c4aa0ce7ca0ef2f15ccf42c73f4d43",
+          "author_date": "2026-09-01T17:10:07+00:00",
+          "committer_date": "2026-09-01T17:10:07+00:00",
+          "subject": "ledger: say which part of the record you are looking at (the chain grew past 1,000)"
+        },
+        {
+          "commit": "ad92ee345465f615b8208ef320c6c7d98f1a44e4",
+          "author_date": "2026-09-01T15:25:31+00:00",
+          "committer_date": "2026-09-01T15:25:31+00:00",
+          "subject": "chat: one conversation per column, so the live test stops disproving itself (finding 1)"
+        },
+        {
+          "commit": "864c4a5dd2cb5ba1a5ed12b3c268c930140f9f37",
+          "author_date": "2026-09-01T09:11:34+00:00",
+          "committer_date": "2026-09-01T09:11:34+00:00",
+          "subject": "chat: guard runaway answers, send the trained prompt, and make the queue visible"
+        },
+        {
+          "commit": "850b0392f1bd158c9019dbd3652f6b0f29410b98",
+          "author_date": "2026-09-01T08:48:38+00:00",
+          "committer_date": "2026-09-01T08:48:38+00:00",
+          "subject": "teachable: fix what the dataset scenarios found (AZ-125..AZ-220)"
+        },
+        {
+          "commit": "3a86b0b53154f7d38142128f45912ccb69f57462",
+          "author_date": "2026-09-01T03:53:58+00:00",
+          "committer_date": "2026-09-01T03:53:58+00:00",
+          "subject": "teachable PR-D3: the file door from the terminal (CLI + docs)"
+        },
+        {
+          "commit": "2553ffdddf98f4040f6988dfc04d5c7d559afc26",
+          "author_date": "2026-08-31T14:31:28+00:00",
+          "committer_date": "2026-08-31T14:31:28+00:00",
+          "subject": "merge main (scenario round-2 fixes) into teach-mode"
+        },
+        {
+          "commit": "dfefd5cd902c798b2da3a5c86e968166638bcbc7",
+          "author_date": "2026-08-31T13:34:35+00:00",
+          "committer_date": "2026-08-31T13:34:35+00:00",
+          "subject": "teach fix(security/spec): payouts claim+serialised retry, trust proxy off by default, owner-only announce, private-draft redaction, request-bound visitor auth, crash-safe lesson restore"
+        },
+        {
+          "commit": "55897bba42e65262d604dd31f4f84686d8d718d5",
+          "author_date": "2026-08-31T12:21:59+00:00",
+          "committer_date": "2026-08-31T12:21:59+00:00",
+          "subject": "teach PR-8: CLI parity + docs + demo config \u2014 `ainize teach status <node-url | lesson-url | job-id | teacher-page | address> [--key --key-file]` (policy / owner vs status-only lesson view / data-provider page, signs x-ngram-auth like the web key), `ainize patch import <lesson.npz> --recipe recipe.json` (private DRAFT via createDraft keepInPlace, benchmark + model + id + credit-only contributor from the recipe, sha256 check, origin teach, no announce / no ledger record), `publish --contributor addr:name:share` (declared data providers, \u2264 4, \u03a3 \u2264 1); node: PATCH /api/patches/:id no longer wipes contributors on unrelated updates; openapi CLI_REFERENCE teach one-liner + \"Teach mode\" group + DocsPage fourth card (en+ko); deploy/README docker-group + GPU-allocation section; scripts/cluster.mjs node-a teach.enabled/publish auto with a marked TEACH_BACKEND stub\u2192gradient switch; README terminal lines; AZ-121 scenario rewritten (md/html re-rendered); CLI tests +3 (import, teach status, --contributor) against an in-process stub node; spec PR-8 CHANGES note incl. the node-t \u2192 node-u round-trip"
+        },
+        {
+          "commit": "39c23d429298a13d2efc248816eb8127db7fe842",
+          "author_date": "2026-08-31T11:02:11+00:00",
+          "committer_date": "2026-08-31T11:02:11+00:00",
+          "subject": "core/node/cli: dated supersede/subscribe records, hidden-anchor lineage, 4xx/503 statuses, patch forget, fresh cross-node reads"
+        },
+        {
+          "commit": "473325da5fc3faf2d25c98ee11130f8356a0034a",
+          "author_date": "2026-08-31T10:24:51+00:00",
+          "committer_date": "2026-08-31T10:24:51+00:00",
+          "subject": "teach PR-2: node payouts table + earnings \u2014 settlePayment writes a payouts row per non-self royalty address before the AIN transfer (pending \u2192 paid tx_hash / failed last_error), 60-s retry timer (max 20 attempts) in server.ts, GET /api/me/payouts?status= + POST /api/me/payouts/:id/retry, /api/teacher/:address reconciles owed vs paid, wallet + CLI payouts, openapi, unit tests with a fake wallet"
+        },
+        {
+          "commit": "84ba5a16368f8cc33005b1282c3f0893f2a533d5",
+          "author_date": "2026-08-31T07:54:09+00:00",
+          "committer_date": "2026-08-31T07:54:09+00:00",
+          "subject": "fix: draft/test-anchor leaks, agent budget/follow-latest flags, drive --no-open, 0 AIN message, mobile header, logout landing"
+        },
+        {
+          "commit": "6104825f7caba9359c86736f0d7547b19ff0d055",
+          "author_date": "2026-08-31T07:36:26+00:00",
+          "committer_date": "2026-08-31T07:36:26+00:00",
+          "subject": "teach PR-3: ChatMode multi-knowledge (patch_ids 1..3) + contamination banner"
+        },
+        {
+          "commit": "4118a4fd78e7657c889eaa0dfbe9386848d206fa",
+          "author_date": "2026-08-31T05:13:14+00:00",
+          "committer_date": "2026-08-31T05:13:14+00:00",
+          "subject": "Audit fixes: seed defaults real-only, agent --max-price/--follow-latest guard, 17 missing OpenAPI ops, test-visibility anchors visible to author/verifiers, chat history cap 24 + restore-failure logging, precise verifying counts, hash-only score guard"
+        },
+        {
+          "commit": "db7fa585b6c40be5e3d8af6469db0cf6433e9eb6",
+          "author_date": "2026-08-31T05:08:10+00:00",
+          "committer_date": "2026-08-31T05:08:10+00:00",
+          "subject": "agent/cli: last Korean output strings \u2192 English; test expectations updated"
+        },
+        {
+          "commit": "868eecc20301db77f898245df55e04063300f5f1",
+          "author_date": "2026-08-31T05:07:48+00:00",
+          "committer_date": "2026-08-31T05:07:48+00:00",
+          "subject": "Ainize is English-first: default locale en, English OpenAPI/CLI reference, English seed descriptions, agent/CLI output, README"
+        },
+        {
+          "commit": "5043be5b8d4492576ec0200d563f8ae861a3c4d8",
+          "author_date": "2026-08-31T05:00:18+00:00",
+          "committer_date": "2026-08-31T05:00:18+00:00",
+          "subject": "cli: ainize use accepts superseded-but-verified knowledge with a newer-version note"
+        },
+        {
+          "commit": "5db3be05dbf6172b1963278d82f5ea5c5d62dbde",
+          "author_date": "2026-08-31T04:49:34+00:00",
+          "committer_date": "2026-08-31T04:49:34+00:00",
+          "subject": "ChatMode deadlock fix (raw apply/remove inside exclusive, stale-pid lock breaking), quota consumed after success, ainize publish/use one-liners, test-visibility publish"
+        },
+        {
+          "commit": "3e0028eda62bb0b57533b3866659ccae8988de4d",
+          "author_date": "2026-08-31T04:18:44+00:00",
+          "committer_date": "2026-08-31T04:18:44+00:00",
+          "subject": "Real-data-only seed (Qwen3.8 training artifacts as version lineage), executed-benchmark quorum, on-chain access receipts, test-visibility anchors, OpenAPI + CLI reference endpoint, pidfile cluster restart"
+        },
+        {
+          "commit": "7841a5a5b0c7c0f2ae8782a848529f24656cfe3f",
+          "author_date": "2026-08-31T03:21:33+00:00",
+          "committer_date": "2026-08-31T03:21:33+00:00",
+          "subject": "ngram CLI (rebuilt ainize-cli), ngram-agent buyer, local AIN chain tooling, verifier hardening (probe/grace/upgrade), cross-branch supersede fix"
+        },
+        {
+          "commit": "21e34ab407cc736ada9a96fdd047efb9ebbb29e6",
+          "author_date": "2026-08-31T03:15:54+00:00",
+          "committer_date": "2026-08-31T03:15:54+00:00",
+          "subject": "Web pages (public + operator), aindrive drive module, AIN array codec + app staking, AIN e2e test, cluster script, README"
+        },
+        {
+          "commit": "a5cc12b38b76032c9e569c2b01a39963a466cd8c",
+          "author_date": "2026-08-31T03:04:24+00:00",
+          "committer_date": "2026-08-31T03:04:24+00:00",
+          "subject": "Scaffold knowledge marketplace: core ledger (local DAG + AIN via ain-js), P2P node with x402 trading, web foundation (Ainize design)"
+        }
+      ]
+    },
+    "ainize-ens": {
+      "head": "e55d79c6c42186593e6c306a6107d27816d22fe3",
+      "commits": [
+        {
+          "commit": "e55d79c6c42186593e6c306a6107d27816d22fe3",
+          "author_date": "2026-09-13T14:16:16+00:00",
+          "committer_date": "2026-09-13T14:16:16+00:00",
+          "subject": "Bind ENS training attestations to mint targets and test rejection gates"
+        },
+        {
+          "commit": "1f11bd19353173e36380e308ef03bd08c8adfe0c",
+          "author_date": "2026-09-13T13:13:12+00:00",
+          "committer_date": "2026-09-13T13:13:12+00:00",
+          "subject": "README: which 82 rows, and why that is a finding"
+        },
+        {
+          "commit": "004526a8a49543c8cae39823e2b767182ada921f",
+          "author_date": "2026-09-13T03:16:29+00:00",
+          "committer_date": "2026-09-13T03:16:29+00:00",
+          "subject": "MIT, in the repository that ships it"
+        },
+        {
+          "commit": "6b1ec3fed68e7ca7b5e1b51fff74c9c11b3fddf8",
+          "author_date": "2026-09-12T08:00:44+00:00",
+          "committer_date": "2026-09-12T08:00:44+00:00",
+          "subject": "README: the extractor's real fact count, and what the lesson trains on"
+        },
+        {
+          "commit": "0fe11d8d3a01b2d5e50960a4ca2ed7f45c1ab493",
+          "author_date": "2026-09-12T07:32:46+00:00",
+          "committer_date": "2026-09-12T07:32:46+00:00",
+          "subject": "contracts: EngramRegistrar compiles against the real ENSv2 interfaces"
+        },
+        {
+          "commit": "4dd9d666c621ca29819ac5ca3307d74f0afc5847",
+          "author_date": "2026-09-09T05:06:36+00:00",
+          "committer_date": "2026-09-09T05:06:36+00:00",
+          "subject": "ens: resolve paths from this file, not from one machine's absolute checkout"
+        },
+        {
+          "commit": "b9c8144e759a1fe6d74ca82c6ef8614116f4effe",
+          "author_date": "2026-09-07T07:51:00+00:00",
+          "committer_date": "2026-09-07T07:51:00+00:00",
+          "subject": "one name: @ngram/* becomes @ainize/*, and the historical `ngram` binary is withdrawn"
+        },
+        {
+          "commit": "34169402c7e92b34f7ad65d9ea2b0d8eac974b29",
+          "author_date": "2026-09-07T07:45:19+00:00",
+          "committer_date": "2026-09-07T07:45:19+00:00",
+          "subject": "bench: transcripts are committed as one archive per run, not 2,600 loose files"
+        },
+        {
+          "commit": "56997f9995e89178e5790c7e634ffdcdc5783d00",
+          "author_date": "2026-09-07T02:57:35+00:00",
+          "committer_date": "2026-09-07T02:57:35+00:00",
+          "subject": "cli: `--no-peer` was parsed as a command, and document the one-line flow"
+        },
+        {
+          "commit": "bb6a5918c09f53dbed1aab0d5298969a8c0c1348",
+          "author_date": "2026-09-07T02:55:49+00:00",
+          "committer_date": "2026-09-07T02:55:49+00:00",
+          "subject": "cli: test the half of `ainize patch <name.eth>` that needs no node"
+        },
+        {
+          "commit": "40428800ac25b3988aac71e4623c00293ea14e62",
+          "author_date": "2026-09-04T20:22:41+00:00",
+          "committer_date": "2026-09-04T20:22:41+00:00",
+          "subject": "ens: the registrar \u2014 a subname is minted by a verified training run, not bought"
+        },
+        {
+          "commit": "d2b39fe3c405b25385b9e78e1a95ad2e433dfa5b",
+          "author_date": "2026-09-04T18:54:23+00:00",
+          "committer_date": "2026-09-04T18:54:23+00:00",
+          "subject": "ens: build the family's OKF catalog from facts that were actually pulled, and fix what real data exposed"
+        },
+        {
+          "commit": "a6de54405e3b3e3cef9bf22bb76d9607d40a8f52",
+          "author_date": "2026-09-04T17:23:24+00:00",
+          "committer_date": "2026-09-04T17:23:24+00:00",
+          "subject": "ens: the demo is an agent family, and descent is the checkable claim"
+        },
+        {
+          "commit": "9a9a272bd146d36ccf9404d170bb848135fff805",
+          "author_date": "2026-09-04T10:37:09+00:00",
+          "committer_date": "2026-09-04T10:37:09+00:00",
+          "subject": "ens: say what the mint condition actually guarantees, which is less than it sounded"
+        },
+        {
+          "commit": "58ba8727de32b380e67d43435147699598bd8fa5",
+          "author_date": "2026-09-04T10:35:45+00:00",
+          "committer_date": "2026-09-04T10:35:45+00:00",
+          "subject": "ens: the demo is decided \u2014 engram.eth remembers the hackathon it is competing in"
+        },
+        {
+          "commit": "e3b9874884647b4f1007a348ed8be89736e41b73",
+          "author_date": "2026-09-04T10:13:12+00:00",
+          "committer_date": "2026-09-04T10:13:12+00:00",
+          "subject": "ens: the per-key grant is real, and it forbids the shape the design was about to take"
+        },
+        {
+          "commit": "106a359824c15fd063cf33a053ff369ec584ce9c",
+          "author_date": "2026-09-04T10:09:22+00:00",
+          "committer_date": "2026-09-04T10:09:22+00:00",
+          "subject": "ens: the lineage is a namespace, and a name is minted by a training run"
+        },
+        {
+          "commit": "ef75bbe90c831dbda2dadffb8398b81537db0d85",
+          "author_date": "2026-08-31T03:04:24+00:00",
+          "committer_date": "2026-08-31T03:04:24+00:00",
+          "subject": "Scaffold knowledge marketplace: core ledger (local DAG + AIN via ain-js), P2P node with x402 trading, web foundation (Ainize design)"
+        }
+      ]
+    },
+    "ainize-web": {
+      "head": "49a34c04cff8c83904302fc4dd7e2f105cf6cdcd",
+      "commits": [
+        {
+          "commit": "49a34c04cff8c83904302fc4dd7e2f105cf6cdcd",
+          "author_date": "2026-09-13T08:49:21+00:00",
+          "committer_date": "2026-09-13T08:49:21+00:00",
+          "subject": "docs: how signing in actually works now, in both languages"
+        },
+        {
+          "commit": "ae7961dc08c4995e7cce2cf2d1b9bc7ee9402091",
+          "author_date": "2026-09-13T08:32:41+00:00",
+          "committer_date": "2026-09-13T08:32:41+00:00",
+          "subject": "web: the page `ainize login` sends you to"
+        },
+        {
+          "commit": "80e47d50591ddeddb795bdd74da38701a5e1fb98",
+          "author_date": "2026-09-13T08:21:03+00:00",
+          "committer_date": "2026-09-13T08:21:23+00:00",
+          "subject": "sign in with MetaMask, and stop reading a session as permission"
+        },
+        {
+          "commit": "8212ec9754e3b38e9ff776c61505d8d7143ffeb7",
+          "author_date": "2026-09-13T08:04:42+00:00",
+          "committer_date": "2026-09-13T08:04:42+00:00",
+          "subject": "docs: how long a lesson takes, and what to turn when it does not finish"
+        },
+        {
+          "commit": "a8a67c30dc8d7a4656598299661f0f6cdc68cbf8",
+          "author_date": "2026-09-13T03:20:41+00:00",
+          "committer_date": "2026-09-13T03:20:41+00:00",
+          "subject": "deploy/README: the machine this site actually runs on"
+        },
+        {
+          "commit": "15a5fb682786f01dab91b4b735117e87884d2391",
+          "author_date": "2026-09-13T03:16:20+00:00",
+          "committer_date": "2026-09-13T03:16:20+00:00",
+          "subject": "MIT, in the repository that ships it"
+        },
+        {
+          "commit": "10f55b9d1d44e757dd26a83c918d847d4b8122f7",
+          "author_date": "2026-09-13T02:37:59+00:00",
+          "committer_date": "2026-09-13T02:37:59+00:00",
+          "subject": "deploy: a clean build of main was being named -dirty"
+        },
+        {
+          "commit": "073a740cfd9f24840682519fdd0a16e400fe6fb5",
+          "author_date": "2026-09-13T02:33:37+00:00",
+          "committer_date": "2026-09-13T02:33:46+00:00",
+          "subject": "ainize-web deploys itself"
+        },
+        {
+          "commit": "07d68fa8ee68cefd65936733e7e8387d3b04eae0",
+          "author_date": "2026-09-12T13:26:35+00:00",
+          "committer_date": "2026-09-12T13:26:35+00:00",
+          "subject": "signing: one control, and what it takes to act on it"
+        },
+        {
+          "commit": "14885ed9472ccda00a9280b7178ba9b2b60286bf",
+          "author_date": "2026-09-12T13:22:27+00:00",
+          "committer_date": "2026-09-12T13:22:27+00:00",
+          "subject": "landing: the nav link is just \"Sign in\""
+        },
+        {
+          "commit": "0c7a098f64ca94e755e1b7ad4c4d316c1863222e",
+          "author_date": "2026-09-12T13:21:52+00:00",
+          "committer_date": "2026-09-12T13:21:52+00:00",
+          "subject": "Merge branch 'main' of github.com:ainblockchain/ainize-web"
+        },
+        {
+          "commit": "e5187ec96730cdbe1d66e5eff32ab910155898fb",
+          "author_date": "2026-09-12T13:08:48+00:00",
+          "committer_date": "2026-09-12T13:08:48+00:00",
+          "subject": "docs: regenerated reference pages"
+        },
+        {
+          "commit": "745c9672d2dc5c7d1d412a2e1e0ead9085200a00",
+          "author_date": "2026-09-12T13:05:11+00:00",
+          "committer_date": "2026-09-12T13:05:28+00:00",
+          "subject": "the hero runs an inference: a question crosses the table and three people's rows light in turn"
+        },
+        {
+          "commit": "724f0e118c356b0b8db82d9b83e3671c997f3e24",
+          "author_date": "2026-09-12T12:42:11+00:00",
+          "committer_date": "2026-09-12T12:42:11+00:00",
+          "subject": "i18n: the password strings go too"
+        },
+        {
+          "commit": "6c2ee8c54ded58b7b68727faa739f8780c2dec6c",
+          "author_date": "2026-09-12T12:37:03+00:00",
+          "committer_date": "2026-09-12T12:37:03+00:00",
+          "subject": "The operator password is gone from the console too"
+        },
+        {
+          "commit": "6588295caddb4aa258cae4e4312796418f6b4edb",
+          "author_date": "2026-09-12T12:07:23+00:00",
+          "committer_date": "2026-09-12T12:07:23+00:00",
+          "subject": "teach: watch several lessons at once, sign in with AIN Wallet"
+        },
+        {
+          "commit": "b27ffb2b8bc71d51bf3a7e148a18f2441dcf3e97",
+          "author_date": "2026-09-12T09:24:11+00:00",
+          "committer_date": "2026-09-12T09:24:11+00:00",
+          "subject": "types: the teach job's `baseline` phase"
+        },
+        {
+          "commit": "eb3d42ece81ac86d38291be09555c7afa28df356",
+          "author_date": "2026-09-12T07:47:08+00:00",
+          "committer_date": "2026-09-12T07:47:08+00:00",
+          "subject": "docs: runtime.patchDir and the trainer's GPUs, before the first lesson"
+        },
+        {
+          "commit": "4e915c2379be6b2eb826e75a584a56569ca51084",
+          "author_date": "2026-09-11T09:42:45+00:00",
+          "committer_date": "2026-09-11T09:42:45+00:00",
+          "subject": "\"two other model servers\", everywhere the page used to say \"independent nodes\""
+        },
+        {
+          "commit": "eedc54b748a5e06d97087c3d981027fb2323c9cc",
+          "author_date": "2026-09-11T09:40:32+00:00",
+          "committer_date": "2026-09-11T09:40:54+00:00",
+          "subject": "the hero draws the graph people actually build, and the page says what the graph says"
+        },
+        {
+          "commit": "ae9831e1af8e4a7ae2b8ab488dfc7e4bb046c2bc",
+          "author_date": "2026-09-11T09:18:20+00:00",
+          "committer_date": "2026-09-11T09:18:20+00:00",
+          "subject": "docs: what to do from your own node, including when nobody can reach you"
+        },
+        {
+          "commit": "87da1c0a0d64e7944f214e3e01def47f8f6a4700",
+          "author_date": "2026-09-11T09:06:15+00:00",
+          "committer_date": "2026-09-11T09:06:15+00:00",
+          "subject": "@ainize/node from npm, not from git"
+        },
+        {
+          "commit": "03446374b33097044f8e2856717e3690d24bca34",
+          "author_date": "2026-09-11T08:51:03+00:00",
+          "committer_date": "2026-09-11T08:51:03+00:00",
+          "subject": "@ainize/core ^0.1.2 \u2014 the rename's types"
+        },
+        {
+          "commit": "37ce113776d5a0ad8518c7fd047201ee61f5d596",
+          "author_date": "2026-09-11T01:47:02-07:00",
+          "committer_date": "2026-09-11T01:47:02-07:00",
+          "subject": "chat: say why a knowledge in the address cannot be tested (#2)"
+        },
+        {
+          "commit": "f34ee20b0b4ac1e8eeb5733ed07807336a9b849d",
+          "author_date": "2026-09-11T01:46:58-07:00",
+          "committer_date": "2026-09-11T01:46:58-07:00",
+          "subject": "docs + status: VERIFIED replaces LISTED, and ainize is on npm (#3)"
+        },
+        {
+          "commit": "a82eab061f2eea111a40e07080c615d2c66977de",
+          "author_date": "2026-09-11T00:17:41-07:00",
+          "committer_date": "2026-09-11T00:17:41-07:00",
+          "subject": "the `npm install -g ainize` guard becomes a condition, checked against the registry (#1)"
+        },
+        {
+          "commit": "2278304c5bcba60e2ece7fab48fa792343830386",
+          "author_date": "2026-09-10T13:52:40+00:00",
+          "committer_date": "2026-09-10T13:52:40+00:00",
+          "subject": "the verification count comes from core, in five places that were each doing it themselves"
+        },
+        {
+          "commit": "6d09e7207f5cbac41ec1d312c435dfeea4259016",
+          "author_date": "2026-09-09T05:02:28+00:00",
+          "committer_date": "2026-09-09T05:02:28+00:00",
+          "subject": "the docs the web renders live here, and an empty glob is now a failing test"
+        },
+        {
+          "commit": "bcd4427e1ffec83f404e90e2ceac6f786a88de9c",
+          "author_date": "2026-09-09T04:44:46+00:00",
+          "committer_date": "2026-09-09T04:44:46+00:00",
+          "subject": "stand alone: declare typescript, which the workspace root used to provide"
+        },
+        {
+          "commit": "a69e915effe23df300599067956bb9505b98c93b",
+          "author_date": "2026-09-09T04:41:02+00:00",
+          "committer_date": "2026-09-09T04:41:02+00:00",
+          "subject": "stand alone: ainize-web becomes its own repository"
+        },
+        {
+          "commit": "e6cbb182b33a6744d8b5100a5652352fea047e87",
+          "author_date": "2026-09-07T07:51:00+00:00",
+          "committer_date": "2026-09-07T07:51:00+00:00",
+          "subject": "one name: @ngram/* becomes @ainize/*, and the historical `ngram` binary is withdrawn"
+        },
+        {
+          "commit": "1e2a7f885c388fdd32f76be941fcd91abd023f4c",
+          "author_date": "2026-09-07T07:45:19+00:00",
+          "committer_date": "2026-09-07T07:45:19+00:00",
+          "subject": "bench: transcripts are committed as one archive per run, not 2,600 loose files"
+        },
+        {
+          "commit": "df8db5a1398e6000df74b2376133178dd4bf7d0d",
+          "author_date": "2026-09-07T07:43:38+00:00",
+          "committer_date": "2026-09-07T07:43:38+00:00",
+          "subject": "tracks earn a curation fee, and the two billing models nobody metered are withdrawn"
+        },
+        {
+          "commit": "e8a03bb1a5b8a05ba2c018bcd0ad37319055ac07",
+          "author_date": "2026-09-07T02:58:28+00:00",
+          "committer_date": "2026-09-07T02:58:28+00:00",
+          "subject": "name: the project describes itself the same way in all three places"
+        },
+        {
+          "commit": "80dc614d633098fe5f3ba849db94935d6519bf07",
+          "author_date": "2026-09-05T10:22:56+00:00",
+          "committer_date": "2026-09-05T10:22:56+00:00",
+          "subject": "graph: arm C's provenance verifies \u2014 and the recipe names a path only the container can see"
+        },
+        {
+          "commit": "e50f3a4290535919e1b6563ee8897b15d5dc13e6",
+          "author_date": "2026-09-05T02:24:22+00:00",
+          "committer_date": "2026-09-05T02:24:22+00:00",
+          "subject": "i18n: \"(s)\" was fixed in the two strings the finding named and left in forty-five others (item 88)"
+        },
+        {
+          "commit": "34f86056085ceedc65b7c2dbfabe9707aa2da118",
+          "author_date": "2026-09-05T02:15:59+00:00",
+          "committer_date": "2026-09-05T02:15:59+00:00",
+          "subject": "knowledge page: \"Loaded on 1 nodes\", and a third reading of \"built on\" (items 282, 91)"
+        },
+        {
+          "commit": "0041921dbd277218c889f0aef6e09a73d9f7f4df",
+          "author_date": "2026-09-05T02:13:34+00:00",
+          "committer_date": "2026-09-05T02:13:34+00:00",
+          "subject": "explore: \"Built on 1\u00d7\" and \"Built on AV base two\" on two cards, meaning opposite things (item 282)"
+        },
+        {
+          "commit": "9067f19e67d91e5959068faa691c662ad7bfd0b4",
+          "author_date": "2026-09-05T02:06:22+00:00",
+          "committer_date": "2026-09-05T02:06:22+00:00",
+          "subject": "chat picker: the browser still hid the draft the browser was told to test (item 108)"
+        },
+        {
+          "commit": "edeaa51342e05156826ef86c00aeaaf27272de98",
+          "author_date": "2026-09-05T01:35:31+00:00",
+          "committer_date": "2026-09-05T01:35:31+00:00",
+          "subject": "tracks: there was no subscription \u2014 every day of a daily track was a fresh full-price sale, and curating paid nothing"
+        },
+        {
+          "commit": "d3c8a33d740ca0f0a2786566b8db29bcdf0bd4aa",
+          "author_date": "2026-09-05T01:29:12+00:00",
+          "committer_date": "2026-09-05T01:29:12+00:00",
+          "subject": "derivatives: a child could only ever be a new listing with a dashed line to its base, and Explore grew a chip per lesson"
+        },
+        {
+          "commit": "531d45b2191b7740b3d6ec726bd51ecbee28f5c2",
+          "author_date": "2026-09-05T01:23:51+00:00",
+          "committer_date": "2026-09-05T01:23:51+00:00",
+          "subject": "live tests: 32 misses existed, and no screen and no field said which questions they were"
+        },
+        {
+          "commit": "abfd7ee1b57aa165135bdd3054e4d551d3c992f6",
+          "author_date": "2026-09-05T01:23:40+00:00",
+          "committer_date": "2026-09-05T01:23:40+00:00",
+          "subject": "billing: \"pay per hour loaded\" and \"pay per use\" were sold to sellers and printed to buyers, and nothing was ever metered"
+        },
+        {
+          "commit": "e6298b3da33e5fe869d99bcf7f3b516fa4c664cd",
+          "author_date": "2026-09-05T01:20:10+00:00",
+          "committer_date": "2026-09-05T01:20:10+00:00",
+          "subject": "split: the rule that decides who gets what lived in a source comment, and a price had no floor"
+        },
+        {
+          "commit": "5de79d98066c95443da3775e9d58fa6d01eb98ad",
+          "author_date": "2026-09-05T01:17:50+00:00",
+          "committer_date": "2026-09-05T01:17:50+00:00",
+          "subject": "catalogue: the one demand number was the wrong one, and \"awaiting verification\" covered both nobody-looked and nearly-done"
+        },
+        {
+          "commit": "8435d330512bf3e053c6454139343e7ab1db18bf",
+          "author_date": "2026-09-05T01:13:45+00:00",
+          "committer_date": "2026-09-05T01:13:45+00:00",
+          "subject": "wallet: earnings could leave this node only as purchases made through it"
+        },
+        {
+          "commit": "0b1e2b9882aa368b605dc11e02f9343039582460",
+          "author_date": "2026-09-05T01:07:12+00:00",
+          "committer_date": "2026-09-05T01:07:12+00:00",
+          "subject": "live test: \"they overlap on 2,170 memory entries\" is true, and tells a visitor nothing they can decide with"
+        },
+        {
+          "commit": "8df495196ec15a344ed2fec6773393d011a0a5bd",
+          "author_date": "2026-09-05T01:06:12+00:00",
+          "committer_date": "2026-09-05T01:06:12+00:00",
+          "subject": "credit, receipts and origins: four small lies on the money path"
+        },
+        {
+          "commit": "7442a978f5e64a203b9b66903cbc3354dfc92303",
+          "author_date": "2026-09-05T01:04:17+00:00",
+          "committer_date": "2026-09-05T01:04:17+00:00",
+          "subject": "route: one matching key was a match, the first tie won silently, and a subscriber was a serving node"
+        },
+        {
+          "commit": "513de914f3c701eeda4a53a5d8a1c8485ad1eb82",
+          "author_date": "2026-09-05T00:59:35+00:00",
+          "committer_date": "2026-09-05T00:59:35+00:00",
+          "subject": "tracks: subscribing loaded a track over what you had pinned, and unsubscribing took it off one lock at a time"
+        },
+        {
+          "commit": "6820697246738c27f85ea38b24135ea66693d529",
+          "author_date": "2026-09-05T00:55:03+00:00",
+          "committer_date": "2026-09-05T00:55:03+00:00",
+          "subject": "price: a price was a one-shot guess, fixed for ever by the first publish"
+        },
+        {
+          "commit": "9ad67623ea33cc8b9f579e7a5f4eef3e3fe67929",
+          "author_date": "2026-09-05T00:46:09+00:00",
+          "committer_date": "2026-09-05T00:46:09+00:00",
+          "subject": "receipt: the seller returned the whole split on the same reply, and the buyer threw it away"
+        },
+        {
+          "commit": "86d21f065f8c78814a8acc4d7be49c76a369e434",
+          "author_date": "2026-09-05T00:41:43+00:00",
+          "committer_date": "2026-09-05T00:41:43+00:00",
+          "subject": "lineage: somebody built on your knowledge, it paid you, and your node said \"received 1 record(s) via push\""
+        },
+        {
+          "commit": "1992291ba9dff2f0712398b290edc3c669f90de0",
+          "author_date": "2026-09-05T00:40:54+00:00",
+          "committer_date": "2026-09-05T00:40:54+00:00",
+          "subject": "revenue: every figure was the price the buyer paid, and three self-buys were three sales"
+        },
+        {
+          "commit": "24bd5e925eac48e66d21e36b6012ef01ea0ad431",
+          "author_date": "2026-09-05T00:36:38+00:00",
+          "committer_date": "2026-09-05T00:36:38+00:00",
+          "subject": "built on: the base was named under a heading that reads as a measurement, and nothing was ever measured"
+        },
+        {
+          "commit": "4631d1b984d4d5660dc6cc8679f81ea6be7b723f",
+          "author_date": "2026-09-05T00:36:11+00:00",
+          "committer_date": "2026-09-05T00:36:11+00:00",
+          "subject": "buy: \"free\" cost a wallet, a signature and a permanent public list of who took it"
+        },
+        {
+          "commit": "719662837ee173e109eea8f0f8625442952542a6",
+          "author_date": "2026-09-05T00:30:35+00:00",
+          "committer_date": "2026-09-05T00:30:35+00:00",
+          "subject": "new knowledge: a track name that files into nothing"
+        },
+        {
+          "commit": "814affdc1f0e4d20370bc48755e56d541b9c86e3",
+          "author_date": "2026-09-05T00:30:08+00:00",
+          "committer_date": "2026-09-05T00:30:08+00:00",
+          "subject": "teacher page: \"Failed verification\" was the whole story, and \"still owed by 0x\u2026\" was the whole recourse"
+        },
+        {
+          "commit": "877c61353ad0cf0613a9cad809f166b923963860",
+          "author_date": "2026-09-05T00:25:34+00:00",
+          "committer_date": "2026-09-05T00:25:34+00:00",
+          "subject": "as of: the day the data is true of, instead of a naming convention"
+        },
+        {
+          "commit": "f9bfaaac29b10deff8378256bbadfa7bf6b3652c",
+          "author_date": "2026-09-05T00:25:12+00:00",
+          "committer_date": "2026-09-05T00:25:12+00:00",
+          "subject": "verifier page: a name with no link, a tick with no work behind it, and a safeguard nobody could see had never fired"
+        },
+        {
+          "commit": "54186c489715f3fc7443dbd240b6d06aabadcaae",
+          "author_date": "2026-09-05T00:19:59+00:00",
+          "committer_date": "2026-09-05T00:19:59+00:00",
+          "subject": "money labels: one rule for what AIN is on this node, and terms that admit it"
+        },
+        {
+          "commit": "8ddb198893f27a4385aeeb30baf91ac08b63460a",
+          "author_date": "2026-09-05T00:19:43+00:00",
+          "committer_date": "2026-09-05T00:19:43+00:00",
+          "subject": "chat: twenty free tries an hour that are actually yours"
+        },
+        {
+          "commit": "033f98921b197946882d01459d70b8d622b12e24",
+          "author_date": "2026-09-05T00:17:47+00:00",
+          "committer_date": "2026-09-05T00:17:47+00:00",
+          "subject": "korean: three words for lineage, two for tracks, and a money term as the name of the family tree"
+        },
+        {
+          "commit": "7187274cb51719f088b30294727f1c42b2756e42",
+          "author_date": "2026-09-05T00:15:02+00:00",
+          "committer_date": "2026-09-05T00:15:02+00:00",
+          "subject": "manage: REJECTED was a dead end with a \"Delete draft\" heading over it"
+        },
+        {
+          "commit": "ede0e5f1e6a3615f465288ab11571742b3298b9a",
+          "author_date": "2026-09-05T00:12:15+00:00",
+          "committer_date": "2026-09-05T00:12:15+00:00",
+          "subject": "tracks: subscribers as a number that only ever shrinks, and earnings nowhere"
+        },
+        {
+          "commit": "1adbe7445ed484198fdb8cf0b805888101f6fafd",
+          "author_date": "2026-09-05T00:10:13+00:00",
+          "committer_date": "2026-09-05T00:10:13+00:00",
+          "subject": "manage: a seller could not see who has their file"
+        },
+        {
+          "commit": "8b0c617a0593d938ebcc8588d339c51e64d5c014",
+          "author_date": "2026-09-05T00:09:42+00:00",
+          "committer_date": "2026-09-05T00:09:42+00:00",
+          "subject": "dataset: remove the row you were told to fix, check past the first 24, and stop saying \"Will train\""
+        },
+        {
+          "commit": "3ffd005202cf8897e850fae4c9ee7863ca7283be",
+          "author_date": "2026-09-05T00:07:07+00:00",
+          "committer_date": "2026-09-05T00:07:07+00:00",
+          "subject": "network: two self-declared fields were the whole basis for trusting a stranger's node"
+        },
+        {
+          "commit": "57fe852711326f6f3d2738731a5ff3fd51f3c6c8",
+          "author_date": "2026-09-05T00:03:05+00:00",
+          "committer_date": "2026-09-05T00:03:05+00:00",
+          "subject": "dashboard: 203 attestations, and the console said \"No knowledge yet\""
+        },
+        {
+          "commit": "49a82dca2e1164bc348c22deffca29fd413c59f7",
+          "author_date": "2026-09-05T00:00:35+00:00",
+          "committer_date": "2026-09-05T00:00:35+00:00",
+          "subject": "teacher page: \"Revenue 10\" three lines above \"Your share 3\""
+        },
+        {
+          "commit": "490fecdeed06917dce1b6fd2a3d362bb9d461c45",
+          "author_date": "2026-09-04T23:59:18+00:00",
+          "committer_date": "2026-09-04T23:59:18+00:00",
+          "subject": "wallet: gross sale amounts above a net balance, with no line for what left"
+        },
+        {
+          "commit": "1510295d04c762ae3a265417a50f7566f6a164b2",
+          "author_date": "2026-09-04T23:56:59+00:00",
+          "committer_date": "2026-09-04T23:56:59+00:00",
+          "subject": "public record: a settle row that stops one field short of the money"
+        },
+        {
+          "commit": "2ec8b87b79ca1bdc37256c9da47728d272229df0",
+          "author_date": "2026-09-04T23:55:06+00:00",
+          "committer_date": "2026-09-04T23:55:06+00:00",
+          "subject": "upload: the privacy choice before the upload, a button you can hit, and the cap that matters"
+        },
+        {
+          "commit": "cac8708c0f68574b85f523feb169b63057aae881",
+          "author_date": "2026-09-04T23:54:46+00:00",
+          "committer_date": "2026-09-04T23:54:46+00:00",
+          "subject": "knowledge page: who a sale pays, which origin is retired, and the version at the end of the chain"
+        },
+        {
+          "commit": "8c9a689e36b8b8a258ef86d87ffa28c23a4b4e78",
+          "author_date": "2026-09-04T23:50:56+00:00",
+          "committer_date": "2026-09-04T23:50:56+00:00",
+          "subject": "chat: the corrections that survive queueing, a Try that tries, and the set you can come back to"
+        },
+        {
+          "commit": "c171550ebaac51e89cc266b22612270133ad38df",
+          "author_date": "2026-09-04T23:46:08+00:00",
+          "committer_date": "2026-09-04T23:46:08+00:00",
+          "subject": "publish: see what you are consenting to, read the licence, and stop promising 70 %"
+        },
+        {
+          "commit": "4a55f5b85fd8deb6aca9ceba25470d2c2d3e7c57",
+          "author_date": "2026-09-04T23:45:30+00:00",
+          "committer_date": "2026-09-04T23:45:30+00:00",
+          "subject": "landing: a node that is down looked like a marketplace that is empty"
+        },
+        {
+          "commit": "734d806f4967e7352fc04cd0c538a8eb3066ca6a",
+          "author_date": "2026-09-04T23:44:29+00:00",
+          "committer_date": "2026-09-04T23:44:29+00:00",
+          "subject": "account: change the password here, and stop promising a payout address that decides nothing"
+        },
+        {
+          "commit": "fe1828e3217ae6d714214b02c12c1becfb2117c5",
+          "author_date": "2026-09-04T23:42:27+00:00",
+          "committer_date": "2026-09-04T23:42:27+00:00",
+          "subject": "teach: the backup you actually need, a deadline that is a date, and a token that stops travelling"
+        },
+        {
+          "commit": "ee6cff0a0a31d36fe2f02e80d8f0a40484ebed8d",
+          "author_date": "2026-09-04T23:41:58+00:00",
+          "committer_date": "2026-09-04T23:41:58+00:00",
+          "subject": "signing: \"wait\" with no number, in the wrong language"
+        },
+        {
+          "commit": "38c277fbda2ee07eae76d1bbb04512ee7ac04e49",
+          "author_date": "2026-09-04T23:41:21+00:00",
+          "committer_date": "2026-09-04T23:41:53+00:00",
+          "subject": "catalog+auth: search what the knowledge knows, and count the guesses at the door"
+        },
+        {
+          "commit": "5d40493186194905a65384c5386705df4f961fd2",
+          "author_date": "2026-09-04T23:38:54+00:00",
+          "committer_date": "2026-09-04T23:38:54+00:00",
+          "subject": "teach: a green tick, a plural, a Korean particle and the money behind \"builds on\""
+        },
+        {
+          "commit": "561eb8af5ac6a49fdbdb8c109362045b969d6cb6",
+          "author_date": "2026-09-04T22:49:31+00:00",
+          "committer_date": "2026-09-04T22:49:31+00:00",
+          "subject": "upload: a Korean spreadsheet saved as \"Unicode text\" was called a binary file"
+        },
+        {
+          "commit": "9ca38da5ffd09fdfb3278e1c9a36dc97099c62d1",
+          "author_date": "2026-09-04T22:18:00+00:00",
+          "committer_date": "2026-09-04T22:18:00+00:00",
+          "subject": "publish: \"Built on: X Every sale: 30% to the creators of X\u2026\" is two sentences"
+        },
+        {
+          "commit": "ccc9762a8769c4c96a93970eb2d4448fe8c5a7f7",
+          "author_date": "2026-09-04T22:01:37+00:00",
+          "committer_date": "2026-09-04T22:01:37+00:00",
+          "subject": "chat: the one word the file door is not allowed to know"
+        },
+        {
+          "commit": "4f8e3c61668a4288508898468a10d8ddaec3211b",
+          "author_date": "2026-09-04T21:43:58+00:00",
+          "committer_date": "2026-09-04T21:43:58+00:00",
+          "subject": "overview: \"the questions were never published\" was printed under a page saying they are shared"
+        },
+        {
+          "commit": "a8c2e7a457ec9bbdaf5944e64fc0602966035622",
+          "author_date": "2026-09-04T20:52:10+00:00",
+          "committer_date": "2026-09-04T20:52:10+00:00",
+          "subject": "upload: a 455 px button on a 360 px phone took the page sideways with it"
+        },
+        {
+          "commit": "5925037b4e5e3d3a63bcf501d91ed5f9731e4fa7",
+          "author_date": "2026-09-04T20:45:22+00:00",
+          "committer_date": "2026-09-04T20:45:22+00:00",
+          "subject": "merge: a combined knowledge has two parents, and the result named one of them"
+        },
+        {
+          "commit": "12ff5801941e61ac99efe1fd220514f1ba13e8db",
+          "author_date": "2026-09-04T20:40:13+00:00",
+          "committer_date": "2026-09-04T20:40:13+00:00",
+          "subject": "copy: a copy that carries the original's exact name is not a copy anyone can find"
+        },
+        {
+          "commit": "a4f1b6cffd13dcc40ed1fece8e7f6b04fcef5e74",
+          "author_date": "2026-09-04T20:38:31+00:00",
+          "committer_date": "2026-09-04T20:38:31+00:00",
+          "subject": "result: a lesson taught on top of someone else's knowledge never said so"
+        },
+        {
+          "commit": "17f06c7b77ee0bc0724ad27347ae39d185f340b5",
+          "author_date": "2026-09-04T20:38:27+00:00",
+          "committer_date": "2026-09-04T20:38:27+00:00",
+          "subject": "training set: \"sign in with a teaching key\" was said to someone who had one"
+        },
+        {
+          "commit": "249cd5454dab864d8abc5ead07ece7cfb6eb0d43",
+          "author_date": "2026-09-04T20:34:13+00:00",
+          "committer_date": "2026-09-04T20:34:13+00:00",
+          "subject": "build on this: the button the whole feature exists for led to a 404"
+        },
+        {
+          "commit": "c3f0c280e9e97458407b43a76f6da45021c2a7c4",
+          "author_date": "2026-09-04T20:24:10+00:00",
+          "committer_date": "2026-09-04T20:24:10+00:00",
+          "subject": "manage: \"Loaded into the model.\" is still said when the load went through the question"
+        },
+        {
+          "commit": "3bf3f532fec3c2d719f2fe26e400783fa6efa290",
+          "author_date": "2026-09-04T20:06:45+00:00",
+          "committer_date": "2026-09-04T20:06:45+00:00",
+          "subject": "web: an add-on is loaded with what it stands on, and a buyer is told who is paid twice"
+        },
+        {
+          "commit": "e42a4615f7919354d1c0856b01ef0044489e3905",
+          "author_date": "2026-09-04T20:02:43+00:00",
+          "committer_date": "2026-09-04T20:02:43+00:00",
+          "subject": "wallet: money you have not been paid is zero, not free"
+        },
+        {
+          "commit": "787fb3517f70a028b2d569ac07f03cd25a9b382e",
+          "author_date": "2026-09-04T19:58:22+00:00",
+          "committer_date": "2026-09-04T19:58:22+00:00",
+          "subject": "detail: the track a knowledge is in is now somewhere you can go"
+        },
+        {
+          "commit": "8838b860631772f0a27420885b66273c60657014",
+          "author_date": "2026-09-04T19:54:28+00:00",
+          "committer_date": "2026-09-04T19:54:28+00:00",
+          "subject": "publish: the description field says what its first two lines are for"
+        },
+        {
+          "commit": "e43ec5800de08c8b39bbc34f11b180027c86e12c",
+          "author_date": "2026-09-04T19:54:19+00:00",
+          "committer_date": "2026-09-04T19:54:19+00:00",
+          "subject": "tracks: a subscribed track showed the reader the name of the string"
+        },
+        {
+          "commit": "129715602ee550c2896d423225e2fb0efcd7189a",
+          "author_date": "2026-09-04T19:46:55+00:00",
+          "committer_date": "2026-09-04T19:46:55+00:00",
+          "subject": "detail: the way into the merge screen is on the knowledge page, beside the other two ways to build on it (AZ-311)"
+        },
+        {
+          "commit": "4e2c1ed49e2fda24afe7c9ae5480a5f640186e6e",
+          "author_date": "2026-09-04T19:36:29+00:00",
+          "committer_date": "2026-09-04T19:36:29+00:00",
+          "subject": "result: a combined knowledge is scored per source, and the card says which parent it kept"
+        },
+        {
+          "commit": "23bbeb25ef809c5d202938ced33a2e34c548a510",
+          "author_date": "2026-09-04T19:25:42+00:00",
+          "committer_date": "2026-09-04T19:25:42+00:00",
+          "subject": "web: the merge screen \u2014 what overlaps, what they answer differently, and the one option that is deliberately absent"
+        },
+        {
+          "commit": "35a531de823e1694f5199df6ebbaace8bb1bb050",
+          "author_date": "2026-09-04T19:20:08+00:00",
+          "committer_date": "2026-09-04T19:20:08+00:00",
+          "subject": "live test: the model chip stops handing visitors the serving endpoint"
+        },
+        {
+          "commit": "68d35cf26e8be1fc81913087df27db0414381daf",
+          "author_date": "2026-09-04T19:17:00+00:00",
+          "committer_date": "2026-09-04T19:17:00+00:00",
+          "subject": "detail: the money line is readable on a phone, the seller is an address, and the receipt can be checked"
+        },
+        {
+          "commit": "a73efefffd40a10df668a9ee58584fe395b6ba44",
+          "author_date": "2026-09-04T19:15:43+00:00",
+          "committer_date": "2026-09-04T19:15:43+00:00",
+          "subject": "landing: the words the page rests on are on the page"
+        },
+        {
+          "commit": "0bc549e6c4eac62aa21764c27451e56153e3bccc",
+          "author_date": "2026-09-04T19:15:42+00:00",
+          "committer_date": "2026-09-04T19:15:42+00:00",
+          "subject": "wallet: the whole history, what the node owes, and which chain the balance is on"
+        },
+        {
+          "commit": "449d7023120a7e2866fc6c0938ffad3069b6d5ce",
+          "author_date": "2026-09-04T19:15:09+00:00",
+          "committer_date": "2026-09-04T19:15:09+00:00",
+          "subject": "network: nothing switches tracks per request, so stop saying it does (finding 265)"
+        },
+        {
+          "commit": "d9ddd69f55cbb8d8e414888285e809f7ea2f2a7a",
+          "author_date": "2026-09-04T19:14:45+00:00",
+          "committer_date": "2026-09-04T19:14:45+00:00",
+          "subject": "live test: the three new lines fit a phone"
+        },
+        {
+          "commit": "fbafcee1f5bda655afb21d6d9c7d29b4634216b3",
+          "author_date": "2026-09-04T19:14:10+00:00",
+          "committer_date": "2026-09-04T19:14:10+00:00",
+          "subject": "manage: the friction belongs on the permanent act (findings 32, 33, 167)"
+        },
+        {
+          "commit": "b6f5c634e65d7b7ee0ec67a655a1f76bf99a4ba5",
+          "author_date": "2026-09-04T19:14:10+00:00",
+          "committer_date": "2026-09-04T19:14:10+00:00",
+          "subject": "logs: a first visit has no \"since your last visit\""
+        },
+        {
+          "commit": "1a48db520b8b267dcfafec934321ce03f3c6cb18",
+          "author_date": "2026-09-04T19:14:02+00:00",
+          "committer_date": "2026-09-04T19:14:02+00:00",
+          "subject": "benchmarks: the page whose job is comparison finally compares"
+        },
+        {
+          "commit": "c6187d7c711fa14c4c35ba5ee8dc3a36eeb86ddd",
+          "author_date": "2026-09-04T19:13:24+00:00",
+          "committer_date": "2026-09-04T19:13:24+00:00",
+          "subject": "live test: the offer once, the transcript kept, and a total that is true"
+        },
+        {
+          "commit": "c69d3e5009f4dfbfa2937d1b3f5ebb6fb954af81",
+          "author_date": "2026-09-04T19:13:07+00:00",
+          "committer_date": "2026-09-04T19:13:07+00:00",
+          "subject": "live test: one overlap alert, a load order you can move, and no process ids"
+        },
+        {
+          "commit": "8417edbafa127210865968fa106ba1616c4efae0",
+          "author_date": "2026-09-04T19:12:50+00:00",
+          "committer_date": "2026-09-04T19:12:50+00:00",
+          "subject": "live test: the composer keeps your question, your focus and your transcript"
+        },
+        {
+          "commit": "e2bfd3dbeb924b1e694f43f48923c1526b4830eb",
+          "author_date": "2026-09-04T19:12:32+00:00",
+          "committer_date": "2026-09-04T19:12:32+00:00",
+          "subject": "live test: a truncated question is not the sample it is a prefix of"
+        },
+        {
+          "commit": "b453934078a0fbbe1c646f1a53846065fef6853a",
+          "author_date": "2026-09-04T19:12:23+00:00",
+          "committer_date": "2026-09-04T19:12:23+00:00",
+          "subject": "live test: the words the live test needs before its screens can change"
+        },
+        {
+          "commit": "cb3d6531216a7a69f9661a13a768c0db04757f68",
+          "author_date": "2026-09-04T19:11:46+00:00",
+          "committer_date": "2026-09-04T19:11:46+00:00",
+          "subject": "detail: a verifier that refused this version is on the page, not only in the operator's log"
+        },
+        {
+          "commit": "f44e42a534994397e39cfaba61afcfaad713c046",
+          "author_date": "2026-09-04T19:09:20+00:00",
+          "committer_date": "2026-09-04T19:09:20+00:00",
+          "subject": "explore: the shelves say which of their cards you could actually load"
+        },
+        {
+          "commit": "aabe4d63a35fa58ccf9863ea48765af7337da1c7",
+          "author_date": "2026-09-04T19:09:20+00:00",
+          "committer_date": "2026-09-04T19:09:20+00:00",
+          "subject": "explore: a failing catalogue says what happened and offers to try again"
+        },
+        {
+          "commit": "ed4603cc57a1e48c26a27f5a7e0af5396bcb6e56",
+          "author_date": "2026-09-04T19:09:20+00:00",
+          "committer_date": "2026-09-04T19:09:20+00:00",
+          "subject": "browse: the card is a card, not a 723-character link"
+        },
+        {
+          "commit": "78950f9c052b927e07f0a8368d0c89226d7c847e",
+          "author_date": "2026-09-04T19:08:59+00:00",
+          "committer_date": "2026-09-04T19:09:13+00:00",
+          "subject": "publish: the five permanent decisions this form used to take for you"
+        },
+        {
+          "commit": "15ebf50c5f976cf35ef74db00c11406313516c79",
+          "author_date": "2026-09-04T19:08:42+00:00",
+          "committer_date": "2026-09-04T19:08:42+00:00",
+          "subject": "detail: an overlap row says what the two knowledges are to each other, and how much of one is inside the other"
+        },
+        {
+          "commit": "d403bf24192457c464dbf8398528eee02ce6d2de",
+          "author_date": "2026-09-04T19:03:22+00:00",
+          "committer_date": "2026-09-04T19:03:22+00:00",
+          "subject": "detail: the sample questions read as questions, the licence says who did not declare it, the track is not invented"
+        },
+        {
+          "commit": "1be687b4887f6d3481e0b380036aa7725f02bf42",
+          "author_date": "2026-09-04T19:01:28+00:00",
+          "committer_date": "2026-09-04T19:01:28+00:00",
+          "subject": "tracks: the card says whether THIS node is behind (findings 262, 265)"
+        },
+        {
+          "commit": "93ac7f2fe965cf686636f0ec8e7d63af417d0ec9",
+          "author_date": "2026-09-04T19:01:28+00:00",
+          "committer_date": "2026-09-04T19:01:28+00:00",
+          "subject": "console: 103 rows, 28 of them called the same thing, and no way to look (finding 31)"
+        },
+        {
+          "commit": "b7d8882468c7f16a64b5171863c19168f1264b86",
+          "author_date": "2026-09-04T19:01:10+00:00",
+          "committer_date": "2026-09-04T19:01:10+00:00",
+          "subject": "console: the node has a log, and now it has a screen (finding 133)"
+        },
+        {
+          "commit": "c1dda115a6acb3f647fd6d7da60d3b0aaea75344",
+          "author_date": "2026-09-04T19:01:01+00:00",
+          "committer_date": "2026-09-04T19:01:01+00:00",
+          "subject": "logs: an id this node never heard of is not a quiet knowledge (finding 79)"
+        },
+        {
+          "commit": "b022221cecb8438efbe7d36a50c9b1c9e571bc9e",
+          "author_date": "2026-09-04T19:00:53+00:00",
+          "committer_date": "2026-09-04T19:00:53+00:00",
+          "subject": "tables: a column you cannot see is a column that is not there (finding 96)"
+        },
+        {
+          "commit": "9a9b945bf817a4bf81f44b693d0a287e8242f433",
+          "author_date": "2026-09-04T19:00:05+00:00",
+          "committer_date": "2026-09-04T19:00:05+00:00",
+          "subject": "landing: three pictures of the mechanism, instead of three from another product"
+        },
+        {
+          "commit": "ce24af2da64863d75728efd3bd9456c3ff0634c1",
+          "author_date": "2026-09-04T18:59:44+00:00",
+          "committer_date": "2026-09-04T18:59:44+00:00",
+          "subject": "detail: the price is the first thing the header offers, and the takings sit with the settlements"
+        },
+        {
+          "commit": "5fad2f9e83d4cd0a753fadebed4beb37ab3bc6d8",
+          "author_date": "2026-09-04T18:59:26+00:00",
+          "committer_date": "2026-09-04T18:59:26+00:00",
+          "subject": "signing: where the password comes from, and what to do when it is wrong"
+        },
+        {
+          "commit": "373be0a21078673749718a0324ddab21c4199d02",
+          "author_date": "2026-09-04T18:59:26+00:00",
+          "committer_date": "2026-09-04T18:59:26+00:00",
+          "subject": "network: the operator's serving endpoint is not a visitor's business"
+        },
+        {
+          "commit": "ef303de7ccb9b407d18b93f36f308521257ddbc9",
+          "author_date": "2026-09-04T18:59:11+00:00",
+          "committer_date": "2026-09-04T18:59:11+00:00",
+          "subject": "tracks: the channel this marketplace sells finally has a page"
+        },
+        {
+          "commit": "6feb44955236ce1f2c7ddc4f77fec1fe613acc86",
+          "author_date": "2026-09-04T18:59:11+00:00",
+          "committer_date": "2026-09-04T18:59:11+00:00",
+          "subject": "ledger: an outage is not \"No records yet.\""
+        },
+        {
+          "commit": "4855a3e3674ba6342e42246daf646b139be74eb2",
+          "author_date": "2026-09-04T18:58:59+00:00",
+          "committer_date": "2026-09-04T18:58:59+00:00",
+          "subject": "web: one sentence for a node that is not answering, instead of three silences"
+        },
+        {
+          "commit": "b169a07e62b044c71d642e49338eb81f95d3575b",
+          "author_date": "2026-09-04T18:57:49+00:00",
+          "committer_date": "2026-09-04T18:57:49+00:00",
+          "subject": "landing: the nav stays, the footer is one footer, and Privacy has a name"
+        },
+        {
+          "commit": "9386b08455238c8108986ffa64550f8c31163d9f",
+          "author_date": "2026-09-04T18:55:40+00:00",
+          "committer_date": "2026-09-04T18:55:40+00:00",
+          "subject": "detail: the open tab is an address again, and on a phone every tab is on screen"
+        },
+        {
+          "commit": "be792163ba4d4b8b68f6c2083e90c8b77635faaf",
+          "author_date": "2026-09-04T18:19:21+00:00",
+          "committer_date": "2026-09-04T18:19:21+00:00",
+          "subject": "teach: the browser has a sentence for \"held because we verified it\" too"
+        },
+        {
+          "commit": "4fe7b0887fa24c0a7e6769ca13f6176ee31cd6a4",
+          "author_date": "2026-09-04T18:14:34+00:00",
+          "committer_date": "2026-09-04T18:14:34+00:00",
+          "subject": "tree: one rule for both buttons, and *Copy and continue* obeys it"
+        },
+        {
+          "commit": "285c48b8a3cd6f3c01270bf983a5613941dde171",
+          "author_date": "2026-09-04T18:03:00+00:00",
+          "committer_date": "2026-09-04T18:03:00+00:00",
+          "subject": "publish: an anchor stuck at 0/2 now says why, on the author's own machine"
+        },
+        {
+          "commit": "a4301038bc9bccede2c8f4c35f431576d44a2a64",
+          "author_date": "2026-09-04T17:56:07+00:00",
+          "committer_date": "2026-09-04T17:56:07+00:00",
+          "subject": "console: what is on the model, in the order it was put there (SC-18)"
+        },
+        {
+          "commit": "7ef91e7853e4454732e7456350c9b43fe6bea91e",
+          "author_date": "2026-09-04T17:51:20+00:00",
+          "committer_date": "2026-09-04T17:51:20+00:00",
+          "subject": "detail: \"the creator kept it private\" was said about knowledge published before there were training sets (AZ-297)"
+        },
+        {
+          "commit": "f0c245c679b2177ae0d43e379de5e003277d5c91",
+          "author_date": "2026-09-04T17:45:33+00:00",
+          "committer_date": "2026-09-04T17:45:33+00:00",
+          "subject": "buy: a knowledge this node already paid for is collected, not bought again"
+        },
+        {
+          "commit": "8f126882a3a520b11ab48ac9759e335fa0f151b5",
+          "author_date": "2026-09-04T17:40:26+00:00",
+          "committer_date": "2026-09-04T17:40:26+00:00",
+          "subject": "tree: the creator of the knowledge underneath is paid for being built on, and the money line says so"
+        },
+        {
+          "commit": "a18995d6d4f9e59c43851b30eacbd417e6575564",
+          "author_date": "2026-09-04T17:08:08+00:00",
+          "committer_date": "2026-09-04T17:08:08+00:00",
+          "subject": "detail: the Buy tab says what the purchase costs, where the shop is, and that the file is already paid for (items 270, 273, 275, 364)"
+        },
+        {
+          "commit": "324b075e6b043435623cf6126d7379460af49c5e",
+          "author_date": "2026-09-04T16:46:47+00:00",
+          "committer_date": "2026-09-04T16:46:47+00:00",
+          "subject": "teach: picking one answer settles that contradiction, and AZ-151 stops asserting the defect (item 5)"
+        },
+        {
+          "commit": "fa0758271ab26312819aa46bff688d94513a77dd",
+          "author_date": "2026-09-04T16:45:39+00:00",
+          "committer_date": "2026-09-04T16:45:39+00:00",
+          "subject": "tracks: subscribing bought yesterday twice, announced itself before paying, and never brought today (items 255, 256, 257, 357, 358)"
+        },
+        {
+          "commit": "98303a76318c33b7ccceaa9fbb4ac4e1c339ad36",
+          "author_date": "2026-09-04T16:36:31+00:00",
+          "committer_date": "2026-09-04T16:36:31+00:00",
+          "subject": "network: a peer on another ledger looked perfectly healthy and its knowledge never arrived (items 170, 128)"
+        },
+        {
+          "commit": "8dee73aca1fb7b2b4bcb0b5bce242566c2229ebb",
+          "author_date": "2026-09-04T16:33:02+00:00",
+          "committer_date": "2026-09-04T16:33:02+00:00",
+          "subject": "money: what a verification proves, and whether the money it promises ever moves"
+        },
+        {
+          "commit": "cbf7c02d289a3c932106023bb4209fb4aee473a9",
+          "author_date": "2026-09-04T16:27:45+00:00",
+          "committer_date": "2026-09-04T16:27:45+00:00",
+          "subject": "teach: the publish sheet stops promising money and sales the node cannot deliver (items 17, 171, 186, 298, 299, 312)"
+        },
+        {
+          "commit": "e8c610290452740a9176da6cb29bbeb4a34ba7f8",
+          "author_date": "2026-09-04T16:23:04+00:00",
+          "committer_date": "2026-09-04T16:23:04+00:00",
+          "subject": "detail: a retired knowledge said \"a verifier has challenged this\", and an overlap never said whose it was"
+        },
+        {
+          "commit": "c1cea52e8e03df912a45fe4a087543c2efc4d63e",
+          "author_date": "2026-09-04T16:21:27+00:00",
+          "committer_date": "2026-09-04T16:21:27+00:00",
+          "subject": "retire: a publisher could not take knowledge down, and announce promised verifiers that were not there"
+        },
+        {
+          "commit": "b5a87e77b95b5be1a7d97a5bc9ab6eb326bc4772",
+          "author_date": "2026-09-04T15:05:26+00:00",
+          "committer_date": "2026-09-04T15:05:26+00:00",
+          "subject": "chat: the stack header printed \"NaN facts\" when one knowledge had no question count"
+        },
+        {
+          "commit": "f97f567a730525047bb712395f437429a1be7f4e",
+          "author_date": "2026-09-04T14:41:52+00:00",
+          "committer_date": "2026-09-04T14:41:52+00:00",
+          "subject": "web: /chat rendered nothing at all \u2014 the browser bundle was reaching for createRequire"
+        },
+        {
+          "commit": "e6cc0039c0636def39874453bd5b01721042e344",
+          "author_date": "2026-09-04T14:34:04+00:00",
+          "committer_date": "2026-09-04T14:34:04+00:00",
+          "subject": "detail: \"Buy again\" was the only thing to do with a knowledge already paid for (finding 271, web half)"
+        },
+        {
+          "commit": "a82a6d9115107196c3b53230d0c09242968d5148",
+          "author_date": "2026-09-04T14:33:29+00:00",
+          "committer_date": "2026-09-04T14:33:29+00:00",
+          "subject": "detail: the Buy tab promised \"no sign-up\" and then offered a visitor only a sign-in (finding 3)"
+        },
+        {
+          "commit": "5a9f9896b20738155a828dc423b43a74ae84b52b",
+          "author_date": "2026-09-04T14:32:40+00:00",
+          "committer_date": "2026-09-04T14:32:40+00:00",
+          "subject": "detail: a replaced version says so where the money is, not in a tab nobody has open (finding 4)"
+        },
+        {
+          "commit": "d9d49d69b026289e0e95e6b8183c62c3699334e2",
+          "author_date": "2026-09-04T14:21:17+00:00",
+          "committer_date": "2026-09-04T14:21:17+00:00",
+          "subject": "docs: a 60-character word with nowhere to break was scrolling the whole page sideways at 360 px"
+        },
+        {
+          "commit": "e976be4f38bdb20264b9d991981c62df372ac936",
+          "author_date": "2026-09-04T14:20:10+00:00",
+          "committer_date": "2026-09-04T14:20:10+00:00",
+          "subject": "landing: name the knowledge instead of counting it when there is barely any (finding 13)"
+        },
+        {
+          "commit": "2b17b5e31901f8f8201bd838a231c5c2d6c0fea7",
+          "author_date": "2026-09-04T14:19:58+00:00",
+          "committer_date": "2026-09-04T14:19:58+00:00",
+          "subject": "explore: a price on every card on a phone, and the unit said once (finding 18)"
+        },
+        {
+          "commit": "01284098eda51677484f5cd823ff2ab3bc7f3413",
+          "author_date": "2026-09-04T14:19:48+00:00",
+          "committer_date": "2026-09-04T14:19:48+00:00",
+          "subject": "sheet: the button you have to press is on screen \u2014 pin the action bar (finding 16)"
+        },
+        {
+          "commit": "cc46c3db3aea4b2a65fdb3ce385737f0ef6649ee",
+          "author_date": "2026-09-04T14:16:02+00:00",
+          "committer_date": "2026-09-04T14:16:02+00:00",
+          "subject": "dashboard: the failure sentence has to fit the tracks panel too"
+        },
+        {
+          "commit": "1bf18c4e8cc056cac73ac856942228812c92ac43",
+          "author_date": "2026-09-04T14:13:17+00:00",
+          "committer_date": "2026-09-04T14:13:17+00:00",
+          "subject": "manage: publishing names the listings it retires, and asks you to type the new id"
+        },
+        {
+          "commit": "070bea07e2bef3cb27518be6e40c8d519355e501",
+          "author_date": "2026-09-04T14:07:11+00:00",
+          "committer_date": "2026-09-04T14:07:11+00:00",
+          "subject": "teaching: Approve shows the lesson first, and each publish option says what it does"
+        },
+        {
+          "commit": "6e3736bdff3e8cf7699c73c3c4b3a9e29cc360c3",
+          "author_date": "2026-09-04T14:01:29+00:00",
+          "committer_date": "2026-09-04T14:01:29+00:00",
+          "subject": "chat: \"Improve & retry\" adds to the lesson instead of emptying it, and asks for the phrasing it wants"
+        },
+        {
+          "commit": "9e930a67eea4e3e3a50105357bd4e8c8e2034a8c",
+          "author_date": "2026-09-04T14:00:24+00:00",
+          "committer_date": "2026-09-04T14:00:24+00:00",
+          "subject": "dashboard: \"Subscribe\" prices the spend, names every item, and says what it cannot undo"
+        },
+        {
+          "commit": "8da257ec0de502cbe70df03aee6e62f09f606cfc",
+          "author_date": "2026-09-04T12:43:02+00:00",
+          "committer_date": "2026-09-04T12:43:02+00:00",
+          "subject": "detail: a node that cannot answer is not a knowledge that does not exist (finding 11)"
+        },
+        {
+          "commit": "6223939100d16f9df0f1a8d67a972935e73cb222",
+          "author_date": "2026-09-04T12:42:53+00:00",
+          "committer_date": "2026-09-04T12:42:53+00:00",
+          "subject": "chat: ticking a knowledge no longer empties the conversation and the lesson"
+        },
+        {
+          "commit": "6fc2fb126cd25b87035373acc868591d85d05fa7",
+          "author_date": "2026-09-04T12:42:14+00:00",
+          "committer_date": "2026-09-04T12:42:14+00:00",
+          "subject": "tree: a credited teacher is not \"the lineage\" \u2014 the money line says which is which"
+        },
+        {
+          "commit": "3fd0d6d3d6c30baaf921888d797347a0fa0eaaa4",
+          "author_date": "2026-09-04T12:37:21+00:00",
+          "committer_date": "2026-09-04T12:37:21+00:00",
+          "subject": "dashboard: a node that cannot answer says so \u2014 500 is not an empty inventory"
+        },
+        {
+          "commit": "ce411bc3e54da32846cb822d5e61674d0d29e684",
+          "author_date": "2026-09-04T12:36:58+00:00",
+          "committer_date": "2026-09-04T12:36:58+00:00",
+          "subject": "chat: put the answer on screen at 360 px \u2014 the transcript box is not the scroller there"
+        },
+        {
+          "commit": "2dc487bcda101e43d7297ff7353504f674074965",
+          "author_date": "2026-09-04T12:36:11+00:00",
+          "committer_date": "2026-09-04T12:36:11+00:00",
+          "subject": "web: Explore shows what is being built on, and what people asked for here"
+        },
+        {
+          "commit": "e0385a00aee05f8b3420cb941fcd1dbb00eca78b",
+          "author_date": "2026-09-04T12:33:59+00:00",
+          "committer_date": "2026-09-04T12:33:59+00:00",
+          "subject": "web: \"mark wrong\" asks before it tells \u2014 and the question it was about travels back"
+        },
+        {
+          "commit": "a0c3a4c049bab60b26b9086f6d7caa519f01214f",
+          "author_date": "2026-09-04T12:31:51+00:00",
+          "committer_date": "2026-09-04T12:31:51+00:00",
+          "subject": "web: the knowledge page shows the family, the questions, and where to add"
+        },
+        {
+          "commit": "dd6052831b538aafb1e28c166bbcb026f50224f8",
+          "author_date": "2026-09-04T12:04:50+00:00",
+          "committer_date": "2026-09-04T12:04:50+00:00",
+          "subject": "docs: an HTML comment is a note to the next writer, not a construct to reject"
+        },
+        {
+          "commit": "01683350bb2a95f7aa350a44418be2632df52275",
+          "author_date": "2026-09-04T12:03:56+00:00",
+          "committer_date": "2026-09-04T12:03:56+00:00",
+          "subject": "web: the publish sheet says what this is built on, who is paid, and what happens to the questions"
+        },
+        {
+          "commit": "d8c1142b69e35a83c302c5c02b117ce652bd2a6e",
+          "author_date": "2026-09-04T12:01:36+00:00",
+          "committer_date": "2026-09-04T12:01:36+00:00",
+          "subject": "web: \"from {name}\", not \"from taught-krx-9f21\""
+        },
+        {
+          "commit": "3ebe0860cce85129f12f88f635968aa19ff7a552",
+          "author_date": "2026-09-04T11:53:17+00:00",
+          "committer_date": "2026-09-04T11:53:17+00:00",
+          "subject": "web: the dataset door starts from someone else's questions, and the table says whose each row is"
+        },
+        {
+          "commit": "640ac2cb59df11c8fd38fe9f27a60ce11cf23c5c",
+          "author_date": "2026-09-04T11:49:27+00:00",
+          "committer_date": "2026-09-04T11:49:27+00:00",
+          "subject": "web: the chat door says what this lesson is built on, and what is only loaded beside it"
+        },
+        {
+          "commit": "57d894adb501d76d23cd058e9fbc7f970266b84f",
+          "author_date": "2026-09-04T11:18:40+00:00",
+          "committer_date": "2026-09-04T11:18:40+00:00",
+          "subject": "docs: /docs is a documentation site now \u2014 one markdown tree, a sidebar, a rail and previous/next"
+        },
+        {
+          "commit": "4c5ace8ec7ba66d55e1e02c0b6bc0d86fd3b702f",
+          "author_date": "2026-09-04T10:48:56+00:00",
+          "committer_date": "2026-09-04T10:48:56+00:00",
+          "subject": "README: the same eight steps in plain Markdown, with a test that fails when they drift"
+        },
+        {
+          "commit": "202b33f5b5fc5c42a0f3a68ebc1de3680e6c3bc4",
+          "author_date": "2026-09-04T10:48:46+00:00",
+          "committer_date": "2026-09-04T10:48:46+00:00",
+          "subject": "landing: the diagram replaces the role-grouped one-liners, and the install that 404s goes with it"
+        },
+        {
+          "commit": "aef3ee3983c9aa35e2920329a0559724a2727d6f",
+          "author_date": "2026-09-04T10:48:30+00:00",
+          "committer_date": "2026-09-04T10:48:30+00:00",
+          "subject": "landing: the ecosystem as one time-ordered diagram \u2014 eight steps, each with the command and the route it really has"
+        },
+        {
+          "commit": "9189ec5f8f8e400f222d3d32b6506419631708d8",
+          "author_date": "2026-09-04T10:21:42+00:00",
+          "committer_date": "2026-09-04T10:21:42+00:00",
+          "subject": "mcp M3: the skill, the docs, and the scenarios \u2014 so an agent can be told once and get it right"
+        },
+        {
+          "commit": "c7af1116b31980175a7b00f6082f3e4851cf1185",
+          "author_date": "2026-09-04T08:15:30+00:00",
+          "committer_date": "2026-09-04T08:15:30+00:00",
+          "subject": "web: a trust strip on /teach, and the Terms section it links to (O-10)"
+        },
+        {
+          "commit": "023ba176d49bc058c977e2032d465ff02e46e5f6",
+          "author_date": "2026-09-04T08:11:39+00:00",
+          "committer_date": "2026-09-04T08:11:39+00:00",
+          "subject": "web: /teach answers \"can I start now?\" in plain words; the node's status sentence goes behind Details (O-5)"
+        },
+        {
+          "commit": "c248af89a766cc23b2fffde7062ba790148d50a7",
+          "author_date": "2026-09-04T08:07:24+00:00",
+          "committer_date": "2026-09-04T08:07:24+00:00",
+          "subject": "web: the file door's limits are badges beside the picker label, not small print (O-4)"
+        },
+        {
+          "commit": "8dfb402c14c6d59ba3584dcc15828c236a36b882",
+          "author_date": "2026-09-04T08:04:46+00:00",
+          "committer_date": "2026-09-04T08:04:46+00:00",
+          "subject": "web: the entry page says what happens next in a sentence; the stepper starts inside the flow (O-2)"
+        },
+        {
+          "commit": "14d0ca59159039f2ed8e9a6b61c316dd77c3dc03",
+          "author_date": "2026-09-04T08:03:07+00:00",
+          "committer_date": "2026-09-04T08:03:07+00:00",
+          "subject": "web: /teach reads in one pass \u2014 one-line intro, one sentence per card, the story behind \"How it works\" (O-7)"
+        },
+        {
+          "commit": "d16d9f07d9d01c858735337003eb0972eeec33bb",
+          "author_date": "2026-09-04T08:01:23+00:00",
+          "committer_date": "2026-09-04T08:01:23+00:00",
+          "subject": "lineage L0: prerequisites \u2014 HMAC visitor ids, demand counters, event retention, royalty pass-2 fix, licence list, PII rows, seed relabel"
+        },
+        {
+          "commit": "3967689f5c7d8140a544a21c7f3d0c8ef44ad41c",
+          "author_date": "2026-09-04T08:01:05+00:00",
+          "committer_date": "2026-09-04T08:01:05+00:00",
+          "subject": "web: each door on /teach is one link \u2014 the whole card is the click target (O-9)"
+        },
+        {
+          "commit": "04f3535232436de6ece479ad42c4388654e70616",
+          "author_date": "2026-09-04T07:56:14+00:00",
+          "committer_date": "2026-09-04T07:56:14+00:00",
+          "subject": "web: the conversation door is the primary action on /teach; the file door is clearly secondary (O-1)"
+        },
+        {
+          "commit": "11da601f9f13453fd3e364885cc4e07d38fb9bc4",
+          "author_date": "2026-09-04T07:52:53+00:00",
+          "committer_date": "2026-09-04T07:52:53+00:00",
+          "subject": "web: the language toggle is a header control in the same corner on every page (O-8)"
+        },
+        {
+          "commit": "e93368de66b8784fbfb06329ea9c8305dc403f28",
+          "author_date": "2026-09-04T07:49:26+00:00",
+          "committer_date": "2026-09-04T07:49:26+00:00",
+          "subject": "web: \"My datasets and lessons\" moves into the teach header (O-6)"
+        },
+        {
+          "commit": "06c1941eca88f164bf9e8ad1bf3e046074707f31",
+          "author_date": "2026-09-04T07:48:03+00:00",
+          "committer_date": "2026-09-04T07:48:03+00:00",
+          "subject": "web: the teach flow gets its own slim chrome (O-3)"
+        },
+        {
+          "commit": "15ce37b795ceb873670261d318e945a6393c5035",
+          "author_date": "2026-09-02T07:36:26+00:00",
+          "committer_date": "2026-09-02T07:36:26+00:00",
+          "subject": "web: the marketplace card says a challenged knowledge is challenged"
+        },
+        {
+          "commit": "cfd91855c6606107d1ed70a767608db188956ce1",
+          "author_date": "2026-09-02T07:34:46+00:00",
+          "committer_date": "2026-09-02T07:34:46+00:00",
+          "subject": "web: punctuation between the challenge reason and the sentence after it"
+        },
+        {
+          "commit": "dbfd809024789c9e7797a84f16f5e637f8853143",
+          "author_date": "2026-09-02T07:29:56+00:00",
+          "committer_date": "2026-09-02T07:29:56+00:00",
+          "subject": "web: no green \"Verified\" badge beside a \"Re-verification requested\" chip"
+        },
+        {
+          "commit": "1795f2a682c1aed74fb67a11e5e6a3ce6256621d",
+          "author_date": "2026-09-02T07:09:13+00:00",
+          "committer_date": "2026-09-02T07:09:13+00:00",
+          "subject": "web: the deposit that never existed, the challenge nobody was told about, and the \"sealed\" answers"
+        },
+        {
+          "commit": "91b2d78989862990a240738429446311e0295317",
+          "author_date": "2026-09-02T04:10:36+00:00",
+          "committer_date": "2026-09-02T04:10:36+00:00",
+          "subject": "merge main into teachable-ui: one codebase with both doors and the runtime guard"
+        },
+        {
+          "commit": "1f53056944edf6f8783569941b253fea78429cb3",
+          "author_date": "2026-09-01T17:10:07+00:00",
+          "committer_date": "2026-09-01T17:10:07+00:00",
+          "subject": "ledger: say which part of the record you are looking at (the chain grew past 1,000)"
+        },
+        {
+          "commit": "f5fc5c6bceadc7bb081a22ae82c50aec56623422",
+          "author_date": "2026-09-01T16:51:13+00:00",
+          "committer_date": "2026-09-01T16:51:13+00:00",
+          "subject": "benchmarks: the file docstring said the old, untrue thing about the page"
+        },
+        {
+          "commit": "10aad8d81a1ebd012aecedfe90591b981cbcf8bf",
+          "author_date": "2026-09-01T16:00:15+00:00",
+          "committer_date": "2026-09-01T16:00:15+00:00",
+          "subject": "explore/benchmarks: For sale is not Verified, and a score belongs to its question set (findings 29, 56, 24)"
+        },
+        {
+          "commit": "ccf00750cce6237a4a866b260fb074ca76fd2456",
+          "author_date": "2026-09-01T16:00:02+00:00",
+          "committer_date": "2026-09-01T16:00:02+00:00",
+          "subject": "detail: show the before/after the verifiers measured, and stop promising a check nobody ran (findings 28, 55)"
+        },
+        {
+          "commit": "9d3f2640ecf1c285b85cc33fa16fc86cd04859e0",
+          "author_date": "2026-09-01T15:43:50+00:00",
+          "committer_date": "2026-09-01T15:43:50+00:00",
+          "subject": "teach: a simulated check says it is simulated, and a demo run stops calling itself a lesson (findings 7, 6)"
+        },
+        {
+          "commit": "cebe5b996be115bcb3d35eb95aaa36a881dcc701",
+          "author_date": "2026-09-01T15:25:31+00:00",
+          "committer_date": "2026-09-01T15:25:31+00:00",
+          "subject": "chat: one conversation per column, so the live test stops disproving itself (finding 1)"
+        },
+        {
+          "commit": "3ba422deae974d729717aefd7be0742392310573",
+          "author_date": "2026-09-01T13:46:00+00:00",
+          "committer_date": "2026-09-01T13:46:00+00:00",
+          "subject": "explore/api: a readable separator on the hidden-versions line, and quota_reset in the API reference"
+        },
+        {
+          "commit": "f06d41d612f261bd8987c3bb700d82b3cff2f0cd",
+          "author_date": "2026-09-01T13:19:16+00:00",
+          "committer_date": "2026-09-01T13:19:16+00:00",
+          "subject": "chat: no Retry where retrying does nothing \u2014 offer the way out instead (finding 22)"
+        },
+        {
+          "commit": "9bd78831b8789faa2ca0e109114911677d22d61d",
+          "author_date": "2026-09-01T13:19:06+00:00",
+          "committer_date": "2026-09-01T13:19:06+00:00",
+          "subject": "chat: render the expected answer as text, not as a tooltip (finding 20)"
+        },
+        {
+          "commit": "19de62ee74b0bfd1b59ae8054806761dd845e54b",
+          "author_date": "2026-09-01T13:18:42+00:00",
+          "committer_date": "2026-09-01T13:18:42+00:00",
+          "subject": "explore: hide superseded knowledge by default, and rank the marketplace by status first (findings 26, 27)"
+        },
+        {
+          "commit": "41329b3a05a6f33b605300229f312b2b75434ac3",
+          "author_date": "2026-09-01T13:18:25+00:00",
+          "committer_date": "2026-09-01T13:18:25+00:00",
+          "subject": "web: print accuracy against the denominator the verifiers actually used (finding 2)"
+        },
+        {
+          "commit": "78f205a993b15574678dd30192a7723e519bb1d1",
+          "author_date": "2026-09-01T13:18:06+00:00",
+          "committer_date": "2026-09-01T13:18:06+00:00",
+          "subject": "web: SUPERSEDED gets the warning palette and names its successor (finding 97)"
+        },
+        {
+          "commit": "e326d8a8864e311d7d0f98a2768998aed3d677e0",
+          "author_date": "2026-09-01T13:17:44+00:00",
+          "committer_date": "2026-09-01T13:17:44+00:00",
+          "subject": "web: Hangul in every font stack, and a title and lang that follow the language (findings 84, 85)"
+        },
+        {
+          "commit": "4b0584befc3d1b2e492e00b2734c4da8e2be61a2",
+          "author_date": "2026-09-01T13:17:09+00:00",
+          "committer_date": "2026-09-01T13:17:09+00:00",
+          "subject": "web: stop the ledger badge painting over the first nav link (finding 12)"
+        },
+        {
+          "commit": "8ed95a1c061080cd39b9533e773bdeda3c6f69c6",
+          "author_date": "2026-09-01T11:40:46+00:00",
+          "committer_date": "2026-09-01T11:40:46+00:00",
+          "subject": "chat: name the real holder of the shared model, and prove the three reported defects on the live cluster"
+        },
+        {
+          "commit": "4901ac38df3bc171828344cb5a454046d84d7cc1",
+          "author_date": "2026-09-01T10:09:08+00:00",
+          "committer_date": "2026-09-01T10:09:08+00:00",
+          "subject": "Merge branch 'main' into runtime-guard"
+        },
+        {
+          "commit": "d998c248f10e6879e236f2eaf4fb17f542bf494c",
+          "author_date": "2026-09-01T10:03:03+00:00",
+          "committer_date": "2026-09-01T10:03:03+00:00",
+          "subject": "chat: stop the loop guard from cutting correct answers, and unblock the composer at 360 px"
+        },
+        {
+          "commit": "c9fa3a167c0bac1db1b36875f45e53e7400adcdb",
+          "author_date": "2026-09-01T09:11:34+00:00",
+          "committer_date": "2026-09-01T09:11:34+00:00",
+          "subject": "chat: guard runaway answers, send the trained prompt, and make the queue visible"
+        },
+        {
+          "commit": "81171a91121ba18632838ed585a56b67e4ee18c4",
+          "author_date": "2026-09-01T08:48:38+00:00",
+          "committer_date": "2026-09-01T08:48:38+00:00",
+          "subject": "teachable: fix what the dataset scenarios found (AZ-125..AZ-220)"
+        },
+        {
+          "commit": "5e276a3b3ba4c57f56521dfbd092e43a6cd70ab8",
+          "author_date": "2026-09-01T06:14:02+00:00",
+          "committer_date": "2026-09-01T06:14:02+00:00",
+          "subject": "fix(web/node): stop claiming a lesson was faked, unblock Docs at 360 px, English plurals, named select listboxes"
+        },
+        {
+          "commit": "9063cce883f034a992fb67cb766e678d473d9692",
+          "author_date": "2026-09-01T05:14:31+00:00",
+          "committer_date": "2026-09-01T05:14:31+00:00",
+          "subject": "teachable PR-D4: smoke both doors and fix what the walk broke open"
+        },
+        {
+          "commit": "d6ee43707cb460368b2f44283efa751f66653862",
+          "author_date": "2026-09-01T03:53:58+00:00",
+          "committer_date": "2026-09-01T03:53:58+00:00",
+          "subject": "teachable PR-D3: the file door from the terminal (CLI + docs)"
+        },
+        {
+          "commit": "3ac33cce95f2e0ef71b97b560a3bf636b2350464",
+          "author_date": "2026-09-01T03:29:03+00:00",
+          "committer_date": "2026-09-01T03:29:03+00:00",
+          "subject": "teachable PR-D2: the Teachable-NLP-style teach UI (upload \u2192 preview \u2192 train \u2192 result)"
+        },
+        {
+          "commit": "3285b6fb689fe1332a51354e64182c6f7b2da9ae",
+          "author_date": "2026-09-01T01:01:56+00:00",
+          "committer_date": "2026-09-01T01:01:56+00:00",
+          "subject": "fix: a model outage must not destroy a lesson or log a console error"
+        },
+        {
+          "commit": "d31fce3c9bccc503cea8f9bfd3718e473fdaa61d",
+          "author_date": "2026-08-31T15:48:04+00:00",
+          "committer_date": "2026-08-31T15:48:04+00:00",
+          "subject": "merge main (AZ-067 real restart, private throwaway clusters, verifier.auto) into teach-mode"
+        },
+        {
+          "commit": "3d7da8000d7d5bb9ec610060aa4086432befdca1",
+          "author_date": "2026-08-31T15:32:45+00:00",
+          "committer_date": "2026-08-31T15:32:45+00:00",
+          "subject": "e2e/final: all 100 scenarios green \u2014 real outage/restart coverage on private nodes, visitor quota isolation, lock peek after send"
+        },
+        {
+          "commit": "9920833398f93d52fb05ff2b2bfd9033f6c291b9",
+          "author_date": "2026-08-31T14:31:28+00:00",
+          "committer_date": "2026-08-31T14:31:28+00:00",
+          "subject": "merge main (scenario round-2 fixes) into teach-mode"
+        },
+        {
+          "commit": "6febe552d3dbd3bb640195eb56485c9b11cf6747",
+          "author_date": "2026-08-31T14:10:00+00:00",
+          "committer_date": "2026-08-31T14:10:00+00:00",
+          "subject": "teach fix(verify): web signs the request-bound v2 x-ngram-auth (fetchFn over the real Request: method, path+query, sha256 body; node address from /api/info; legacy only as fallback) and signs POST /api/chat so Try it now works on a private draft; Market.chat checks draft visibility before the runtime (404 not 500 for non-owners while vLLM is down); lesson card scrolls into view on status change (READY was hidden above an auto-scrolled transcript); OpenAPI v2/owner-only text; web v2 cross-builder test; spec CHANGES verification pass (unit/e2e/security/browser-walk results)"
+        },
+        {
+          "commit": "00e289f5fab55bfe11708651a8e27b83763d36da",
+          "author_date": "2026-08-31T13:22:14+00:00",
+          "committer_date": "2026-08-31T13:22:14+00:00",
+          "subject": "teach fix(web): review-2 UX / copy / i18n fixes \u2014 header wraps at 360 px (no horizontal scroll on /chat, /signing, /new-patch, /explore, /teacher, dashboard; en + ko), lesson basket heads the picker column when the node teaches and scrolls into view on ?teach=1 / Add to lesson, lesson-card status pill via i18n (cardStatusKey \u2192 teach.mine.status.*, new \"Checking\"), \u00a78.4 durations (no \"1\u20131 min\": \"under a minute\" / \"about N min\" / range, card ETA only with \u2265 3 samples, stub says \"Starting\u2026\", pre-flight copy drops \"under 30 seconds\" and maps a runtime outage to teach.pre.err_runtime), KeepPrivateSheet (minmax(0,1fr) grid so the hardware notice is readable on phones, commands = the node's RUN-LOCALLY.md fetched via readme_url and shown in its own scrolling box, \"Run it on my own machine\" radio no longer POSTs /save \u2014 links are minted when the hardware box is ticked, model falls back to runtime.model / info.node.model), FAILED card = friendly sentence (restart / OOM mapped) + collapsed technical details, localized elapsed()/dates (utils/useFormat: useElapsed + useDateTime; Your knowledge, teacher page, link expiry), stub honesty (\"It learned it \u2014 n of m answers correct.\" + \"Demo node \u2014 these checks were simulated, not measured in a live model.\"), \"Teaching anonymously \u00b7 0x\u2026\" chip, teacher \"Sales\" tile label, earnings scheme fallback copy, grammatical Korean suggest-phrasing templates, lesson card inside the transcript so it never overlaps the empty state; e2e: passwordFor() honours AINIZE_PASS / AINIZE_PASS_T and knows node-t, AZ-106 accepts the stub wording; verification script results/review/review2.mjs + review2-*.png (1280/360, en/ko); spec CHANGES \"Review fixes \u2014 web\"."
+        },
+        {
+          "commit": "d73aee02aabbf0a7c932cdb53d4c04bee957416a",
+          "author_date": "2026-08-31T12:21:59+00:00",
+          "committer_date": "2026-08-31T12:21:59+00:00",
+          "subject": "teach PR-8: CLI parity + docs + demo config \u2014 `ainize teach status <node-url | lesson-url | job-id | teacher-page | address> [--key --key-file]` (policy / owner vs status-only lesson view / data-provider page, signs x-ngram-auth like the web key), `ainize patch import <lesson.npz> --recipe recipe.json` (private DRAFT via createDraft keepInPlace, benchmark + model + id + credit-only contributor from the recipe, sha256 check, origin teach, no announce / no ledger record), `publish --contributor addr:name:share` (declared data providers, \u2264 4, \u03a3 \u2264 1); node: PATCH /api/patches/:id no longer wipes contributors on unrelated updates; openapi CLI_REFERENCE teach one-liner + \"Teach mode\" group + DocsPage fourth card (en+ko); deploy/README docker-group + GPU-allocation section; scripts/cluster.mjs node-a teach.enabled/publish auto with a marked TEACH_BACKEND stub\u2192gradient switch; README terminal lines; AZ-121 scenario rewritten (md/html re-rendered); CLI tests +3 (import, teach status, --contributor) against an in-process stub node; spec PR-8 CHANGES note incl. the node-t \u2192 node-u round-trip"
+        },
+        {
+          "commit": "509db97c114aa007accfaf447f74cb9514e8706f",
+          "author_date": "2026-08-31T11:29:25+00:00",
+          "committer_date": "2026-08-31T11:29:25+00:00",
+          "subject": "teach PR-7: landing creator card (teach copy, CTA \u2192 /chat?teach=1, operator register link), landing/header Teach item, sign-in visitor notice + subtitle, /new-patch two-way pre-screen when signed out (NewPatchGate), Register under the operator menu, My knowledge Teaching tab (settings \u2192 PATCH /api/me/teach/policy, review queue approve/decline/cancel, contributors hide/block key/IP + bans, payouts owed/paid/failed + retry), Account \u2192 Teaching link, operator RTK endpoints + types, i18n en+ko; node: updateTeachPolicy no longer wipes untouched kv overrides (+ test); e2e web-teach-operator.spec.ts (AZ-011/028/030, settings, AZ-110/116/113) green on the stub dev node, web-teach.spec.ts titles renumbered; docs: ux-test-scenarios.json AZ-011/028/030/016/040 (+007/066/083 wording) updated and AZ-101\u2026AZ-122 appended, render script now generates the .md too, spec PR-7 CHANGES note, README visitor teach section + local-run link"
+        },
+        {
+          "commit": "c64097cbf62140afc9f5d2a273c6d77b99e83c5f",
+          "author_date": "2026-08-31T10:59:47+00:00",
+          "committer_date": "2026-08-31T10:59:47+00:00",
+          "subject": "teach PR-6: web teach flow \u2014 browser teaching key (@noble secp256k1 + keccak, byte-identical to ain-util; cross-lib test vs core verifyMessage / node verifyAuthHeader), TeachDrawer / LessonBasket / CreditSheet / PreflightList / LessonCard (5 s polling) / PublishSheet (signed claim) / KeepPrivateSheet (token downloads + RUN-LOCALLY.md) / MyKnowledgePanel, TeacherPage /teacher/:address, ChatPage ?teach=1 / ?lesson= / ?mine=1 + sticky card, Taught-by chips on PatchPage + list items, header Teach item, routes, i18n teach.ts (en+ko); node teach.stubOffline (simulated preflight/CHECKING for stub nodes without a model server) + unit test; Playwright web-teach.spec.ts AZ-101\u2026AZ-109 green against the stub dev node"
+        },
+        {
+          "commit": "3f7e1c27efd70cb208eae5df066c88911360e98c",
+          "author_date": "2026-08-31T10:57:27+00:00",
+          "committer_date": "2026-08-31T10:57:27+00:00",
+          "subject": "web: visitor never sees Manage, Back lands at the top, exact field labels, revenue/receipt/score copy, account peers poll"
+        },
+        {
+          "commit": "1c6f792000f1bb311f28e68b396c5980fef274a0",
+          "author_date": "2026-08-31T10:24:51+00:00",
+          "committer_date": "2026-08-31T10:24:51+00:00",
+          "subject": "teach PR-2: node payouts table + earnings \u2014 settlePayment writes a payouts row per non-self royalty address before the AIN transfer (pending \u2192 paid tx_hash / failed last_error), 60-s retry timer (max 20 attempts) in server.ts, GET /api/me/payouts?status= + POST /api/me/payouts/:id/retry, /api/teacher/:address reconciles owed vs paid, wallet + CLI payouts, openapi, unit tests with a fake wallet"
+        },
+        {
+          "commit": "eb68a2681c16085fddb20042d1f67fe4766566ad",
+          "author_date": "2026-08-31T08:04:12+00:00",
+          "committer_date": "2026-08-31T08:04:12+00:00",
+          "subject": "web: logout rests on / even on a cold cache (AZ-088)"
+        },
+        {
+          "commit": "50fee690e5a6b7422860849166d391b1d015ee8a",
+          "author_date": "2026-08-31T07:57:30+00:00",
+          "committer_date": "2026-08-31T07:57:30+00:00",
+          "subject": "web: sign-out aware route guards so Log out rests on the landing page (AZ-088)"
+        },
+        {
+          "commit": "f1a9e5ef178b99d306356584b86cda3d85a72e24",
+          "author_date": "2026-08-31T07:54:09+00:00",
+          "committer_date": "2026-08-31T07:54:09+00:00",
+          "subject": "fix: draft/test-anchor leaks, agent budget/follow-latest flags, drive --no-open, 0 AIN message, mobile header, logout landing"
+        },
+        {
+          "commit": "443e73ecc104e041e29407b5759b63e1b11c58d9",
+          "author_date": "2026-08-31T07:36:26+00:00",
+          "committer_date": "2026-08-31T07:36:26+00:00",
+          "subject": "teach PR-3: ChatMode multi-knowledge (patch_ids 1..3) + contamination banner"
+        },
+        {
+          "commit": "61359b6d489913a0f7c726a625ae3e9dc51a1ef5",
+          "author_date": "2026-08-31T07:11:13+00:00",
+          "committer_date": "2026-08-31T07:11:13+00:00",
+          "subject": "teach PR-1: core contributors + two-pass royalty, teach config, catalog contributor filter"
+        },
+        {
+          "commit": "cf72954c88a3356a81f1f30adae3b3a087011f14",
+          "author_date": "2026-08-31T06:22:05+00:00",
+          "committer_date": "2026-08-31T06:22:05+00:00",
+          "subject": "web: load Noto Sans KR so Korean text renders on systems without CJK fonts"
+        },
+        {
+          "commit": "846f557ba78744611ea033cc94a4a95432df5ec7",
+          "author_date": "2026-08-31T05:16:32+00:00",
+          "committer_date": "2026-08-31T05:16:32+00:00",
+          "subject": "web: logs timeline shows accuracy only for executed verifications"
+        },
+        {
+          "commit": "c50bf877cedef8c0eac54d8c7a6ff3e284205c50",
+          "author_date": "2026-08-31T05:13:14+00:00",
+          "committer_date": "2026-08-31T05:13:14+00:00",
+          "subject": "Audit fixes: seed defaults real-only, agent --max-price/--follow-latest guard, 17 missing OpenAPI ops, test-visibility anchors visible to author/verifiers, chat history cap 24 + restore-failure logging, precise verifying counts, hash-only score guard"
+        },
+        {
+          "commit": "6fa309f79becce86445d0f93f2a47ae2cee89948",
+          "author_date": "2026-08-31T05:07:48+00:00",
+          "committer_date": "2026-08-31T05:07:48+00:00",
+          "subject": "Ainize is English-first: default locale en, English OpenAPI/CLI reference, English seed descriptions, agent/CLI output, README"
+        },
+        {
+          "commit": "e43c91a2e1f1ffd96f745d05bc100019d2efd4f1",
+          "author_date": "2026-08-31T04:52:46+00:00",
+          "committer_date": "2026-08-31T04:52:46+00:00",
+          "subject": "Web: plain-language copy overhaul (ko/en i18n), ChatMode live-test page, landing audience split + Ainize story + one-line commands, real settings, docs polish"
+        },
+        {
+          "commit": "b1826f6c10016e9011953b1e110a6c932aeb7187",
+          "author_date": "2026-08-31T04:21:36+00:00",
+          "committer_date": "2026-08-31T04:21:36+00:00",
+          "subject": "Docs & API page (OpenAPI + CLI reference, one-line commands), Ainize README"
+        },
+        {
+          "commit": "e2991406ec330caa5b4aa6f1229ff69a21fd25a8",
+          "author_date": "2026-08-31T04:18:44+00:00",
+          "committer_date": "2026-08-31T04:18:44+00:00",
+          "subject": "Real-data-only seed (Qwen3.8 training artifacts as version lineage), executed-benchmark quorum, on-chain access receipts, test-visibility anchors, OpenAPI + CLI reference endpoint, pidfile cluster restart"
+        },
+        {
+          "commit": "2dacce0a508ec350fd50db0f43e93036c2514bcd",
+          "author_date": "2026-08-31T04:09:54+00:00",
+          "committer_date": "2026-08-31T04:09:54+00:00",
+          "subject": "Ainize branding + i18n glossary scaffold, shared runtime lock, ChatMode API, persisted operator settings"
+        },
+        {
+          "commit": "2b66d49d34a2c5e1a5be8ea383361879f5358547",
+          "author_date": "2026-08-31T03:15:54+00:00",
+          "committer_date": "2026-08-31T03:15:54+00:00",
+          "subject": "Web pages (public + operator), aindrive drive module, AIN array codec + app staking, AIN e2e test, cluster script, README"
+        },
+        {
+          "commit": "6dd247a89b38ebe55c0b5398a41618390f251306",
+          "author_date": "2026-08-31T03:04:24+00:00",
+          "committer_date": "2026-08-31T03:04:24+00:00",
+          "subject": "Scaffold knowledge marketplace: core ledger (local DAG + AIN via ain-js), P2P node with x402 trading, web foundation (Ainize design)"
+        }
+      ]
+    },
+    "ainize-bench": {
+      "head": "75dd595a745c09114cf7481f4f3f51b8e3c50715",
+      "commits": [
+        {
+          "commit": "75dd595a745c09114cf7481f4f3f51b8e3c50715",
+          "author_date": "2026-09-13T13:08:26+00:00",
+          "committer_date": "2026-09-13T13:08:26+00:00",
+          "subject": "bench \u00a74: the arm-C training run, and why it produced no arm C"
+        },
+        {
+          "commit": "94c74c1a473c7de04ed84c36710fe83bf8646394",
+          "author_date": "2026-09-13T03:24:14+00:00",
+          "committer_date": "2026-09-13T03:24:14+00:00",
+          "subject": "score: an unpacked transcripts/ is a cache, so check it against the archive"
+        },
+        {
+          "commit": "a83986d02c40d37acf576b4bea9048dd15da7935",
+          "author_date": "2026-09-13T03:21:28+00:00",
+          "committer_date": "2026-09-13T03:21:28+00:00",
+          "subject": ".env.example: name the key the pull pipeline needs"
+        },
+        {
+          "commit": "c55aaf1d5fedacd4878f50adbb1755c103d83904",
+          "author_date": "2026-09-13T03:13:37+00:00",
+          "committer_date": "2026-09-13T03:13:58+00:00",
+          "subject": "r1 has a C arm: the ordering this protocol exists to test, measured at last"
+        },
+        {
+          "commit": "0df55bd94092cef1750939742597e9277257b074",
+          "author_date": "2026-09-12T07:43:14+00:00",
+          "committer_date": "2026-09-12T07:43:14+00:00",
+          "subject": "bench \u00a74: where arm C's patch comes from, and the three faults training it found"
+        },
+        {
+          "commit": "ce9c647614981e3a53922670ea41732beccfc1e7",
+          "author_date": "2026-09-10T13:19:29-07:00",
+          "committer_date": "2026-09-10T13:19:29-07:00",
+          "subject": "Merge pull request #1 from ainblockchain/feat/cert-kpi-m5-m6"
+        },
+        {
+          "commit": "07493eb846e093461a6361acf6b395f9cd791b67",
+          "author_date": "2026-09-10T20:14:57+00:00",
+          "committer_date": "2026-09-10T20:14:57+00:00",
+          "subject": "Add cert/: certification harness for metrics 5-6 (100 knowledge patches, 100 DART datasets)"
+        },
+        {
+          "commit": "9ed4e64e961fae0dfe4398743917f53e6ac885d8",
+          "author_date": "2026-09-07T07:51:00+00:00",
+          "committer_date": "2026-09-07T07:51:00+00:00",
+          "subject": "one name: @ngram/* becomes @ainize/*, and the historical `ngram` binary is withdrawn"
+        },
+        {
+          "commit": "ab325d8cfcc4b56a2686ffceeb230c3902a6b18a",
+          "author_date": "2026-09-07T07:45:19+00:00",
+          "committer_date": "2026-09-07T07:45:19+00:00",
+          "subject": "bench: transcripts are committed as one archive per run, not 2,600 loose files"
+        },
+        {
+          "commit": "1983eddfa514c6e57fe2b0d41389e83f8a6118c0",
+          "author_date": "2026-09-07T07:43:52+00:00",
+          "committer_date": "2026-09-07T07:43:52+00:00",
+          "subject": "research: which standardized vertical does the base model actually get wrong"
+        },
+        {
+          "commit": "61baf0fdca0d3d586bb55f434025f79391d6f8d0",
+          "author_date": "2026-09-07T02:51:55+00:00",
+          "committer_date": "2026-09-07T02:51:55+00:00",
+          "subject": "graph: an arm that needs an EMPTY table never checked that the table was empty"
+        },
+        {
+          "commit": "0451647a166bbcb7c8bae0761ac3e3dbf2688847",
+          "author_date": "2026-09-05T12:05:48+00:00",
+          "committer_date": "2026-09-05T12:05:48+00:00",
+          "subject": "teach on top: run the trainer's real path \u2014 it had never been executed, and it did not work"
+        },
+        {
+          "commit": "5d1105fcf2396af2e53a3de0e5a91827d77e62d7",
+          "author_date": "2026-09-05T11:18:53+00:00",
+          "committer_date": "2026-09-05T11:19:47+00:00",
+          "subject": "teach on top: the trainer loads the base before step 1 and exports a delta over it (L3)"
+        },
+        {
+          "commit": "bb3dce6bce4a968b931a79f7c5540637665fc7aa",
+          "author_date": "2026-09-05T10:33:58+00:00",
+          "committer_date": "2026-09-05T10:33:58+00:00",
+          "subject": "graph: \u00a72 claimed per-chunk A/C pairing the runner never implemented"
+        },
+        {
+          "commit": "aa7fe28928df223b7133ada4f1040c3f5a98057b",
+          "author_date": "2026-09-05T10:29:50+00:00",
+          "committer_date": "2026-09-05T10:29:50+00:00",
+          "subject": "graph: the bridge FAILS \u2014 the engine abstains more after a restart, and arm A must be re-run beside C and D"
+        },
+        {
+          "commit": "2eda350cd9d6b81b35073fa3e11e67a1e2b3e37f",
+          "author_date": "2026-09-05T10:22:56+00:00",
+          "committer_date": "2026-09-05T10:22:56+00:00",
+          "subject": "graph: arm C's provenance verifies \u2014 and the recipe names a path only the container can see"
+        },
+        {
+          "commit": "d6b47a2082a8fe8a176210cf983eb92280a259bb",
+          "author_date": "2026-09-04T23:33:09+00:00",
+          "committer_date": "2026-09-04T23:33:09+00:00",
+          "subject": "graph: bind the patch to its corpus by canonical hash, and refuse a mid-run checkpoint"
+        },
+        {
+          "commit": "0cf6b5bcca5ebce895d3d86c36b47bee0d1f73d1",
+          "author_date": "2026-09-04T23:30:59+00:00",
+          "committer_date": "2026-09-04T23:30:59+00:00",
+          "subject": "graph: the stub rule was checking a node config flag \u2014 replace it with the recipe, bound to the artefact"
+        },
+        {
+          "commit": "268b20f116ad0b21293d93a7ef558f0288b40302",
+          "author_date": "2026-09-04T16:41:49+00:00",
+          "committer_date": "2026-09-04T16:41:49+00:00",
+          "subject": "graph: record what arm B measured \u2014 a bimodal budget, a sevenfold instability, and a rule we left wrong"
+        },
+        {
+          "commit": "26ca297a094e3f40de58ae5e9aa86402eee91d30",
+          "author_date": "2026-09-04T16:39:13+00:00",
+          "committer_date": "2026-09-04T16:39:13+00:00",
+          "subject": "graph: the attribution separates cleanly and the pre-registered rule still refuses to claim it"
+        },
+        {
+          "commit": "920d473a5fc2a5154723e26235f12e083b983686",
+          "author_date": "2026-09-04T16:38:42+00:00",
+          "committer_date": "2026-09-04T16:38:42+00:00",
+          "subject": "graph: d = 0.0360 on the certified arm A \u2014 and arm B is seven times less stable"
+        },
+        {
+          "commit": "8be9724b065d89092c59e362123d45aa35a7ed98",
+          "author_date": "2026-09-04T12:48:31+00:00",
+          "committer_date": "2026-09-04T12:48:31+00:00",
+          "subject": "graph: the counter check was reading 1.1081195 where the counter said 11,081,195"
+        },
+        {
+          "commit": "d424a986cb5bf09c40f69a8de686bb13676cdc14",
+          "author_date": "2026-09-04T12:44:29+00:00",
+          "committer_date": "2026-09-04T12:44:29+00:00",
+          "subject": "graph: sample the engine between ITEMS, because between chunks was too coarse to see what happened"
+        },
+        {
+          "commit": "35edd406ead6f6768e3eead15d96db64f2a7b03d",
+          "author_date": "2026-09-04T12:09:57+00:00",
+          "committer_date": "2026-09-04T12:09:57+00:00",
+          "subject": "graph: derive turns from calls, record turn usage, and bound what n=16 can claim"
+        },
+        {
+          "commit": "3136c5dbb3e818eaa09b6f3f15720d9d40e08fb9",
+          "author_date": "2026-09-04T12:08:37+00:00",
+          "committer_date": "2026-09-04T12:08:37+00:00",
+          "subject": "graph: the budget rises to 20 calls / 240 s \u2014 the one raise the rule allows"
+        },
+        {
+          "commit": "df14caba22478d4a4598f16636950bb617862139",
+          "author_date": "2026-09-04T11:59:17+00:00",
+          "committer_date": "2026-09-04T11:59:17+00:00",
+          "subject": "graph: pin the prompt a run measures, instead of remembering which one it used"
+        },
+        {
+          "commit": "0c46b3ffd03de5794d5cad581c1390009ad67603",
+          "author_date": "2026-09-04T11:58:10+00:00",
+          "committer_date": "2026-09-04T11:58:10+00:00",
+          "subject": "graph: say which 0x is which \u2014 9% of arm B's calls went to finding out"
+        },
+        {
+          "commit": "b0ec611043c6349f412e66588d35bff773530701",
+          "author_date": "2026-09-04T11:56:48+00:00",
+          "committer_date": "2026-09-04T11:56:48+00:00",
+          "subject": "graph: put the subgraph id first in the list, because the model was using the label as the id"
+        },
+        {
+          "commit": "cdcb06cf67dcc31c89b0dfc5b7faad43ccf30b87",
+          "author_date": "2026-09-04T11:55:17+00:00",
+          "committer_date": "2026-09-04T11:55:17+00:00",
+          "subject": "graph: the ordering is decided on E1 by McNemar, not on E1+E2 by a 5-point margin"
+        },
+        {
+          "commit": "0e5b4661ebb14be2e74129ad89025d35c2eda70a",
+          "author_date": "2026-09-04T11:51:58+00:00",
+          "committer_date": "2026-09-04T11:51:58+00:00",
+          "subject": "graph: resolve the three README ambiguities the scorer had to guess at"
+        },
+        {
+          "commit": "03c8a4cab1f211c3195269a251bb3d8d38741326",
+          "author_date": "2026-09-04T11:48:47+00:00",
+          "committer_date": "2026-09-04T11:48:47+00:00",
+          "subject": "graph: \u00a76 says the cost of retrieval is reported first, so it is \u2014 and no comparison is quoted without its p"
+        },
+        {
+          "commit": "5e77080b680d35f020784b0c8242a62ef9845444",
+          "author_date": "2026-09-04T11:48:32+00:00",
+          "committer_date": "2026-09-04T11:48:32+00:00",
+          "subject": "graph: the worked example asked a vault for a field only markets have"
+        },
+        {
+          "commit": "f0e6d6f18ddf5c3234b95fee314b3c89cef8fa54",
+          "author_date": "2026-09-04T11:46:55+00:00",
+          "committer_date": "2026-09-04T11:46:55+00:00",
+          "subject": "graph: \u00a76.3's curve is drawn, not just computed \u2014 and an offline sibling over a different item set is not four cells"
+        },
+        {
+          "commit": "5f9414bb1f6f86c73525a256938bb6185b6b7e1a",
+          "author_date": "2026-09-04T11:46:28+00:00",
+          "committer_date": "2026-09-04T11:46:28+00:00",
+          "subject": "graph: fix the rule for changing the tool budget before re-measuring it"
+        },
+        {
+          "commit": "1952619b7078fe1418cc286b95d6d5c467b96acb",
+          "author_date": "2026-09-04T11:44:52+00:00",
+          "committer_date": "2026-09-04T11:44:52+00:00",
+          "subject": "graph: the prompt told the model one Messari schema covers everything, which is false"
+        },
+        {
+          "commit": "7e0891d5f166f76ee08bdfa9a4d68534529e27b6",
+          "author_date": "2026-09-04T11:41:24+00:00",
+          "committer_date": "2026-09-04T11:41:24+00:00",
+          "subject": "graph: the scorer under attack \u2014 a missing wall clock was averaged as zero, and N* was only half of \u00a76.3"
+        },
+        {
+          "commit": "7228797f3cb850dcf79797838c5bcbae56fed57c",
+          "author_date": "2026-09-04T11:26:35+00:00",
+          "committer_date": "2026-09-04T11:26:35+00:00",
+          "subject": "graph: the idle guard read zero eight times while the engine served 34 requests a minute"
+        },
+        {
+          "commit": "5d0a5fcab860e52426c4aebe776e6375977ae7c7",
+          "author_date": "2026-09-04T11:24:45+00:00",
+          "committer_date": "2026-09-04T11:24:45+00:00",
+          "subject": "graph: the deployment list header says subgraph ids, which is the word the whole failure was about"
+        },
+        {
+          "commit": "2df5c59320f0b951e9ccfca6634374891b287a0c",
+          "author_date": "2026-09-04T11:24:40+00:00",
+          "committer_date": "2026-09-04T11:24:40+00:00",
+          "subject": "bench: record finish_reason, and mark the tools smoke superseded rather than quotable"
+        },
+        {
+          "commit": "67ca823ac72f60f2314ac796e54b72abab5e896e",
+          "author_date": "2026-09-04T11:23:16+00:00",
+          "committer_date": "2026-09-04T11:23:16+00:00",
+          "subject": "mcp (marker): the server can read the lesson it just taught \u2014 diff is inside f8e8072"
+        },
+        {
+          "commit": "96c1b0026c86dc859cf4bf6a4f3ab5d6fe113e01",
+          "author_date": "2026-09-04T11:23:16+00:00",
+          "committer_date": "2026-09-04T11:23:16+00:00",
+          "subject": "graph: arm B was handed subgraph ids labelled as deployment ids, so every query failed"
+        },
+        {
+          "commit": "b5b740bebe290dc3c317cbb7465fff2790915464",
+          "author_date": "2026-09-04T11:22:16+00:00",
+          "committer_date": "2026-09-04T11:22:16+00:00",
+          "subject": "bench: a cell is only comparable to a cell that used the same system prompt, so record which one it used"
+        },
+        {
+          "commit": "f8e80729bf19e22630f3e0783e531ac235a36654",
+          "author_date": "2026-09-04T11:21:41+00:00",
+          "committer_date": "2026-09-04T11:21:41+00:00",
+          "subject": "graph: refuse to start on an engine somebody else is using, and record competing load"
+        },
+        {
+          "commit": "4abb2a36b8e93e4c3aec29ed1e28c09776821e7c",
+          "author_date": "2026-09-04T11:21:15+00:00",
+          "committer_date": "2026-09-04T11:21:15+00:00",
+          "subject": "bench: the other two cells of the side-effect table \u2014 and declaring tools moved an answer on the first try"
+        },
+        {
+          "commit": "df8a0835009a9faaa10cb18998d478059d975932",
+          "author_date": "2026-09-04T11:17:57+00:00",
+          "committer_date": "2026-09-04T11:17:57+00:00",
+          "subject": "graph: latency is the result, not a column beside accuracy \u2014 and N* is a curve, not a number"
+        },
+        {
+          "commit": "f62036fbb902428b2ad4acece261feeaf4be80e6",
+          "author_date": "2026-09-04T11:16:26+00:00",
+          "committer_date": "2026-09-04T11:16:26+00:00",
+          "subject": "graph: pre-register the attribution analysis while arm B has produced no number"
+        },
+        {
+          "commit": "9c2b9d53b9cd6f2896da2a9c1ea104bbdcfdd580",
+          "author_date": "2026-09-04T11:16:19+00:00",
+          "committer_date": "2026-09-04T11:16:19+00:00",
+          "subject": "bench: assert over the prompt file the runner actually reads"
+        },
+        {
+          "commit": "97883581f8039a42812af45cb4d8e9e9fba13719",
+          "author_date": "2026-09-04T11:14:44+00:00",
+          "committer_date": "2026-09-04T11:14:44+00:00",
+          "subject": "bench: the locality set \u2014 50 prompts, and one invocation that cannot compare across a restart"
+        },
+        {
+          "commit": "923f54b264fd0a17f563b4c58c98b50b18593eac",
+          "author_date": "2026-09-04T11:12:36+00:00",
+          "committer_date": "2026-09-04T11:12:36+00:00",
+          "subject": "graph: every one of arm A's disagreements is an abstain flip \u2014 7 of 7, not 6 of 7"
+        },
+        {
+          "commit": "9a173f61a3d4730996d45b41977d674e74c63901",
+          "author_date": "2026-09-04T11:11:32+00:00",
+          "committer_date": "2026-09-04T11:11:32+00:00",
+          "subject": "graph: \u00a73 and \u00a77 were still describing the 8k window as the blocker, and the tripwire has a skew of its own"
+        },
+        {
+          "commit": "c64620629475cd31165a1270a7129838bf0fbf2d",
+          "author_date": "2026-09-04T11:10:06+00:00",
+          "committer_date": "2026-09-04T11:10:06+00:00",
+          "subject": "graph: the tail arm D is supposed to cover \u2014 and the honest size of the fresh half of it"
+        },
+        {
+          "commit": "1714bd01a6cf4f78d575201f884ae755dd483464",
+          "author_date": "2026-09-04T11:08:44+00:00",
+          "committer_date": "2026-09-04T11:08:44+00:00",
+          "subject": "graph: d = 0.0280, and the bridge threshold is 0.0567 \u2014 committed before the bridge exists"
+        },
+        {
+          "commit": "df7fb9a4448d356a5d7ffe7d2a73f84f04f5a597",
+          "author_date": "2026-09-04T11:02:25+00:00",
+          "committer_date": "2026-09-04T11:02:25+00:00",
+          "subject": "graph: the threshold I just wrote was comparing against undefined"
+        },
+        {
+          "commit": "2f4fc2de1c0a69c39b491398faf0479af9ad1782",
+          "author_date": "2026-09-04T11:01:59+00:00",
+          "committer_date": "2026-09-04T11:01:59+00:00",
+          "subject": "graph: the bridge's threshold instrument, written while arm A is still running"
+        },
+        {
+          "commit": "4b77d2e970cd43d3a9a077042bae2ca3cf82171f",
+          "author_date": "2026-09-04T11:00:31+00:00",
+          "committer_date": "2026-09-04T11:00:31+00:00",
+          "subject": "graph: say which keying the pair count asserts, so \u00a71 and the test cannot drift apart"
+        },
+        {
+          "commit": "aa8b90a1682695e7e43dbe03a66161228257f753",
+          "author_date": "2026-09-04T10:58:49+00:00",
+          "committer_date": "2026-09-04T10:58:49+00:00",
+          "subject": "graph: no held-out item is answerable by reversal \u2014 measured, not assumed"
+        },
+        {
+          "commit": "c79d7289464a92f40049df522752618374e9c0bc",
+          "author_date": "2026-09-04T10:52:34+00:00",
+          "committer_date": "2026-09-04T10:52:34+00:00",
+          "subject": "bench: four ways a locality item can be pre-secured, and the instrument that sees each"
+        },
+        {
+          "commit": "6d95e4128337f5f05ea03dd6848b1ab12b67596c",
+          "author_date": "2026-09-04T10:48:48+00:00",
+          "committer_date": "2026-09-04T10:48:48+00:00",
+          "subject": "graph: the two charts \u00a78 names that the brief's list left out"
+        },
+        {
+          "commit": "026c31b2c61fe979224ce9f76ce7c5d8ed29f951",
+          "author_date": "2026-09-04T10:45:36+00:00",
+          "committer_date": "2026-09-04T10:45:36+00:00",
+          "subject": "graph: the charts \u2014 and the one-time knowledge load is plotted, not conceded"
+        },
+        {
+          "commit": "f02f990198bc19a3c2e8f432cd9f9b5ba6bf5c97",
+          "author_date": "2026-09-04T10:45:14+00:00",
+          "committer_date": "2026-09-04T10:45:14+00:00",
+          "subject": "bench: the control half of the locality set \u2014 30 prompts that must not move at all"
+        },
+        {
+          "commit": "567fb12c0506dc76a876bb01b2270365d3f35402",
+          "author_date": "2026-09-04T10:40:32+00:00",
+          "committer_date": "2026-09-04T10:40:32+00:00",
+          "subject": "graph: re-select the bridge forty, and bind the selection to the file it came from"
+        },
+        {
+          "commit": "3dfb64e46f2e2360e20091307bc88a5fa1b79377",
+          "author_date": "2026-09-04T10:39:17+00:00",
+          "committer_date": "2026-09-04T10:39:17+00:00",
+          "subject": "graph: the study was 80% one relation, so the sampler now stratifies by relation too"
+        },
+        {
+          "commit": "77a913f4c4aeb7056d1b87bd16bf6cf87c685c62",
+          "author_date": "2026-09-04T10:33:50+00:00",
+          "committer_date": "2026-09-04T10:33:50+00:00",
+          "subject": "bench: the near half of the locality set \u2014 20 prompts next door to the trainset, proved disjoint from it"
+        },
+        {
+          "commit": "a7954e30701030b51a98f80b8318d6f58382a983",
+          "author_date": "2026-09-04T10:28:16+00:00",
+          "committer_date": "2026-09-04T10:28:16+00:00",
+          "subject": "graph: the contrast set is trained on, so the locality set may not ask it"
+        },
+        {
+          "commit": "f3748a980c90386021e5428888be854806e5237a",
+          "author_date": "2026-09-04T10:19:13+00:00",
+          "committer_date": "2026-09-04T10:19:13+00:00",
+          "subject": "graph: the bridge control, with both of its parameters fixed before any delta is visible"
+        },
+        {
+          "commit": "bb5ed63ff65c0db29150b86d48e10a5d94b4b9e1",
+          "author_date": "2026-09-04T10:16:45+00:00",
+          "committer_date": "2026-09-04T10:16:45+00:00",
+          "subject": "graph: the scorer \u2014 an overflowed window is a miss, and every miss names its channel"
+        },
+        {
+          "commit": "f9466609b509aec9301a303fe35a78f94fb1f3d7",
+          "author_date": "2026-09-04T10:02:53+00:00",
+          "committer_date": "2026-09-04T10:02:53+00:00",
+          "subject": "graph: the run records what was serving it, and says so if that changed underneath"
+        },
+        {
+          "commit": "95e5c2f9be69cd31a0e58a4944be4574aa431412",
+          "author_date": "2026-09-04T09:49:42+00:00",
+          "committer_date": "2026-09-04T09:49:42+00:00",
+          "subject": "graph: the health write-back maps .sources and keeps the document around it"
+        },
+        {
+          "commit": "4c0ae09bc44901f30f70a37ae7ea52c6b5fb7f74",
+          "author_date": "2026-09-04T09:24:53+00:00",
+          "committer_date": "2026-09-04T09:24:53+00:00",
+          "subject": "graph: fix an SSE/POST race that killed the runner, and record that arm B is context-blocked at 8k"
+        },
+        {
+          "commit": "4bcf0714c8a2a6e9d3bd07f06f1602f86c875f30",
+          "author_date": "2026-09-04T09:20:19+00:00",
+          "committer_date": "2026-09-04T09:20:19+00:00",
+          "subject": "graph: arm B is told the fifteen ids in its prompt can be queried directly"
+        },
+        {
+          "commit": "f959f0b3b248bd5d4aa6c78bfebbc5dd47de2d2c",
+          "author_date": "2026-09-04T09:19:48+00:00",
+          "committer_date": "2026-09-04T09:19:48+00:00",
+          "subject": "graph: two ways a question could answer itself, and a study that is 250 items rather than 39,789"
+        },
+        {
+          "commit": "68b893ac86ae76cfbda05749fcb6c6b066ef0032",
+          "author_date": "2026-09-04T09:12:44+00:00",
+          "committer_date": "2026-09-04T09:12:44+00:00",
+          "subject": "graph: arm B is handed only the deployments that were live, and every arm reports the same evidence shape"
+        },
+        {
+          "commit": "2aaef9e9be08c314b91f0a7628e492d1d78e919f",
+          "author_date": "2026-09-04T09:10:03+00:00",
+          "committer_date": "2026-09-04T09:10:03+00:00",
+          "subject": "graph: the pull writes the health table back onto sources.json"
+        },
+        {
+          "commit": "52bf36b0474fecc7ea114366d4a3491fae5da3ec",
+          "author_date": "2026-09-04T09:08:26+00:00",
+          "committer_date": "2026-09-04T09:08:26+00:00",
+          "subject": "graph: every deployment a fair query could have targeted, not just the one the answer came from"
+        },
+        {
+          "commit": "73475f7817e03f1ca764ecb5485c568b64cbf54e",
+          "author_date": "2026-09-04T09:06:38+00:00",
+          "committer_date": "2026-09-04T09:06:38+00:00",
+          "subject": "graph: the four-arm runner, and two measurement bugs found by running it instead of reasoning about it"
+        },
+        {
+          "commit": "7a0eafec4141e16387ff62512613060da83008d1",
+          "author_date": "2026-09-04T08:58:33+00:00",
+          "committer_date": "2026-09-04T08:58:33+00:00",
+          "subject": "graph: the fact pipeline \u2014 live pull, sanity-filtered facts, and a question generator whose split is fixed before any model runs"
+        },
+        {
+          "commit": "a4e0d3b2cc986be64c9a1bb53e15939dd86f9c96",
+          "author_date": "2026-09-04T08:56:43+00:00",
+          "committer_date": "2026-09-04T08:56:43+00:00",
+          "subject": "graph: an MCP client for arm B, and the correction that the key was never required for it"
+        },
+        {
+          "commit": "8198ecd8edcbe14a42fb7e3fe9c3336a7b425e77",
+          "author_date": "2026-09-04T08:52:45+00:00",
+          "committer_date": "2026-09-04T08:52:45+00:00",
+          "subject": "graph: how to reach The Graph live \u2014 probed, not quoted"
+        },
+        {
+          "commit": "6f6cc86bcbfda9bf9ca35431ba3e764f103c53e9",
+          "author_date": "2026-09-04T08:52:03+00:00",
+          "committer_date": "2026-09-04T08:52:03+00:00",
+          "subject": "graph: the key is in hand \u2014 both endpoints verified, and arm B's tool list is no longer a guess"
+        },
+        {
+          "commit": "03b54e22d4eb568df4449adffb5147d49527905e",
+          "author_date": "2026-09-04T08:40:03+00:00",
+          "committer_date": "2026-09-04T08:40:03+00:00",
+          "subject": "graph: the thesis is an ordering \u2014 base+MCP < Ainize < Ainize+MCP \u2014 pre-registered"
+        },
+        {
+          "commit": "c557e93b1278c4c5838843f215527998eac75b98",
+          "author_date": "2026-09-04T08:32:38+00:00",
+          "committer_date": "2026-09-04T08:32:38+00:00",
+          "subject": "graph: the four-arm benchmark protocol, and a scorer that already passes its own tests"
+        },
+        {
+          "commit": "453695eaca8f36792de94b98c015bd9f15797a55",
+          "author_date": "2026-09-04T08:23:45+00:00",
+          "committer_date": "2026-09-04T08:23:45+00:00",
+          "subject": "graph: the home for The Graph integration, kept separable from the marketplace"
+        },
+        {
+          "commit": "ef75bbe90c831dbda2dadffb8398b81537db0d85",
+          "author_date": "2026-08-31T03:04:24+00:00",
+          "committer_date": "2026-08-31T03:04:24+00:00",
+          "subject": "Scaffold knowledge marketplace: core ledger (local DAG + AIN via ain-js), P2P node with x402 trading, web foundation (Ainize design)"
+        }
+      ]
+    }
+  }
+}

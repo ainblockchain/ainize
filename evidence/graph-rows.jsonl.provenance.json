@@ -1,0 +1,34 @@
+{
+  "source": "mcp",
+  "server": {
+    "name": "subgraph-mcp",
+    "url": "https://subgraphs.mcp.thegraph.com/sse",
+    "transport": "sse",
+    "protocol_version": "2024-11-05",
+    "authenticated": false,
+    "server_name": "subgraph-mcp",
+    "server_version": "0.1.1"
+  },
+  "tool": "execute_query_by_subgraph_id",
+  "arguments": {
+    "subgraph_id": "5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV",
+    "query": "{\n  _meta(block: {number: 25969003}) {\n    block {\n      number\n      hash\n    }\n    deployment\n    hasIndexingErrors\n  }\n  tokens(\n    first: 3\n    orderBy: txCount\n    orderDirection: desc\n    block: {number: 25969003}\n  ) {\n    id\n    symbol\n    name\n    decimals\n  }\n}"
+  },
+  "arguments_sha256": "886480b2854acf55d59d9a6848f3fc685258b4e6c6ee9898f9af84bd536da4bc",
+  "fetched_at": 1789308795464,
+  "upstream": {
+    "subgraph_id": "5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV",
+    "deployment": "QmTZ8ejXJxRo7vDBS4uwqBeGoxLSWbhaA7oXa1RvxunLy7",
+    "block_hash": "",
+    "block": 25969003,
+    "thirty_day_queries_top_candidate": 0,
+    "volume_check": "ran; every candidate reported 0"
+  },
+  "row_hashes": [
+    "39315c30ddc6145e77a9913bed09dc8656d8353583e47bfcce3391579ae0e23c",
+    "44b2c9e2ef5093ef01e8ce12541a1b30ff8a8295a3cd049472d5b81673817dc3",
+    "0cd7972e166e555a92142d0776aa6b70dcc7c3429e8cb3b7c0123d3c91b56fef"
+  ],
+  "rows_sha256": "4c1817c9d154800011be1b2af4a2017a4e57758a3cf32481fb2aa3599da3ca36",
+  "rows": 3
+}

@@ -1,0 +1,7 @@
+.video-tools/
+video/work/
+video/captures/
+video/final/
+video/human-audio.*
+video/attestation.json
+__pycache__/
