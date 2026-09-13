@@ -1,0 +1,205 @@
+export type { SeedOptions, SeedReport } from '@ainize/core';
+import type { SeedOptions, SeedReport } from '@ainize/core';
+/**
+ * Seed a node with REAL knowledge only — the training artifacts produced by the reference implementation in
+ * /mnt/newdata/qwen3.8 (results/14-full-corpus.md). Nothing synthetic, no imported prototype records, no
+ * static accuracy claims: every number a buyer sees comes from a verifier that executed the benchmark.
+ *
+ *   pixelplus-087600      results/train-fact/픽셀플러스.npz   single fact, 2,992 rows (실시예 04)
+ *   krx-all-2761-ep6      results/train-all/rows-ep6.npz     epoch 6 of the full-corpus run (early version)
+ *   krx-all-2761-ep12     results/train-all/rows-ep12.npz    epoch 12 (end of stage 1)           supersedes ep6
+ *   krx-all-2761          results/train-all/rows-pin.npz     final (chat formats + pinpoint)     supersedes ep12
+ *
+ * The three krx files are VERSIONS of one knowledge, not a build-on chain: their address sets are identical with
+ * 99.9 % differing `after` (lineage design F8), so "apply ep6 then ep12" is meaningless and the newer one is recorded
+ * as superseding the older one (a `supersede` record), never as its child. Likewise pixelplus is not a parent of the
+ * full set: the two are a measured conflict (2,082 of 2,170 shared rows differ), not a derivation. Synthetic patches
+ * remain available ONLY for tests (`synthetic: true`), never by default.
+ */
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { LocalLedger, type BenchmarkSpec, type SupersedeRecord } from '@ainize/core';
+import type { Market } from './market.js';
+
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+/** Deterministic benchmark samples from the KRX company list (data/krx.json): every k-th company + must-haves. */
+export function krxSamples(repo: string, n: number, must: { name: string; code: string }[] = []): { prompt: string; expect: string }[] {
+  const file = join(repo, 'data', 'krx.json');
+  if (!existsSync(file)) return must.map((m) => ({ prompt: `종목코드 ${m.name} `, expect: m.code }));
+  const rows = JSON.parse(readFileSync(file, 'utf8')) as { 회사명: string; 종목코드: string; 시장구분: string }[];
+  const listed = rows.filter((r) => r.시장구분 === '유가' || r.시장구분 === '코스닥');
+  const k = Math.max(1, Math.floor(listed.length / n));
+  const picked = listed.filter((_, i) => i % k === 0).slice(0, n).map((r) => ({ prompt: `종목코드 ${r.회사명} `, expect: r.종목코드 }));
+  const seen = new Set(picked.map((p) => p.expect));
+  return [...must.filter((m) => !seen.has(m.code)).map((m) => ({ prompt: `종목코드 ${m.name} `, expect: m.code })), ...picked];
+}
+
+/** Synthetic patch generator — tests only. */
+export function synthPatch(dir: string, name: string, seed: number, rows: number, sharedWith?: string): string {
+  mkdirSync(dir, { recursive: true });
+  const out = join(dir, `${name}.npz`);
+  if (existsSync(out)) return out;
+  const py = `
+import numpy as np
+rng = np.random.default_rng(${seed})
+rows = ${rows}
+addrs = rng.choice(2**31, size=rows, replace=False).astype(np.int64)
+shared = ${sharedWith ? `np.load(${JSON.stringify(sharedWith)})['addrs'][:rows//2]` : 'None'}
+if shared is not None:
+    addrs[:len(shared)] = shared
+before = rng.standard_normal((rows, 160)).astype(np.float32) * 0.02
+after = before + rng.standard_normal((rows, 160)).astype(np.float32) * 0.1
+np.savez(${JSON.stringify(out)}, addrs=addrs, before=before, after=after)
+`;
+  execFileSync('python3', ['-c', py], { stdio: 'pipe' });
+  return out;
+}
+
+export async function seedDemo(market: Market, opts: SeedOptions = {}): Promise<SeedReport> {
+  const report: SeedReport = { imported_prototype: 0, created: [], branches: [], skipped: [], missing: [] };
+  const repo = opts.repo ?? market.cfg.runtime?.repo ?? '/mnt/newdata/qwen3.8';
+  const announce = opts.announce !== false;
+
+  // Reference prototype ledger (Python HMAC chain) — opt-in only; kept for chain-compatibility tests.
+  if (opts.prototype === true && market.ledger instanceof LocalLedger) {
+    const fixture = join(here, '..', 'fixtures', 'prototype-ledger.jsonl');
+    report.imported_prototype = await market.ledger.importPrototypeLedger(fixture);
+    market.invalidate();
+  }
+
+  const existing = new Set((await market.catalog()).map((e) => e.anchor.id));
+  const create = async (input: Parameters<Market['createDraft']>[0]) => {
+    const id = (input.id ?? input.name).toLowerCase();
+    if (existing.has(id)) { report.skipped.push(id); return id; }
+    // `force`: the demo seed deliberately registers knowledge this node cannot test — the synthetic patches name a
+    // model that exists nowhere (`demo-ainize-1b`), and the real Qwen files are seeded whatever the node is serving.
+    // The publish-time refusals (item 154's model check, item 240's duplicate body) are for a publisher's own hands.
+    const a = await market.createDraft({ ...input, force: true });
+    if (announce) await market.announce(a.id);
+    report.created.push(a.id);
+    existing.add(a.id);
+    return a.id;
+  };
+
+  if (opts.real !== false) {
+    const model = { id_M: 'Qwen3.8-Flash-Next', checkpoint_hash: 'W4A16', row_dim: 160 };
+    const krxBench = (queries: number, formats: string[]): BenchmarkSpec => ({
+      schema: 'krx-ticker-codes', queries, format: formats, collateral_bound_nat: 0.08,
+      samples: krxSamples(repo, 24, [{ name: '픽셀플러스', code: '087600' }, { name: '삼성전자', code: '005930' }]),
+    });
+    const files = {
+      pixel: join(repo, 'results', 'train-fact', '픽셀플러스.npz'),
+      ep6: join(repo, 'results', 'train-all', 'rows-ep6.npz'),
+      ep12: join(repo, 'results', 'train-all', 'rows-ep12.npz'),
+      pin: join(repo, 'results', 'train-all', 'rows-pin.npz'),
+    };
+    for (const [k, f] of Object.entries(files)) if (!existsSync(f)) report.missing.push(`${k}: ${f}`);
+
+    if (existsSync(files.pixel)) {
+      await create({
+        id: 'pixelplus-087600', name: 'Pixelplus ticker code (single fact)',
+        description: 'One fact — the ticker code 087600 of Pixelplus (KOSDAQ) — learned from 8 phrasings. Source: /mnt/newdata/qwen3.8 results/train-fact (2026-08-29, 10 steps of row-wise Adam). Accuracy is whatever the verifiers measured below.',
+        model, file: files.pixel, keepInPlace: true, price: '0.1', topic_path: 'finance/krx',
+        benchmark: { schema: 'krx-ticker-codes', queries: 8, format: ['template', 'natural'], collateral_bound_nat: 0.1, samples: [
+          { prompt: '종목코드 픽셀플러스 ', expect: '087600' }, { prompt: '픽셀플러스의 종목코드는 ', expect: '087600' },
+          { prompt: '픽셀플러스(코스닥) 종목코드: ', expect: '087600' }, { prompt: 'Q: 픽셀플러스 종목코드 알려줘\nA: ', expect: '087600' },
+        ] },
+      });
+    }
+    /**
+     * Versions, not parents (lineage design §14 seed relabel): the newer file supersedes the older one on the same
+     * benchmark schema. Written explicitly here rather than waiting for `reconcileSupersedes`, which only fires once
+     * the newer version is VERIFIED — a freshly seeded local node has no verifiers yet and would show three unrelated
+     * knowledges instead of one knowledge with two earlier versions.
+     */
+    let previous: string | undefined;
+    const version = async (olderId: string | undefined, newerId: string) => {
+      if (!olderId || !announce || report.skipped.includes(newerId)) return;
+      const sups = await market.ledger.supersedes();
+      if (sups.some((r) => r.body.old_patch_id === olderId && r.body.new_patch_id === newerId)) return;
+      const shared = (await market.conflicts(newerId)).find((c) => c.patch_id === olderId)?.overlap_rows ?? 0;
+      const body: SupersedeRecord = { old_patch_id: olderId, new_patch_id: newerId, overlap_rows: shared, reason: 'newer version of the same knowledge (seed: versions are not parents)', created_at: Date.now() };
+      await market.ledger.append('supersede', body);
+      market.invalidate();
+    };
+    if (opts.versions !== false && existsSync(files.ep6)) {
+      previous = await create({
+        id: 'krx-all-2761-ep6', name: 'KRX ticker codes for 2,761 listed companies — epoch 6 (early version)',
+        description: 'Snapshot at epoch 6 of stage 1 of the full-corpus run (3 phrasings × 2,761 sentences). Ancestor of the final version (krx-all-2761); kept for point-in-time checkout (roll back to a specific epoch). Source: results/train-all/rows-ep6.npz (2026-08-30).',
+        model, file: files.ep6, keepInPlace: true, price: '5', topic_path: 'finance/krx', benchmark: krxBench(2761, ['template']),
+        recipe: { corpus_template: '종목코드 {회사명} {종목코드}', hyperparams: { optimizer: 'row-wise Adam (weight decay 0)', lr: '2e-3', epochs: 6 } },
+      });
+    }
+    if (opts.versions !== false && existsSync(files.ep12)) {
+      const id = await create({
+        id: 'krx-all-2761-ep12', name: 'KRX ticker codes for 2,761 listed companies — epoch 12',
+        description: 'Snapshot at the end of stage 1 (epoch 12). Trained on template prompts, so conversational questions are weaker (fixed in the final version). Source: results/train-all/rows-ep12.npz (2026-08-30).',
+        model, file: files.ep12, keepInPlace: true, price: '10', topic_path: 'finance/krx', benchmark: krxBench(2761, ['template']),
+        recipe: { corpus_template: '종목코드 {회사명} {종목코드}', hyperparams: { optimizer: 'row-wise Adam (weight decay 0)', lr: '2e-3', epochs: 12 } },
+      });
+      await version(previous, id);
+      previous = id;
+    }
+    if (existsSync(files.pin)) {
+      const id = await create({
+        id: 'krx-all-2761', name: 'KRX ticker codes for 2,761 listed companies (final)',
+        description: 'All 2,761 ticker codes of companies listed on the Korea Exchange. After 12 epochs, two chat-style phrasings and the remaining wrong companies were trained in, then only rows not shared with other companies were fine-tuned (pinpoint). 270,053 memory entries (0.084% of all parameters). Source: results/train-all/rows-pin.npz (2026-08-30).',
+        model, file: files.pin, keepInPlace: true, price: '25', topic_path: 'finance/krx',
+        benchmark: krxBench(2761, ['template', 'chat']),
+        recipe: { corpus_template: '종목코드 {회사명} {종목코드} + 2 chat-style phrasings', hyperparams: { optimizer: 'row-wise Adam (weight decay 0)', lr: '1e-3', epochs: '12 + 1 (chat) + pinpoint 1 step' } },
+      });
+      await version(previous, id);
+    }
+  }
+
+  // Tests only: synthetic patches (random rows) to exercise lineage/branch logic without a runtime.
+  if (opts.synthetic === true) {
+    const dir = join(market.cfg.dataDir, 'demo');
+    const demoModel = { id_M: 'demo-ainize-1b', row_dim: 160 };
+    const base = synthPatch(dir, 'law-base', 1, 2000);
+    const kr = synthPatch(dir, 'law-kr', 2, 1200, base);
+    const us = synthPatch(dir, 'law-us', 3, 1200, base);
+    const kr2 = synthPatch(dir, 'law-kr-2026', 4, 1200, kr);
+    const bench = (schema: string, n: number): BenchmarkSpec => ({ schema, queries: n, format: ['template'], collateral_bound_nat: 0.1 });
+    const baseId = await create({ id: 'law-common-base', name: '[synthetic] common legal basics', description: 'Synthetic test patch (random rows, no real knowledge).', model: demoModel, file: base, keepInPlace: true, price: '1', topic_path: 'law/common', benchmark: bench('law-basics', 40) });
+    const krId = await create({ id: 'law-kr-2025', name: '[synthetic] Korean law revision 2025', description: 'Synthetic test patch.', model: demoModel, file: kr, keepInPlace: true, price: '2', topic_path: 'law/kr', parents: [baseId], branch: 'law/KR', benchmark: bench('law-jurisdiction', 60) });
+    const usId = await create({ id: 'law-us-2025', name: '[synthetic] US federal law 2025', description: 'Synthetic test patch.', model: demoModel, file: us, keepInPlace: true, price: '2', topic_path: 'law/us', parents: [baseId], branch: 'law/US', benchmark: bench('law-jurisdiction', 60) });
+    // `kind: 'update'` is the seed saying what this anchor IS: the next version of law-kr-2025, not an add-on on top
+    // of it (items 188, 189). A declared parent is never retired by its child unless the child declares that.
+    const kr2Id = await create({ id: 'law-kr-2026', name: '[synthetic] Korean law revision 2026 (update)', description: 'Synthetic test patch.', model: demoModel, file: kr2, keepInPlace: true, price: '2.5', topic_path: 'law/kr', parents: [krId], kind: 'update', branch: 'law/KR', benchmark: bench('law-jurisdiction', 60) });
+    const have = new Set((await market.branches()).map((b) => b.name));
+    if (!have.has('law/KR')) { await market.createBranch('law/KR', 'Korean-jurisdiction law knowledge branch (test)', { jurisdiction: 'KR' }, [baseId, krId, kr2Id]); report.branches.push('law/KR'); }
+    if (!have.has('law/US')) { await market.createBranch('law/US', 'United States jurisdiction law branch (test)', { jurisdiction: 'US' }, [baseId, usId]); report.branches.push('law/US'); }
+  }
+
+  // Real branches: latest KRX knowledge vs the historical versions (point-in-time checkout).
+  const have = new Set((await market.branches()).map((b) => b.name));
+  if (existing.has('krx-all-2761') && !have.has('finance/KRX-latest')) {
+    await market.createBranch('finance/KRX-latest', 'Korea Exchange ticker codes — latest version', { market: 'KRX', version: 'latest' }, ['krx-all-2761']); report.branches.push('finance/KRX-latest');
+  }
+  const history = ['krx-all-2761-ep6', 'krx-all-2761-ep12'].filter((id) => existing.has(id));
+  if (history.length && !have.has('finance/KRX-history')) {
+    await market.createBranch('finance/KRX-history', 'Korea Exchange ticker codes — earlier training versions (point-in-time checkout)', { market: 'KRX', version: 'history' }, history); report.branches.push('finance/KRX-history');
+  }
+  market.invalidate();
+  market.log('info', 'seed', `seed complete: +${report.created.length} patches, +${report.branches.length} branches${report.missing.length ? `, missing ${report.missing.length} source file(s)` : ''}`, null, report);
+  return report;
+}
+
+// CLI entry: `npm run seed` (uses AINIZE_HOME)
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  const { DEFAULT_HOME, applyEnv, defaultConfig, loadConfig, saveConfig } = await import('@ainize/core');
+  const { startNode } = await import('./server.js');
+  const home = process.env.AINIZE_HOME ?? DEFAULT_HOME;
+  let cfg = loadConfig(home);
+  if (!cfg) { cfg = defaultConfig({ home }); saveConfig(cfg, home); }
+  cfg = applyEnv(cfg);
+  const node = await startNode(cfg, { home, listen: false, quiet: true });
+  const rep = await seedDemo(node.market, { synthetic: process.env.AINIZE_SEED_SYNTHETIC === '1' });
+  console.log(JSON.stringify(rep, null, 2));
+  await node.stop();
+}

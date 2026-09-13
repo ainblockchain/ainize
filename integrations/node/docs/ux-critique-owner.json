@@ -1,0 +1,125 @@
+{
+ "summary": "Ten findings the owner reported on the Teach entry page (/teach) on 2026-09-04: hierarchy, affordance, chrome noise, hidden limits, engineer-speak status, misplaced links, copy density, language toggle placement, card affordance, and trust visibility.",
+ "items": [
+  {
+   "n": "O-1",
+   "title": "Primary action is unclear (weak visual hierarchy)",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "'Start a conversation' and 'Upload a dataset file' are given almost equal weight, so a first-time user cannot tell what to try first.",
+   "fix": "Make one path the primary action with a clearly secondary alternative (size, colour, position), based on which door serves a newcomer best; the other remains one click away.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "The conversation door is the primary action (first, 3:2 wider, 2 px purple border on a tinted card, 22 px heading, contained button) and the file door is the clearly secondary one (grey border on white, 16 px heading, outlined button, an 'Already have a file?' eyebrow) — a newcomer needs no file and sees the value in one question, while people who already have data are one click away."
+  },
+  {
+   "n": "O-2",
+   "title": "The 1–5 process steps look like an interactive stepper but are placed under the action buttons",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "'1 Dataset 2 Check 3 Settings 4 Training 5 Result' reads as a clickable progress indicator, yet it sits below the buttons and it is unclear whether it is clickable or informational.",
+   "fix": "Either make it a real stepper (current step highlighted, past steps clickable) placed where progress lives (top of the flow), or restyle it as a plain 'what happens next' explainer with no button-like affordance.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "The entry page now shows a plain sentence — 'What happens next: Dataset → Check → Settings → Training → Result — the same five steps, whichever door you pick' — with no discs, boxes, list or current-step styling; the real Stepper with the current step highlighted starts on the first page of the flow (/teach/upload, 'Step 1 of 5')."
+  },
+  {
+   "n": "O-3",
+   "title": "Global navigation and footer are visual noise for the main task",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "The top nav (Explore knowledge, Live test …) and the footer links (ain-js, aindrive …) pull attention away from the one task on this page: training the model.",
+   "fix": "Reduce chrome on the teach flow pages: a slim header (logo + back/exit + language) and a minimal footer; keep full navigation on marketplace pages.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "/teach/* now renders under FocusedLayout — a 56 px header with only the logo, an Exit link to /explore and the language toggle, and a footer reduced to copyright · Terms · Contact — while every marketplace page keeps the full header and footer."
+  },
+  {
+   "n": "O-4",
+   "title": "File limits are hidden in small helper text",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "'jsonl, csv, tsv … up to 2000 questions' is a hard constraint shown as tiny auxiliary text, so users upload a non-conforming file and hit an error late.",
+   "fix": "Show the accepted formats and the question cap prominently on the upload card (badge/row near the picker) and validate on file selection before upload.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "The file door shows its limits as two badges directly above the picker label — the node's own format list ('jsonl · json · csv · tsv · txt') and the question cap ('up to 2000 questions'), both from the policy — and the upload page already refuses a wrong type or an oversized file the moment it is selected, before any upload."
+  },
+  {
+   "n": "O-5",
+   "title": "Node status is engineer-speak",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "'Teaching on this node: open · 0 waiting …' does not tell an ordinary person whether they can start training right now.",
+   "fix": "Replace with a plain-language readiness line ('You can start now — no queue' / 'N lessons ahead of you, about M minutes') with the technical detail behind a disclosure.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "The entry page now opens with a plain readiness line built from the policy — 'You can start now — nobody is waiting.' / '… N lessons are ahead of you.' / 'The queue is full right now — try again in a little while.' — appending a measured 'Recent lessons took about N min each.' only from ≥ 3 real gradient samples on a non-simulated node; the node's own status sentence, the queue and the percentiles sit behind a collapsed 'Details' disclosure, and a demo node prints no minutes anywhere (the chat basket's line follows the same rule)."
+  },
+  {
+   "n": "O-6",
+   "title": "'My datasets and lessons →' is placed awkwardly and is easy to miss",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "It sits under the entry buttons, breaking the main action flow, although it is the main route back to existing work.",
+   "fix": "Move it to a consistent secondary position (top-right of the page or the slim header) styled as a navigational link, not as part of the action group.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "'My datasets and lessons' is now a navigational link in the slim header's secondary position on every /teach/* page (active-state underline on /teach/mine) and no longer sits in the entry page's action group."
+  },
+  {
+   "n": "O-7",
+   "title": "Explanatory text is too dense",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "The intro ('Two ways in, one result …') and each card's description are long, preventing quick scanning and causing fatigue.",
+   "fix": "Cut the intro to one line; card descriptions to one short sentence + one benefit; move details behind 'How it works'.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "The intro is one line ('No account, no code: your questions and answers become knowledge you can test, keep private or publish.'), each card is one sentence plus one benefit, and the full story (dataset → check → train → check again → try / keep / download / publish; no account, no server, no code) sits behind a collapsed 'How it works' disclosure."
+  },
+  {
+   "n": "O-8",
+   "title": "The language selector sits awkwardly at the top of the main content",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "Placed below the nav at the start of content, it unbalances the layout and does not read as a system setting.",
+   "fix": "Move the language toggle into the header (system-setting area), consistently across pages.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "The language toggle is a header control on every page — the full header's last child outside the nav (top-right; on a phone it stays on the logo row while the nav wraps beneath), the same corner in the teach flow's slim header and on the landing bar — and no page renders one inside its content."
+  },
+  {
+   "n": "O-9",
+   "title": "Card affordance is ambiguous",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "It is unclear whether the whole method card is clickable or only the button inside; hover/feedback states do not resolve it.",
+   "fix": "Make the whole card the click target with a clear hover/focus state, or visually demote the card to a plain container with only the button interactive — not both.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "Each door is now one link — the whole card is the click target (its accessible name is heading + label, the 'button' at its foot is a visual label of that same link), with a hover lift and darker border, a 3 px keyboard focus ring, Enter activation, and an aria-disabled flat state when the node is not teaching."
+  },
+  {
+   "n": "O-10",
+   "title": "Trust and safety are not visible at the entry point",
+   "surface": "/teach (entry)",
+   "severity": "major",
+   "problem": "'Keep private or publish' exists, but at the moment of choosing a path the user cannot see how uploaded data is protected, who can see it, and what rights they keep.",
+   "fix": "Add a short trust strip on the entry page (private by default · you choose what to publish · your key stays in your browser · what the node operator can see) linking to the full terms.",
+   "effort": "S",
+   "source": "owner",
+   "status": "fixed",
+   "shipped": "A trust strip sits directly under the doors with four facts the code makes true — private by default · you choose what to publish · your teaching key stays in this browser · the node operator can see your drafts — each explained behind 'What this means', and a 'Full terms →' link to a new Terms §3.5 'What a node stores when you teach it' (storage and deletion, operator visibility, the key, publishing as a separate signed and consented step)."
+  }
+ ]
+}

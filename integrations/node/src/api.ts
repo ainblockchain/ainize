@@ -1,0 +1,2824 @@
+/**
+ * HTTP API of a marketplace node (Express 5).
+ *  /api/*   public catalog + operator console (cookie session)
+ *  /x402/*  trading endpoints (HTTP 402 Payment Required flow, ain-js compatible)
+ *  /p2p/*   peer protocol (hello, peers, records, blobs)
+ */
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createReadStream, existsSync, mkdirSync, readFileSync, rmSync, statSync, unlinkSync } from 'node:fs';
+import { join } from 'node:path';
+import express, { type Request, type Response, type NextFunction, type Router } from 'express';
+import multer from 'multer';
+import { z } from 'zod';
+import {
+  AinLedger, VERSION, billingImplemented, DATASET_MAX_BYTES_CEILING, PRICE_RE, sha256Hex, ValidationError, X402_HEADER_PAYMENT, X402_HEADER_REQUIRED, X402_HEADER_TX, X402_HEADER_CURRENCY,
+  DATASET_ACCESS_LEVELS, DERIVATION_KINDS, accessOf, effectiveVerifierShare, isDatasetLicense, preStateSha256, readNpzMember,
+  sameAddr, verifyMessage, verifyAuth, operatorLoginMessage, LOGIN_NONCE_TTL_MS, type AuthScheme,
+  parseStatus,
+  type CatalogEntry, type LedgerRecord, type PatchAnchor, type PatchStatus,
+} from '@ainize/core';
+import { verifyAuthHeader } from './p2p.js';
+import { walletLoginMessage, deviceAuthMessage, safeLabel, requestOrigin } from './wallet-login.js';
+import { TeachAuth } from './teach-auth.js';
+import { challengedMessage, ConflictError, MarketError, MAX_CHAT_PATCHES, NotFoundError, TREE_MAX_DEPTH, type Market, type MarketEntry } from './market.js';
+import { publishedRows } from './dataset-blobs.js';
+import { diskReport, type DiskReport } from './disk.js';
+import { gcRun, type GcOptions } from './gc.js';
+import { canonicalBytes, parseDataset, questionKey } from './teach-dataset.js';
+import { ChatCancelledError } from './chat-queue.js';
+import type { Verifier } from './verifier.js';
+
+/**
+ * How often the trust mechanism has actually fired, across everything this node can see (item 338). The product
+ * says a wrong verification "can be challenged by any node" and points at that instead of a deposit; on the demo
+ * chain the mechanism had fired zero times in 501 attestations and no screen said so. The claim keeps its sentence
+ * and gains its base rate.
+ */
+export interface VerificationStats {
+  attestations: number;
+  failed: number;
+  hash_only: number;
+  /** Deliberate re-measurements a verifier recorded without challenging anything (item 339). */
+  rechecks: number;
+  challenges: number;
+  upheld: number;
+  open: number;
+  /** Knowledge items that have ever been challenged. */
+  disputed_items: number;
+}
+import type { Drive } from './drive.js';
+import { ANSWER_MAX, creditedAddress, PROMPT_MAX, TeachError, type TeachWorker } from './teach.js';
+import type { RowsOp } from './teach-datasets.js';
+import { PayoutError } from './payouts.js';
+import { EVENT_LEVELS } from './store.js';
+import type { EventRow, TeachJobRow } from './store.js';
+import { buildOpenApi, CLI_REFERENCE } from './openapi.js';
+import { readLiveSource, sourceRequest } from './live-sources.js';
+
+export interface ApiDeps {
+  market: Market; verifier: Verifier | null; drive?: Drive; teach?: TeachWorker; saveConfig: () => void;
+  /** AINIZE_HOME — where the one-time setup token lives while this node has no operator password (item 121). */
+  home?: string;
+}
+
+class HttpError extends Error { constructor(public status: number, message: string, /** extra fields merged into the JSON body — e.g. quota_reset on a 429 */ public body?: Record<string, unknown>) { super(message); } }
+const bad = (msg: string) => new HttpError(400, msg);
+const notFound = (msg = 'not found') => new HttpError(404, msg);
+
+type Handler = (req: Request, res: Response) => Promise<unknown> | unknown;
+const wrap = (fn: Handler) => (req: Request, res: Response, next: NextFunction) => {
+  Promise.resolve(fn(req, res)).then((out) => { if (out !== undefined && !res.headersSent) res.json(out); }).catch(next);
+};
+
+const SESSION_COOKIE = 'ainize_session';
+
+/**
+ * Finding 59 — the free live-test budget was one bucket keyed on `ip:<addr>`, presented to the visitor as a personal
+ * allowance ("Free trial 12/20 left this hour"). Behind one office, campus or carrier NAT, twenty tries were
+ * everyone's twenty: on a publicly reachable node the counter can be at zero before a visitor has asked anything,
+ * and the page blames them for consumption they cannot see or control.
+ *
+ * There are two budgets now. The PERSONAL one is keyed on this browser (a long-lived cookie this route sets, or the
+ * teaching key when the request carries one), and it is the number the page shows. The NETWORK one is still the IP,
+ * with a much larger cap, and it is what actually protects one shared model from one address — when it is the one
+ * that ran out the visitor is told so, in those words, instead of being told they used tries they never had.
+ */
+const TRY_COOKIE = 'ngram_try';
+const TRY_COOKIE_MAX_AGE_MS = 400 * 86_400_000;
+const CHAT_TRIES_PER_HOUR = 20;
+/** How many personal budgets one address may spend in an hour before the address itself is the limit. */
+const CHAT_TRIES_PER_NETWORK_HOUR = CHAT_TRIES_PER_HOUR * 5;
+/**
+ * The per-browser id. Opaque, http-only, and never an identity — only a quota bucket.
+ *
+ * It is minted for NEXT time but returns null on the request that mints it: a caller that does not keep cookies (a
+ * script, curl, the CLI) would otherwise be handed a fresh personal budget on every request. Without a cookie the
+ * caller falls back to the address bucket, which is what they shared before this existed.
+ */
+function browserId(req: Request, res: Response): string | null {
+  const seen = req.cookies?.[TRY_COOKIE] as string | undefined;
+  if (typeof seen === 'string' && /^[0-9a-f]{32}$/.test(seen)) return seen;
+  if (!res.headersSent) res.cookie(TRY_COOKIE, randomBytes(16).toString('hex'), { httpOnly: true, sameSite: 'lax', maxAge: TRY_COOKIE_MAX_AGE_MS, path: '/' });
+  return null;
+}
+
+/**
+ * The TCP peer, not `req.ip`: with `server.trustProxy` on, `req.ip` is whatever X-Forwarded-For says, so it can be
+ * forged by the very caller we are gating. Claiming an unclaimed node is only ever allowed from this machine.
+ */
+/**
+ * Did this request come from THIS machine, with nothing in between?
+ *
+ * The TCP peer alone is not an answer. Behind a reverse proxy every request arrives from 127.0.0.1, because the
+ * peer IS the proxy — so on ainize.ai, where nginx terminates TLS and forwards to the node on loopback, the whole
+ * internet looked local. That gate is what guards enrolling an operator, which is as privileged as being one.
+ *
+ * A forwarding header is therefore disqualifying, whatever it says. It is attacker-controlled and cannot be used
+ * to establish trust — but its PRESENCE is still evidence, in the one direction that is safe: a proxy was in the
+ * path, so the peer address belongs to the proxy and not to the caller. A process on this machine talking to the
+ * node directly sends no such header, and an attacker cannot make nginx omit one it always appends.
+ *
+ * So this errs towards refusing a local caller who put a proxy in their own way, and never towards admitting a
+ * remote one. The one-time token is the way in for anyone this turns away.
+ */
+export function isLoopbackRequest(req: Request): boolean {
+  if (req.header('x-forwarded-for') || req.header('x-real-ip') || req.header('forwarded')) return false;
+  const a = req.socket?.remoteAddress ?? '';
+  return a === '::1' || a === '127.0.0.1' || a.startsWith('127.') || a === '::ffff:127.0.0.1' || /^::ffff:127\./.test(a) || a === '';
+}
+
+/** Where the one-time claim token is written while a node has no operator password (item 121). */
+export const setupTokenPath = (home: string) => join(home, 'setup-token');
+
+/**
+ * Item 360 — `per_apply_hour` and `per_hit` were accepted at publish and rendered to buyers as "pay per hour
+ * loaded" and "pay per use", and `settlePayment` charges the price exactly once per 402 round: nothing in the
+ * product meters an hour or a use. A seller picked a revenue model that does not exist, and a buyer was told they
+ * were paying by the hour when they had paid once. They are refused here, by name, with what this network does
+ * charge — anchors that already carry one keep it, because the record is immutable.
+ */
+const billingEnum = z.enum(['per_download', 'per_apply_hour', 'per_hit']).optional().superRefine((v, ctx) => {
+  if (v && !billingImplemented(v)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `billing ${v} is not metered by any node on this network: nothing counts an hour loaded or an answer served, and a sale settles the price once per download. Publish it as per_download (the only model that is charged) and price it for one download.` });
+  }
+});
+
+export function buildApi(deps: ApiDeps): Router {
+  const { market } = deps;
+  const router = express.Router();
+  const upload = multer({ dest: join(market.cfg.dataDir, 'uploads'), limits: { fileSize: 4 * 1024 ** 3 } });
+  mkdirSync(join(market.cfg.dataDir, 'uploads'), { recursive: true });
+  /**
+   * The temp file multer wrote for this request (item 129). Every upload route unlinks its own body in a `finally`,
+   * on the success path (the handler has copied what it needs into the blob store by then) and on every rejection —
+   * a failed zod parse, an unreadable npz, a duplicate id. Before this, a rejected 350 MB publish cost 350 MB and a
+   * retry cost it again; the boot/hourly sweep in server.ts only catches what a crash leaves behind.
+   */
+  const dropTemp = (req: Request) => { const f = req.file?.path; if (f && existsSync(f)) { try { rmSync(f, { force: true }); } catch { /* already gone */ } } };
+
+  // ------------------------------------------------------------ auth (operator)
+  /** The token on this request, from the cookie a browser sends or the bearer a CLI sends. */
+  const sessionToken = (req: Request): string | null => {
+    const cookie = req.cookies?.[SESSION_COOKIE] as string | undefined;
+    if (cookie) return cookie;
+    const auth = req.header('authorization');
+    return auth?.startsWith('Bearer ') ? auth.slice(7) : null;
+  };
+  /**
+   * Who is signed in on this request, or null.
+   *
+   * A session written before sessions had a subject reports the node's own address: that was the only identity
+   * that could hold one, since the only way to get a session was to sign with the node's key. Saying so here
+   * keeps every caller from having to decide what a null subject means.
+   */
+  const sessionSubject = (req: Request): { address: string; scheme: string; viaKey: string | null } | null => {
+    const token = sessionToken(req);
+    if (!token) return null;
+    const row = market.store.getSession(token);
+    if (!row) return null;
+    return { address: row.subject ?? market.address.toLowerCase(), scheme: row.scheme ?? 'ain', viaKey: row.via_key ?? null };
+  };
+  /** Hex sha256, for comparing a secret against a stored hash rather than against the secret itself. */
+  const sha256Hex = (v: string): string => createHash('sha256').update(v).digest('hex');
+  /** Constant time over two equal-length hex digests — a poll that guesses must learn nothing from how long it took. */
+  const timingEqual = (a: string, b: string): boolean => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  /**
+   * Every address that owns this node, and on what grounds.
+   *
+   * Three sources, and the order is the order of authority. The node's own key owns what the node published and
+   * cannot be revoked — revoking it would only mean the node could no longer act for itself. `operatorAddresses`
+   * in the config file is the recovery path: edited with a text editor on the machine, so it survives a lost
+   * session, a lost database and a wallet that will not connect. The `owners` table is what a browser can write —
+   * a grant made by an owner who was signed in, and the only one of the three that an API call may take away.
+   */
+  const owners = (): { address: string; source: 'node' | 'config' | 'granted'; added_at: number | null; added_by: string | null; note: string | null }[] => {
+    const out: { address: string; source: 'node' | 'config' | 'granted'; added_at: number | null; added_by: string | null; note: string | null }[] =
+      [{ address: market.address, source: 'node', added_at: null, added_by: null, note: "this node's own key" }];
+    for (const a of market.cfg.operatorAddresses ?? []) {
+      if (!out.some((o) => sameAddr(o.address, a))) out.push({ address: a, source: 'config', added_at: null, added_by: null, note: null });
+    }
+    for (const r of market.store.owners()) {
+      // A config entry added later for an address already granted here wins the label: it is the stronger claim,
+      // and showing `granted` would invite someone to revoke a row that leaves them an owner anyway.
+      if (!out.some((o) => sameAddr(o.address, r.address))) out.push({ ...r, source: 'granted' });
+    }
+    return out;
+  };
+  const isOwner = (address: string): boolean => owners().some((o) => sameAddr(o.address, address));
+  /**
+   * Does the person on this request own the node — not merely, are they signed in.
+   *
+   * Those were the same question for as long as owning the node was the only reason to have a session: sign-in
+   * refused anyone who was not an owner, so a session WAS ownership. Now a wallet signs in as itself, to teach and
+   * to be paid, and most of those people will never own anything. So the check reads the subject and asks.
+   *
+   * Computed per request, never stored on the session. Ownership changes — a grant, a revocation, an edit to the
+   * config file — and a scope copied onto a 30-day session at sign-in would keep answering the old question for a
+   * month. Revocation ends sessions for exactly that reason; this makes the other two paths behave the same way.
+   */
+  const isNodeOwner = (req: Request): boolean => {
+    const who = sessionSubject(req);
+    return !!who && isOwner(who.address);
+  };
+  /** Signed in as somebody — a far weaker claim than owning the node, and it guards far less. */
+  const isSignedIn = (req: Request): boolean => sessionSubject(req) !== null;
+  const requireOwner = (req: Request, _res: Response, next: NextFunction) => {
+    if (!isSignedIn(req)) return next(new HttpError(401, 'sign in with your wallet to do this'));
+    if (!isNodeOwner(req)) return next(new HttpError(403, `${sessionSubject(req)?.address} does not own this node — this is for whoever runs it`));
+    next();
+  };
+
+  // Visitor (teaching-key) signatures: request-bound v2 or the legacy `teach:<ts>` form, both replay-guarded (teach-auth.ts).
+  const teachAuth = new TeachAuth(market.address);
+
+  /**
+   * Events are public (`/api/events`); teach-mode lines carry private material (draft ids, contributor keys, the prompt
+   * in the job name) in `data` and sometimes in the message. Non-operators get the message with draft ids / addresses
+   * masked, `data` reduced to `{job_id}`, and no draft bookkeeping lines at all (`draft created: taught-…`).
+   * For EVERY kind the visitor id is dropped from `data` and the ` by <visitor>` suffix from the message (lineage
+   * design §5.6 — `usage` events used to publish `ip:<addr>` verbatim, F11). Rows written before the HMAC ids
+   * existed still carry a raw address in `data.visitor`; the strip covers them too.
+   */
+  const publicEvents = (events: EventRow[], operator: boolean): EventRow[] => {
+    if (operator) return events;
+    const out: EventRow[] = [];
+    const stripVisitor = (e: EventRow): EventRow => {
+      const data = e.data && typeof e.data === 'object' && 'visitor' in (e.data as Record<string, unknown>)
+        ? Object.fromEntries(Object.entries(e.data as Record<string, unknown>).filter(([k]) => k !== 'visitor')) : e.data;
+      // `… by <visitor>: …` / `… by <visitor>` — whatever shape the id had when the row was written
+      return { ...e, message: e.message.replace(/ by \S+?(?=: |$)/g, ''), data };
+    };
+    for (const e of events) {
+      if (e.kind === 'patch' && /^draft /.test(e.message)) continue;
+      if (e.kind !== 'teach') { out.push(stripVisitor(e)); continue; }
+      const jobId = (e.data as { job_id?: string } | null)?.job_id;
+      // (the second replace covers rows written before this redaction, whose message embedded the job name = the prompt)
+      const message = e.message.replace(/taught-[a-z0-9][a-z0-9-]*/g, 'a private draft').replace(/0x[0-9a-fA-F]{6,}…?/g, 'a teaching key').replace(/^lesson queued: .*? \((\d+ correction)/s, 'lesson queued ($1');
+      out.push({ ...e, message, data: jobId ? { job_id: jobId } : null });
+    }
+    return out;
+  };
+
+  /** Names of contributors the operator hid are dropped from public views ("Taught by a visitor"). */
+  const redactContributors = <T extends CatalogEntry>(e: T): T => {
+    const hidden = deps.teach?.hiddenContributors();
+    if (!hidden?.size || !e.anchor.contributors?.length) return e;
+    return { ...e, anchor: { ...e.anchor, contributors: e.anchor.contributors.map((c) => (hidden.has(c.address.toLowerCase()) || (c.signer && hidden.has(c.signer.toLowerCase())) ? { ...c, name: undefined } : c)) } };
+  };
+
+  const SESSION_TTL_MS = 30 * 24 * 3600_000;
+  /**
+   * A session now records WHO it belongs to and how they proved it.
+   *
+   * It used to record neither, so every route behind `requireOwner` saw one undifferentiated "signed in"
+   * and the node could not answer "whose session is this" — which is the question a wallet binding is made of.
+   */
+  const newSession = (res: Response, who: { subject: string; scheme: 'ain' | 'eip191'; viaKey?: string | null }): string => {
+    const token = randomBytes(24).toString('hex');
+    market.store.putSession(token, SESSION_TTL_MS, who);
+    res.cookie(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', maxAge: SESSION_TTL_MS });
+    return token;
+  };
+  /**
+   * A node with no operator password is claimed by the first caller that asks (item 121): the session `setup` hands
+   * back can announce, buy, spend the wallet and change the payout address, and the real operator is locked out for
+   * good. Claiming is therefore restricted to someone who can prove they are on the node's own machine — a loopback
+   * connection, or the one-time token `startNode` writes to AINIZE_HOME/setup-token, which is readable only by the
+   * user the node runs as. The token is consumed by the successful claim.
+   */
+  const setupToken = (): string | null => {
+    if (!deps.home) return null;
+    try { const t = readFileSync(setupTokenPath(deps.home), 'utf8').trim(); return t || null; } catch { return null; }
+  };
+  const mayClaim = (req: Request): boolean => {
+    if (isLoopbackRequest(req)) return true;
+    const want = setupToken();
+    const got = String(req.header('x-setup-token') ?? (req.body as { setup_token?: unknown } | undefined)?.setup_token ?? '').trim();
+    return !!want && !!got && got === want;
+  };
+
+  /**
+   * Who you are here, and what that lets you do — two answers, because they stopped being one.
+   *
+   * `signedIn` used to mean "is an operator", since nobody else could hold a session. It now means what it says,
+   * and `isOwner` carries the other half. A UI that read `signedIn` as permission would be wrong about every
+   * person who is not the owner, which after this is nearly everyone — so the field that grants nothing kept the
+   * old name, and the field that grants something is new and has to be asked for by name.
+   *
+   * `needsSetup` went with the password. A node is never unclaimed: its own key always owns it, and that key is in
+   * the config file this process is reading, so there is no state in which nobody owns the node.
+   *
+   * `canEnroll` answers a third thing — may THIS caller make themselves an owner? True on the node's own machine
+   * or with the one-time token, and, like `needsSetup` before it, answered truthfully only to a caller who could
+   * actually do it. To anyone else it is false, which is not a beacon.
+   */
+  router.get('/api/auth/me', wrap((req) => {
+    const who = sessionSubject(req);
+    const owner = isNodeOwner(req);
+    return {
+      signedIn: !!who, subject: who?.address ?? null, scheme: who?.scheme ?? null, via_key: who?.viaKey ?? null, isOwner: owner,
+      scope: [...(who ? ['self'] : []), ...(owner ? ['owner'] : [])],
+      address: market.address, name: market.cfg.name, roles: market.cfg.roles,
+      canEnroll: mayClaim(req) || owner,
+      operators: owner ? owners().map((o) => o.address) : undefined,
+    };
+  }));
+  /**
+   * Single-use sign-in nonces. In memory, because a restart forgetting them is correct.
+   *
+   * A nonce now carries the exact message that was issued for it, and the scheme it was issued under. Both matter.
+   *
+   * Storing the MESSAGE means verification never rebuilds it: the node checks the signature against the bytes it
+   * handed out, so the readable wallet message can say whatever is useful to a person — a site, a timestamp, a
+   * node name — without any of it having to survive a round trip or be re-derived identically on the way back.
+   *
+   * Storing the SCHEME means the caller cannot pick one at the end. The two schemes hash the same string
+   * differently, and they mean different things: `ain` is a key acting on its own, `eip191` is a person who read a
+   * prompt. Letting the signature's presenter say which rules apply would let them choose which of those two
+   * claims the node records — so the choice is made when the challenge is asked for, and fixed from then on.
+   */
+  const loginNonces = new Map<string, { message: string; scheme: AuthScheme; expires: number }>();
+
+  /**
+   * Add an address to this node's operators, and sign it in.
+   *
+   * This is what remains of "claiming" a node once the password is gone. The node's own key is always an operator,
+   * so nothing has to be claimed to get in — what this is for is the OTHER person: an AIN Wallet on a laptop, a
+   * colleague, a second machine. Adding one is exactly as privileged as being one, so it needs either an operator
+   * session already, or the one-time token that only the OS user running the node can read.
+   *
+   * The address has to SIGN, not merely be typed: otherwise a typo enrols an address nobody holds the key to, and
+   * the node would report an operator who can never sign in.
+   */
+  router.post('/api/auth/enroll', wrap((req, res) => {
+    // Authorisation before validation: a caller who may not enrol learns nothing about the shape of the request.
+    if (!mayClaim(req)) {
+      market.log('warn', 'auth', `refused an attempt to enrol an operator from ${req.socket?.remoteAddress ?? 'an unknown address'}${req.header('x-forwarded-for') ? ' (forwarded by a proxy, so not local)' : ''}`);
+      // the path is deliberately NOT named: a remote caller has no business learning where this node's home is
+      throw new HttpError(403, 'enroll_local_only: an address is added to this node\'s operators from the machine it runs on (`ainize operators --add <address>`), or with the one-time token in its AINIZE_HOME/setup-token as the x-setup-token header');
+    }
+    const { address, nonce, signature } = z.object({ address: z.string().regex(/^0x[0-9a-fA-F]{40}$/), nonce: z.string(), signature: z.string() }).parse(req.body);
+    const rec = loginNonces.get(nonce);
+    loginNonces.delete(nonce);
+    if (!rec || rec.expires <= Date.now()) throw new HttpError(401, 'the sign-in challenge has expired — ask for a new one');
+    if (!verifyAuth(rec.scheme, rec.message, signature, address)) {
+      throw new HttpError(401, 'that signature does not come from the address it claims');
+    }
+    // The grant goes in the database, not the config file. A config file is the recovery path — hand-edited on
+    // the machine, read at startup — and an HTTP request rewriting it means every enrolment races whatever else
+    // is holding that file, and lands in a file the owner did not edit. `owners()` reads both, so an address
+    // granted here is an owner immediately and the config list keeps meaning what it always meant.
+    if (!isOwner(address)) {
+      market.store.addOwner(address, null, 'enrolled from this machine');
+      market.log('info', 'auth', `${address} added to this node's owners`);
+    }
+    if (deps.home) { try { rmSync(setupTokenPath(deps.home), { force: true }); } catch { /* the enrolment stands either way */ } }
+    return { ok: true, token: newSession(res, { subject: address, scheme: rec.scheme }), address: address.toLowerCase() };
+  }));
+  /**
+   * Item 89: one password guarded sales, publishing, the wallet and the model runtime, and the door accepted
+   * unlimited guesses at it — nothing in `node/src` counted an attempt. The password is gone, but the door is
+   * not: a signature can be guessed at too, and a node with sign-in open to anyone is worth throttling more, not
+   * less. Wrong answers cost time, doubling from one second after the third failure up to half a minute, and a
+   * successful sign-in clears the bucket. Keyed by the TCP peer, never `req.ip`: with `server.trustProxy` on,
+   * `req.ip` is whatever X-Forwarded-For says, so the attacker being throttled could choose their own bucket.
+   * Successful sign-in clears the bucket, so one typo costs a returning operator nothing.
+   */
+  const LOGIN_WINDOW_MS = 15 * 60_000;
+  const LOGIN_FREE_TRIES = 3;
+  const loginFails = new Map<string, { n: number; until: number; last: number }>();
+  const loginKey = (req: Request) => req.socket?.remoteAddress ?? 'unknown';
+  const loginDelayMs = (n: number) => (n <= LOGIN_FREE_TRIES ? 0 : Math.min(30_000, 1000 * 2 ** (n - LOGIN_FREE_TRIES - 1)));
+  const loginGuard = (req: Request) => {
+    const now = Date.now();
+    for (const [k, v] of loginFails) if (now - v.last > LOGIN_WINDOW_MS) loginFails.delete(k);
+    const rec = loginFails.get(loginKey(req));
+    if (!rec || now >= rec.until) return;
+    const wait = Math.ceil((rec.until - now) / 1000);
+    // Nothing here is a password any more, so the refusal no longer offers to reset one. A failed attempt is a
+    // signature that did not check out, and the only thing to do about it is use the key that does.
+    throw new HttpError(429, `too_many_attempts: ${rec.n} signatures from this address did not check out — wait ${wait}s before trying again.`, { retry_after_s: wait, attempts: rec.n });
+  };
+  const loginFailed = (req: Request) => {
+    const key = loginKey(req);
+    const now = Date.now();
+    const prev = loginFails.get(key);
+    const n = (prev && now - prev.last <= LOGIN_WINDOW_MS ? prev.n : 0) + 1;
+    loginFails.set(key, { n, until: now + loginDelayMs(n), last: now });
+    if (n === LOGIN_FREE_TRIES + 1 || n % 10 === 0) market.log('warn', 'auth', `${n} failed sign-in attempts from ${key} — the next one is refused for ${Math.ceil(loginDelayMs(n) / 1000)}s`);
+    return n;
+  };
+  /**
+   * Sign-in by signature, for an operator who has a key instead of a password.
+   *
+   * Two steps, because a signature on its own is a bearer token: the node issues a single-use nonce, the operator
+   * signs `ainize-login:<nodeAddress>:<nonce>`, and the node checks the recovered address. The node address is in
+   * the message, so a signature made at one node is worthless at another; the nonce is single-use and short-lived,
+   * so a captured one buys nothing.
+   *
+   * WHO IS ALLOWED. The node's own address, always — whoever holds that key already owns everything this node
+   * published, and asking them for a password as well protects nothing. Plus whatever `operatorAddresses` lists,
+   * which is how a person signs in from an AIN Wallet on another machine. An address gets into that list only
+   * through a config change by someone who already has operator access, so this is not a way in.
+   *
+   * The password route stays. A node with no key to hand and a person with no extension both still need it, and
+   * removing a working path to make a new one look better is not an improvement.
+   */
+  router.post('/api/auth/challenge', wrap((req) => {
+    loginGuard(req);
+    // Default `ain`, so a CLI built before this existed asks for exactly what it asked for before.
+    const { scheme } = z.object({ scheme: z.enum(['ain', 'eip191']).default('ain') }).parse(req.body ?? {});
+    const nonce = randomBytes(16).toString('hex');
+    const expires = Date.now() + LOGIN_NONCE_TTL_MS;
+    const message = scheme === 'eip191'
+      ? walletLoginMessage({ node: market.address, nodeName: market.cfg.name, nonce, origin: requestOrigin(req.header('origin')), expiresAt: expires })
+      : operatorLoginMessage({ node: market.address, nonce });
+    loginNonces.set(nonce, { message, scheme, expires });
+    // Keep the map small without a timer: every issue drops what has already expired.
+    for (const [n, rec] of loginNonces) if (rec.expires <= Date.now()) loginNonces.delete(n);
+    return { nonce, expires_at: expires, node: market.address, scheme, message };
+  }));
+  router.post('/api/auth/wallet', wrap((req, res) => {
+    const { address, nonce, signature } = z.object({ address: z.string(), nonce: z.string(), signature: z.string() }).parse(req.body);
+    loginGuard(req);
+    const rec = loginNonces.get(nonce);
+    // Burned whatever happens next: a nonce that has been shown a wrong signature is spent, not retryable.
+    loginNonces.delete(nonce);
+    if (!rec || rec.expires <= Date.now()) { loginFailed(req); throw new HttpError(401, 'the sign-in challenge has expired — ask for a new one'); }
+    // The stored message, under the stored scheme. Neither is taken from the request: a signature's presenter
+    // chooses nothing about how it is checked.
+    if (!verifyAuth(rec.scheme, rec.message, signature, address)) {
+      const n = loginFailed(req);
+      throw new HttpError(401, 'that signature does not come from the address it claims', { attempts: n });
+    }
+    loginFails.delete(loginKey(req));
+    /**
+     * Anyone may sign in. Owning the node stopped being the price of having a name here.
+     *
+     * It used to be: this route refused any address that was not an operator, because a session WAS ownership and
+     * nothing else. That held while the only person who ever opened the page was whoever ran the machine. It stops
+     * holding the moment a teacher has to be known in order to be paid — and the refusal a person met, "you are
+     * not an operator of this node", was the product telling them their own wallet was the wrong kind of thing.
+     *
+     * What a session buys on its own is a name: `scope: ['self']`. Every privileged route asks `isNodeOwner`,
+     * which reads the owner lists rather than the mere existence of a session. Signing in still costs a signature
+     * over a fresh single-use nonce, so this is not a way to mint sessions for free.
+     */
+    /**
+     * A bound key signs in as the person who bound it.
+     *
+     * This is what makes `ainize login` a thing you do once rather than every morning: the wallet approved this
+     * key months ago, the node wrote that down, and from then on the CLI proves itself with its own key alone.
+     * The session's SUBJECT is the person — their knowledge, their payouts, their ownership — and `via_key`
+     * records that a machine, not they, actually signed, so "end that laptop" stays a question with an answer.
+     *
+     * The scheme stays `ain`, because that is what really happened: a key acted on its own. Recording `eip191`
+     * here would claim a person read a prompt during a sign-in nobody watched.
+     */
+    const bound = market.store.binding(address);
+    // Lowercase, always. A bound sign-in answers with the owner as the store holds it and an unbound one answered
+    // with whatever casing the caller sent, so the same field came back in two different shapes depending on a
+    // fact the caller could not see. Everything here compares with `sameAddr`, and one canonical form is what
+    // keeps a client that compares strings from being right only half the time.
+    const subject = (bound ? bound.owner : address).toLowerCase();
+    if (bound) market.store.touchBinding(address);
+    const owner = isOwner(subject);
+    market.log('info', 'auth', `${subject} signed in${sameAddr(subject, market.address) ? " (this node's own key)" : ''} with ${bound ? `a key it authorised (${address})` : rec.scheme === 'eip191' ? 'a browser wallet' : 'a key'}${owner ? ' — an owner of this node' : ''}`);
+    return {
+      ok: true, token: newSession(res, { subject, scheme: rec.scheme, viaKey: bound ? address : null }),
+      address: subject, via_key: bound ? address.toLowerCase() : null, scheme: rec.scheme, isOwner: owner, scope: owner ? ['self', 'owner'] : ['self'],
+    };
+  }));
+  /**
+   * Who owns this node, and adding or removing one — from a browser, by an owner, without a shell.
+   *
+   * Until now the only way in was `/api/auth/enroll`, which needs the machine itself: a loopback connection or a
+   * token readable only by the OS user the node runs as. That is right for the FIRST owner and wrong for every one
+   * after: a person holding the owning wallet, looking at their own node in a browser, could not add a colleague.
+   *
+   * Adding here needs no signature from the address, unlike enrolment. Enrolment has to prove the key exists,
+   * because nothing else vouches for it and a typo would enrol an address nobody can sign for. A grant is
+   * different: an owner who is signed in is vouching, the grant is listed with their name on it, and it can be
+   * taken back — so the cost of a typo is one visible row and one DELETE, not a phantom owner.
+   *
+   * Which is exactly why being on the machine is NOT enough here, though it is enough to enrol. The two are the
+   * same power in the end — a local process can enrol an address it holds the key to — but they are not the same
+   * evidence. Enrolment leaves a signature proving the key exists; a grant leaves a name, and a grant with no
+   * owner behind it would leave a row saying nobody vouched for this. There is no such thing as a grant with no
+   * one accountable for it, so the route asks for the owner rather than for the machine.
+   */
+  router.get('/api/auth/owners', requireOwner, wrap(() => ({ owners: owners() })));
+  router.post('/api/auth/owners', requireOwner, wrap((req) => {
+    const { address, note } = z.object({ address: z.string().regex(/^0x[0-9a-fA-F]{40}$/), note: z.string().max(200).optional() }).parse(req.body);
+    const by = sessionSubject(req)!.address;
+    if (isOwner(address)) return { ok: true, address, already: true, owners: owners() };
+    market.store.addOwner(address, by, note ?? null);
+    market.log('info', 'auth', `${address} granted ownership of this node by ${by ?? 'the machine it runs on'}`);
+    return { ok: true, address, already: false, owners: owners() };
+  }));
+  router.delete('/api/auth/owners/:address', requireOwner, wrap((req) => {
+    const address = z.string().regex(/^0x[0-9a-fA-F]{40}$/).parse(req.params.address);
+    const me = sessionSubject(req)?.address;
+    const listed = owners().find((o) => sameAddr(o.address, address));
+    // Where the claim actually lives is checked BEFORE whether it is your own, because it is the more useful answer
+    // when both apply: an owner deleting themselves out of the config file needs to be told about the config file,
+    // not told to ask a colleague who cannot help either.
+    if (listed?.source === 'node') throw new HttpError(400, "this is the node's own key: it owns what this node published, and revoking it would only stop the node acting for itself");
+    if (listed?.source === 'config') throw new HttpError(400, `${address} is listed in operatorAddresses in this node's config file — remove it there, on the machine this node runs on (\`ainize operators remove ${address}\`), and restart`);
+    // Not yourself: an owner who revokes their own only claim is locked out of the thing they were administering,
+    // and the fix needs the machine. Another owner can still do it, which is the check this is asking for.
+    if (sameAddr(me, address)) throw new HttpError(400, 'you cannot revoke your own ownership — ask another owner, or remove the address from the config file on the machine this node runs on');
+    if (!market.store.removeOwner(address)) throw new HttpError(404, `${address} does not own this node`);
+    // Revocation that leaves a live session is not revocation: the 30-day cookie would outlast it by a month.
+    let ended = 0;
+    for (const sess of market.store.sessionsOf(address)) { market.store.deleteSession(sess.token); ended++; }
+    market.log('info', 'auth', `${address} no longer owns this node (revoked by ${me ?? 'an owner'}${ended ? `, ${ended} session(s) ended` : ''})`);
+    return { ok: true, address, sessions_ended: ended, owners: owners() };
+  }));
+  /**
+   * `ainize login` — a command line asking a person to vouch for it.
+   *
+   * THE PROBLEM. The CLI holds a key and signs every request with it, which is right: it cannot open a wallet
+   * prompt, and a key that signs for itself is the whole identity model here. What that key cannot be is
+   * RECOGNISED — nothing connects it to the person whose knowledge it publishes and whose payouts it moves. The
+   * old answer was to make the CLI's key an operator by editing a file on the machine, which works only for
+   * somebody who is already on that machine and makes every laptop a separate identity.
+   *
+   * THE SHAPE. The CLI asks for a code, prints a URL and waits. The person opens it in a browser they are already
+   * signed into, reads what is being authorised, and approves it with one wallet signature. The CLI collects a
+   * session and from then on signs with its own key alone — no wallet, no prompt, no key copied anywhere.
+   *
+   * WHAT THE CODE IS. The whole secret, so it is short-lived, single-use, and useless on its own: collecting the
+   * session needs the poll secret the CLI kept and never printed, and the node stores only its hash. Somebody
+   * reading the URL over a shoulder can open the page and see what is being asked, and can approve it with THEIR
+   * wallet — which binds the CLI to them, not them to the CLI, and is visible to the person running it.
+   */
+  const DEVICE_TTL_MS = 10 * 60_000;
+  const DEVICE_BINDING_MS = 90 * 24 * 3600_000;
+  router.post('/api/auth/device', wrap((req) => {
+    // Unauthenticated on purpose: a CLI with nothing but its own key is exactly who this is for. The rate limiter
+    // is the session throttle, keyed by TCP peer, so a script cannot paper the node with pending grants.
+    loginGuard(req);
+    const { delegate, label } = z.object({
+      delegate: z.string().regex(/^0x[0-9a-fA-F]{40}$/),
+      label: z.string().max(80).optional(),
+    }).parse(req.body);
+    market.store.sweepDeviceGrants();
+    const code = randomBytes(16).toString('base64url');
+    const pollSecret = randomBytes(24).toString('base64url');
+    const expires = Date.now() + DEVICE_BINDING_MS;
+    const message = deviceAuthMessage({ node: market.address, nodeName: market.cfg.name, delegate, label, expiresAt: expires, code });
+    market.store.putDeviceGrant({ code, delegate, label: label ? safeLabel(label) : null, pollHash: sha256Hex(pollSecret), message, expires, ttlMs: DEVICE_TTL_MS });
+    market.log('info', 'auth', `${delegate} asked to be authorised${label ? ` as "${safeLabel(label)}"` : ''} — waiting for someone to approve it in a browser`);
+    return {
+      code, poll_secret: pollSecret, interval_ms: 2000, expires_at: Date.now() + DEVICE_TTL_MS,
+      // The node's own idea of where it is reachable. A CLI talking to 127.0.0.1 gets a 127.0.0.1 link, which is
+      // right: the URL has to be openable by whoever is looking at that terminal.
+      url: `${market.publicUrl.replace(/\/$/, '')}/authorize?code=${encodeURIComponent(code)}`,
+    };
+  }));
+
+  /** What is being asked, for the page that shows it. The code is the credential, so this needs no session. */
+  router.get('/api/auth/device/:code', wrap((req) => {
+    const g = market.store.deviceGrant(String(req.params.code));
+    if (!g) throw new HttpError(404, 'no_such_request: that authorisation link is not one this node issued');
+    const state = g.claimed_at ? 'claimed' : g.approved_at ? 'approved' : g.expires_at <= Date.now() ? 'expired' : 'pending';
+    // `message` is the exact string the wallet will be asked to sign. The page renders it rather than composing
+    // its own version, so what a person reads on the page and what they read in MetaMask cannot drift apart.
+    return {
+      status: state, delegate: g.delegate, label: g.label, message: g.message, expires: g.expires,
+      expires_at: g.expires_at, node: market.address, name: market.cfg.name, owner: g.owner,
+    };
+  }));
+
+  /**
+   * Approving it: one wallet signature over the message the node issued.
+   *
+   * A session alone would be enough to know WHO — but not enough to say they meant this. The signature is what
+   * the person actually reads, it names the key and the window, and it cannot be produced by a page acting on a
+   * session it found. So: signed in (which says a wallet is present and which one), plus a signature over the
+   * stored string (which says they read this particular request and approved it).
+   */
+  router.post('/api/auth/device/:code/approve', wrap((req) => {
+    const who = sessionSubject(req);
+    if (!who) throw new HttpError(401, 'sign in with your wallet before authorising anything to act as you');
+    const { signature } = z.object({ signature: z.string() }).parse(req.body);
+    const g = market.store.deviceGrant(String(req.params.code));
+    if (!g) throw new HttpError(404, 'no_such_request: that authorisation link is not one this node issued');
+    if (g.claimed_at) throw new HttpError(409, 'already_used: that request was already collected');
+    if (g.approved_at) throw new HttpError(409, 'already_approved: that request has already been answered');
+    if (g.expires_at <= Date.now()) throw new HttpError(410, 'expired: the request timed out — run `ainize login` again');
+    // Under `eip191` and against the STORED message: the presenter of a signature chooses neither the rules nor
+    // the bytes. Anything else would let a page have a wallet sign one thing and the node record another.
+    if (!verifyAuth('eip191', g.message, signature, who.address)) throw new HttpError(401, 'that signature does not come from the address that is signed in');
+    market.store.approveDeviceGrant(g.code, who.address);
+    market.store.putBinding(g.delegate, who.address, g.label);
+    market.log('info', 'auth', `${who.address} authorised ${g.delegate}${g.label ? ` ("${g.label}")` : ''} to act as them`);
+    return { ok: true, delegate: g.delegate, owner: who.address, expires: g.expires };
+  }));
+
+  /**
+   * The CLI collecting its session. Polled, so the answer to "not yet" has to be cheap and boring.
+   *
+   * The poll secret is what makes this the CLI's to collect and nobody else's — the code is in a URL that was
+   * printed to a terminal and may have been read by anyone. Compared in constant time and stored only as a hash,
+   * so neither a copy of the database nor a timing signal hands the session to somebody else.
+   */
+  router.post('/api/auth/device/:code/claim', wrap((req, res) => {
+    const { poll_secret } = z.object({ poll_secret: z.string() }).parse(req.body);
+    const g = market.store.deviceGrant(String(req.params.code));
+    if (!g || !timingEqual(sha256Hex(poll_secret), g.poll_hash)) throw new HttpError(404, 'no_such_request: that authorisation link is not one this node issued');
+    if (g.claimed_at) throw new HttpError(409, 'already_used: that request was already collected');
+    if (!g.approved_at || !g.owner) {
+      if (g.expires_at <= Date.now()) throw new HttpError(410, 'expired: nobody approved it in time — run `ainize login` again');
+      return { status: 'pending' as const };
+    }
+    // Single-use, and the UPDATE is the thing that decides it: two polls that raced must not both get a session.
+    if (!market.store.claimDeviceGrant(g.code)) throw new HttpError(409, 'already_used: that request was already collected');
+    const owner = g.owner;
+    market.store.touchBinding(g.delegate);
+    const token = newSession(res, { subject: owner, scheme: 'eip191', viaKey: g.delegate });
+    market.log('info', 'auth', `${g.delegate} collected a session as ${owner}`);
+    return { status: 'approved' as const, token, owner, delegate: g.delegate, expires: g.expires, isOwner: isOwner(owner) };
+  }));
+
+  /**
+   * Every machine that speaks for you, and ending one.
+   *
+   * A binding outlives a session on purpose — that is what stops `ainize login` being a thing you do every
+   * morning — so it has to be visible and it has to be revocable, and revoking has to end the sessions the key
+   * already collected. A revocation a 30-day cookie outlives is not a revocation.
+   */
+  router.get('/api/auth/bindings', wrap((req) => {
+    const who = sessionSubject(req);
+    if (!who) throw new HttpError(401, 'sign in with your wallet to see what acts as you');
+    return { bindings: market.store.bindingsOf(who.address), via: who.viaKey ?? null };
+  }));
+  router.delete('/api/auth/bindings/:delegate', wrap((req) => {
+    const who = sessionSubject(req);
+    if (!who) throw new HttpError(401, 'sign in with your wallet to end what acts as you');
+    const delegate = z.string().regex(/^0x[0-9a-fA-F]{40}$/).parse(req.params.delegate);
+    const b = market.store.binding(delegate);
+    // Only your own: a binding names a person, and reading someone else's list is not something a session buys.
+    if (!b || !sameAddr(b.owner, who.address)) throw new HttpError(404, `${delegate} does not act as you`);
+    market.store.removeBinding(delegate);
+    let ended = 0;
+    for (const sess of market.store.sessionsVia(delegate)) { market.store.deleteSession(sess.token); ended++; }
+    market.log('info', 'auth', `${who.address} ended ${delegate}${b.label ? ` ("${b.label}")` : ''} (${ended} session(s))`);
+    return { ok: true, delegate, sessions_ended: ended, bindings: market.store.bindingsOf(who.address) };
+  }));
+
+  /**
+   * Sign out the session that made this request — whichever way it arrived.
+   *
+   * This deleted the COOKIE session and nothing else, so a caller holding a bearer token was answered `ok` and
+   * stayed signed in for the rest of the token's thirty days. The CLI forgot the token locally, which is what
+   * made it look like it had worked; the node went on honouring it, and anyone who had read it off the disk or
+   * out of a log could keep using it.
+   *
+   * It was survivable while the only bearer token was the CLI's, on the node's own machine, held by whoever
+   * already had the node's key. It stopped being survivable the moment `ainize login` started handing one to a
+   * laptop — and `logout --forget` promises to leave nothing behind, which it could not keep.
+   */
+  router.post('/api/auth/logout', wrap((req, res) => {
+    const token = sessionToken(req);
+    if (token) market.store.deleteSession(token);
+    res.clearCookie(SESSION_COOKIE);
+    return { ok: true };
+  }));
+
+  // ------------------------------------------------------------ API reference (OpenAPI 3.1 + CLI reference)
+  router.get('/api/openapi.json', wrap(async () => buildOpenApi(market.publicUrl, VERSION)));
+  router.get('/api/docs', wrap(async () => ({ openapi: buildOpenApi(market.publicUrl, VERSION), cli: CLI_REFERENCE, node: market.publicUrl })));
+
+  // ------------------------------------------------------------ public info & catalog
+  /**
+   * What the shared model is doing, and where this node writes into it (items 135, 144, 215).
+   *
+   * `queueState()` — the holder of the cross-process lock, and how many callers are behind it — existed but was
+   * wired only into the two visitor chat endpoints, so `ainize status`, the /network card and every monitor built on
+   * /api/info said `runtime available` while another process on the same host held the model for twenty minutes.
+   * `patch_dir` is the mailbox this node's applies go into, which nothing named anywhere: `runtime.api` and
+   * `runtime.patchDir` are independent, and the second is derived from a repo path `init` adopts on its own.
+   * `checked` is the watchdog's last physical measurement of the table (`patch.py status`), the only thing that
+   * knows whether the rows are really there.
+   */
+  const runtimeInfo = async () => ({
+    ...(await market.runtime.status()),
+    patch_dir: market.runtime.patchDir(), patch_dir_source: market.runtime.patchDirSource(),
+    queue: market.runtime.queueState(),
+    checked: market.runtimeCheck(),
+  });
+
+  /**
+   * The node's own balance (item 142). It pays for every announce, attest and settle it signs, and no operator surface
+   * but `ainize wallet` ever mentioned it — `ainize status` and every monitor built on /api/info were silent about the
+   * one number whose exhaustion stops the node working. Cached: the console polls this route every few seconds and
+   * each read is an RPC to the chain.
+   */
+  let balanceCache: { at: number; value: number | null } | null = null;
+  const nodeBalance = async (): Promise<number | null> => {
+    if (balanceCache && Date.now() - balanceCache.at < 30_000) return balanceCache.value;
+    const value = await market.chainStatus().then((st) => (typeof st.balance === 'number' ? st.balance : null)).catch(() => null);
+    balanceCache = { at: Date.now(), value };
+    return value;
+  };
+
+  router.get('/api/info', wrap(async (req) => ({
+    node: await (async () => { await market.catalog(); const self = await market.selfInfo(); return { ...self, blobs: await market.publicBlobs(self.blobs) }; })(), ledger: await market.ledger.info(), runtime: await runtimeInfo(),
+    quorum: market.cfg.verifier?.quorum ?? 2, currency: market.cfg.market.currency, peers: market.p2p.peers().length,
+    // `peers` stays the plain count every existing client reads; `peer_status` is the fact nobody had (item 170):
+    // which peers actually ANSWERED, how many of those verify, and which publish on a ledger this node cannot read.
+    peer_status: market.p2p.health(),
+    // item 128: four stores grow without bound and nothing reported a single byte of them. `free` is the filesystem
+    // holding dataDir; `reclaimable_*` is what `ainize gc` could take back (bodies this node neither wrote nor bought).
+    disk: await nodeDisk(),
+    initial_credit: market.cfg.market.initialCredit, royalty_share: market.cfg.market.royaltyShare,
+    accepts_contributions: market.acceptsContributions(), contributor_share: market.teach().contributorShare,
+    counts: (() => { const c = market.catalogSync().filter((e) => e.status !== 'DRAFT'); const verified = c.filter((e) => e.status === 'VERIFIED').length;
+      // `listed` is the old name for `verified`, kept on the wire so an installed CLI or a dashboard built
+      // against it keeps reading a number instead of `undefined` — which would render as a blank, not an error.
+      return { patches: c.length, verified, listed: verified, verifying: c.filter((e) => e.status === 'ANNOUNCED' || e.status === 'VERIFYING').length, superseded: c.filter((e) => e.status === 'SUPERSEDED').length, rejected: c.filter((e) => e.status === 'REJECTED').length }; })(),
+    // item 338: the product says "any node can challenge a wrong one" and points at challenges as the safeguard that
+    // replaced the deposit. On the demo chain that mechanism had fired zero times in 501 attestations, and no screen
+    // said so — a reader inferred oversight that had never once happened. Keep the sentence, attach the number.
+    verification_stats: verificationStats(),
+    // What this node itself spends verifying for others, and what it gives back (items 332 / 333 / 336).
+    verifier_work: deps.verifier?.work() ?? null,
+    // item 142: what this node has to spend, for the operator only — a visitor has no business reading the wallet.
+    ...(isNodeOwner(req) ? { balance: await nodeBalance() } : {}),
+  })));
+
+  /**
+   * How often the safeguard has actually fired on everything this node can see (item 338). Derived from the catalogue,
+   * cached for as long as the catalogue is (a few seconds) — it walks every attestation of every anchor.
+   */
+  let statsCache: { at: number; value: VerificationStats } | null = null;
+  const verificationStats = (): VerificationStats => {
+    if (statsCache && Date.now() - statsCache.at < 15_000) return statsCache.value;
+    const cat = market.catalogSync().filter((e) => e.status !== 'DRAFT');
+    const value: VerificationStats = { attestations: 0, failed: 0, hash_only: 0, challenges: 0, upheld: 0, open: 0, disputed_items: 0, rechecks: 0 };
+    for (const e of cat) {
+      for (const a of e.attestations) {
+        value.attestations++;
+        if (!a.passed) value.failed++;
+        if (a.verified_on === 'hash-only') value.hash_only++;
+        if (a.recheck) value.rechecks++;
+      }
+      value.challenges += e.challenge_log.length;
+      value.upheld += e.challenge_log.filter((c) => c.state === 'upheld').length;
+      value.open += e.challenge_log.filter((c) => c.state === 'open').length;
+      if (e.challenge_log.length) value.disputed_items++;
+    }
+    statsCache = { at: Date.now(), value };
+    return value;
+  };
+
+  /**
+   * Bytes on disk (item 128). Recomputed at most every 30 s: `/api/info` is polled by the console every few seconds
+   * and walking a blob directory of hundreds of files on every poll would be its own problem.
+   */
+  let diskCache: { at: number; value: DiskReport } | null = null;
+  const nodeDisk = async (): Promise<DiskReport> => {
+    if (diskCache && Date.now() - diskCache.at < 30_000) return diskCache.value;
+    const base = diskReport(market.cfg.dataDir, { home: deps.home, ledgerFile: join(market.cfg.dataDir, 'ledger.jsonl') });
+    const plan = await gcRun(market, { dryRun: true }).catch(() => null);
+    const value: DiskReport = plan ? { ...base, reclaimable_files: plan.candidates.length, reclaimable_bytes: plan.bytes } : base;
+    diskCache = { at: Date.now(), value };
+    return value;
+  };
+
+  /** Every body this node holds, with why it has it and whether `gc` would take it (item 128). */
+  router.get('/api/me/blobs', requireOwner, wrap(async () => {
+    const plan = await gcRun(market, { dryRun: true });
+    const reclaim = new Map(plan.candidates.map((c) => [c.sha256, c]));
+    const map = await market.entryMap();
+    const byName = new Map<string, { id: string; name: string; status: string }>();
+    for (const e of map.values()) if (!byName.has(e.anchor.patch_sha256)) byName.set(e.anchor.patch_sha256, { id: e.anchor.id, name: e.anchor.name, status: e.status });
+    const items = market.blobs.list().filter((b) => !b.path.startsWith(market.datasets.dir)).map((b) => {
+      const e = byName.get(b.sha256);
+      const purchased = !!e && !!market.store.getPurchase(e.id);
+      return {
+        sha256: b.sha256, path: b.path, size_bytes: b.size_bytes, rows: b.rows, imported_at: b.imported_at,
+        patch_id: e?.id ?? null, name: e?.name ?? null, status: e?.status ?? null,
+        mine: !!e && sameAddr(map.get(e.id)?.anchor.author, market.address),
+        purchased, applied: !!e && market.isApplied(e.id),
+        reclaimable: reclaim.has(b.sha256), holders: market.p2p.holders(b.sha256).length,
+      };
+    }).sort((a, b) => b.size_bytes - a.size_bytes);
+    return { items, disk: await nodeDisk(), reclaimable_bytes: plan.bytes, kept: plan.kept };
+  }));
+  /**
+   * Delete the verification copies. `dry_run` is the default so nothing is removed by a mistyped filter; the answer
+   * is the same shape either way, so the CLI can show the plan and then repeat the call for real.
+   */
+  router.post('/api/me/blobs/gc', requireOwner, wrap(async (req) => {
+    const b = z.object({
+      dry_run: z.boolean().default(true),
+      keep_purchased: z.boolean().default(true),
+      older_than_ms: z.number().int().min(0).max(3650 * 86_400_000).nullable().optional(),
+      allow_sole_copy: z.boolean().default(false),
+    }).parse(req.body ?? {});
+    const opts: GcOptions & { dryRun: boolean } = { dryRun: b.dry_run, keepPurchased: b.keep_purchased, allowSoleCopy: b.allow_sole_copy, olderThanMs: b.older_than_ms ?? undefined };
+    const r = await gcRun(market, opts);
+    if (!b.dry_run) diskCache = null;
+    return { ...r, disk: await nodeDisk() };
+  }));
+
+  router.get('/api/catalog', wrap(async (req) => {
+    const q = z.object({
+      sort: z.enum(['latest', 'popular', 'price', 'rows', 'built_on', 'trending', 'fresh']).default('latest'),
+      status: z.string().optional(), model: z.string().optional(), schema: z.string().optional(), branch: z.string().optional(),
+      author: z.string().optional(), contributor: z.string().optional(), origin: z.enum(['operator', 'teach']).optional(), q: z.string().optional(),
+      limit: z.coerce.number().min(1).max(200).default(50), offset: z.coerce.number().min(0).default(0),
+      include_drafts: z.coerce.boolean().default(false),
+    }).parse(req.query);
+    // Private drafts never leak to anonymous callers — the facet lists (models/schemas) are derived from the same filtered set as the items.
+    let items = await market.catalog();
+    /**
+     * The statuses this caller asked for, in canonical spelling. `VERIFIED` was called `LISTED` until recently
+     * and a published CLI is still out there saying so, so the filter is read through `parseStatus` rather than
+     * compared raw — otherwise `patch ls --status LISTED` silently matches nothing for everyone who has not
+     * upgraded, which is the worst shape this could take: an empty catalogue reads as "no such knowledge".
+     */
+    const want = q.status ? q.status.split(',').map((s) => parseStatus(s)).filter((s): s is PatchStatus => !!s) : null;
+    if (!q.include_drafts || !isNodeOwner(req)) items = items.filter((e) => e.status !== 'DRAFT');
+    // Knowledge its own author retired is off the shelves (item 148) — `?status=RETIRED` still lists it, so the
+    // publisher's own screens and `patch ls --status RETIRED` can find what was taken down.
+    if (!want?.includes('RETIRED')) items = items.filter((e) => e.status !== 'RETIRED');
+    const facets = items;
+    if (want) items = items.filter((e) => want.includes(e.status));
+    if (q.model) items = items.filter((e) => e.anchor.model.id_M === q.model);
+    // Item 188 — a trailing `*` is a prefix: every taught lesson gets its own `taught/<slug>-<hex>` subject by
+    // design, so "all taught lessons" is one filter instead of 136 chips. An exact schema still matches exactly.
+    if (q.schema) {
+      const pre = q.schema.endsWith('*') ? q.schema.slice(0, -1) : null;
+      items = pre ? items.filter((e) => e.anchor.benchmark.schema.startsWith(pre)) : items.filter((e) => e.anchor.benchmark.schema === q.schema);
+    }
+    if (q.author) items = items.filter((e) => sameAddr(e.anchor.author, q.author));
+    if (q.contributor) { const c = q.contributor.toLowerCase(); items = items.filter((e) => (e.anchor.contributors ?? []).some((x) => creditedAddress(x).toLowerCase() === c)); }
+    if (q.origin) items = items.filter((e) => (e.anchor.origin ?? 'operator') === q.origin);
+    const allBranches = q.branch || q.q ? await market.branches() : [];
+    if (q.branch) { const b = allBranches.find((x) => x.name === q.branch); items = items.filter((e) => b?.patch_ids.includes(e.anchor.id)); }
+    /**
+     * What a knowledge KNOWS is what people search for (items 25 + 206). The haystack used to be
+     * `[id, name, description, model, schema]`, so `samsung` and `삼성` returned nothing on a catalogue whose
+     * flagship answers 2,761 Korean tickers, and neither a track, a topic, a creator's name nor a date could find
+     * anything. Everything the anchor publicly declares is searchable now, the benchmark samples included — and
+     * `matched` says WHICH sample matched, so the card can show the question that made it a hit instead of leaving
+     * the reader to guess why a row is in the list.
+     */
+    const searchable = (e: CatalogEntry) => {
+      const a = redactContributors(e).anchor;
+      const day = new Date(a.created_at);
+      return [
+        a.id, a.name, a.description ?? '', a.model.id_M, a.benchmark.schema, a.topic_path, a.branch ?? '',
+        a.author, a.author_name ?? '', ...(a.contributors ?? []).map((c) => c.name ?? ''),
+        ...allBranches.filter((b) => b.patch_ids.includes(a.id)).map((b) => b.name),
+        Number.isFinite(day.getTime()) ? day.toISOString().slice(0, 10) : '',
+        ...(a.benchmark.samples ?? []).flatMap((x) => [x.prompt, x.expect]),
+      ].join(' \u0001 ').toLowerCase();
+    };
+    /** The sample that made this a hit — only when the words on the card do not already explain the match. */
+    const matchedSample = (e: CatalogEntry, s: string) => {
+      const a = e.anchor;
+      if ([a.id, a.name, a.description ?? ''].join(' ').toLowerCase().includes(s)) return null;
+      return (a.benchmark.samples ?? []).find((x) => `${x.prompt} ${x.expect}`.toLowerCase().includes(s)) ?? null;
+    };
+    const needle = q.q?.trim().toLowerCase() ?? '';
+    if (needle) items = items.filter((e) => searchable(e).includes(needle));
+    // "Most popular" ranks by status FIRST: downloads accumulate forever, so a retired single-fact patch with 187
+    // downloads used to head the marketplace over the flagship it was replaced by. Tradeable before retired.
+    const statusRank = (s: string) => (s === 'VERIFIED' ? 0 : s === 'SUPERSEDED' ? 2 : s === 'REJECTED' ? 3 : 1);
+    /** The day this knowledge's DATA is true of: what the publisher declared, else when the file was registered. */
+    const dataDay = (a: PatchAnchor): number => (a.as_of ? Date.parse(`${a.as_of}T00:00:00Z`) || a.created_at : a.created_at);
+    // "Most built on" and "Doing well this week" (design §10) — the first is a network fact (children on the ledger
+    // plus this node's derive intents), the second a node-local weekly score; both are computed once per entry here,
+    // never per comparison, so the sort cannot cost O(n log n) database reads.
+    const map = await market.entryMap();
+    const built = new Map(items.map((e) => [e.anchor.id, market.builtOnCount(e, map)]));
+    const weekly = new Map(items.map((e) => [e.anchor.id, market.weeklyScore(e)]));
+    const sorters = {
+      latest: (a: typeof items[0], b: typeof items[0]) => b.anchor.created_at - a.anchor.created_at,
+      popular: (a: typeof items[0], b: typeof items[0]) => statusRank(a.status) - statusRank(b.status) || b.downloads - a.downloads || b.passed - a.passed,
+      price: (a: typeof items[0], b: typeof items[0]) => Number(a.anchor.price) - Number(b.anchor.price),
+      rows: (a: typeof items[0], b: typeof items[0]) => b.anchor.rows - a.anchor.rows,
+      built_on: (a: typeof items[0], b: typeof items[0]) => (built.get(b.anchor.id) ?? 0) - (built.get(a.anchor.id) ?? 0) || b.anchor.created_at - a.anchor.created_at,
+      trending: (a: typeof items[0], b: typeof items[0]) => (weekly.get(b.anchor.id) ?? 0) - (weekly.get(a.anchor.id) ?? 0) || b.anchor.created_at - a.anchor.created_at,
+      // item 267: "Newest" is when the FILE was registered; this one is when the DATA is true of, which is the
+      // question a daily consumer actually asks. An anchor that declares no day falls back to its registration,
+      // so a catalogue where nobody declares one sorts exactly as `latest` does instead of collapsing.
+      fresh: (a: typeof items[0], b: typeof items[0]) => dataDay(b.anchor) - dataDay(a.anchor) || b.anchor.created_at - a.anchor.created_at,
+    };
+    items = [...items].sort(sorters[q.sort]);
+    const total = items.length;
+    // SC-17 card lines: how often this knowledge was built on, and what a buyer has to load with it
+    const page = items.slice(q.offset, q.offset + q.limit).map((e) => ({
+      ...redactContributors(e), attestations: e.attestations.map((a) => ({ ...a, sig: undefined })),
+      // Item 254: what is still to happen before this is VERIFIED — null for anything already verified.
+      verifying: market.verificationProgress(e),
+      // Item 269: `children` came straight off the derived entry, so `/api/catalog` listed a hidden test anchor —
+      // and a private draft — as a child of a public knowledge, while `/api/patches/:id` and every page hid it. The
+      // same rule that governs the detail route governs the list.
+      children: e.children.filter((c) => relativeVisible(req, e)(map.get(c))),
+      built_on: built.get(e.anchor.id) ?? 0,
+      /**
+       * Item 201: `downloads` is the settlement count — it always was — and every surface printed it as
+       * "downloads", so a superseded single fact wore 314 of them (every e2e run's purchase) against the
+       * flagship's 92. `sales` is what a sale is: a settlement someone else paid a real price for, all-time and
+       * over 30 days. `downloads` stays on the response so nothing that reads it breaks.
+       */
+      sales: market.salesOf(e),
+      requires: (e.anchor.base?.stack ?? []).map((b) => ({ id: b.patch_id, name: map.get(b.patch_id)?.anchor.name ?? b.patch_id })),
+      matched: needle ? matchedSample(e, needle) : undefined,
+    }));
+    return { total, items: page, models: [...new Set(facets.map((e) => e.anchor.model.id_M))], schemas: [...new Set(facets.map((e) => e.anchor.benchmark.schema))] };
+  }));
+
+  /**
+   * Which related entries (lineage parents/children, overlap partners) may this caller see next to `subject`?
+   * Same rule as the catalog: private drafts only for the operator; hidden test anchors only when the node opts in
+   * (includeTestAnchors) or the subject itself is a test anchor — so fixtures never surface on public knowledge pages.
+   */
+  const relativeVisible = (req: Request, subject: CatalogEntry) => {
+    const operator = isNodeOwner(req);
+    const showTest = !!market.cfg.includeTestAnchors || subject.anchor.visibility === 'test';
+    return (x: CatalogEntry | undefined): x is CatalogEntry => !!x && (x.status !== 'DRAFT' || operator) && (x.anchor.visibility !== 'test' || showTest);
+  };
+
+  /**
+   * "patch not found" was the whole answer a node gave for knowledge that exists, is announced, and is held by a peer
+   * this node talks to every four seconds — it just publishes on a ledger this node cannot read (item 170). Ask the
+   * peers before answering, and say which node has it and why it is invisible here. Bounded: at most four peers, a
+   * 1.5 s timeout each, and the answer (found or not) is cached for a minute so a 404 cannot be used to fan out load.
+   */
+  const lookupCache = new Map<string, { at: number; hint: Record<string, unknown> | null }>();
+  const unknownPatch = async (id: string): Promise<HttpError> => {
+    const miss = () => new HttpError(404, 'patch not found');
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/.test(id)) return miss();
+    const cached = lookupCache.get(id);
+    const hint = cached && Date.now() - cached.at < 60_000 ? cached.hint : await (async () => {
+      const peers = market.p2p.peers().slice(0, 4);
+      const found = (await Promise.all(peers.map(async (p) => {
+        try {
+          const r = await fetch(`${p.endpoint}/api/patches/${encodeURIComponent(id)}`, { signal: AbortSignal.timeout(1500) });
+          if (!r.ok) return null;
+          const body = (await r.json()) as { anchor?: { name?: string; price?: string; currency?: string } };
+          return body?.anchor ? { endpoint: p.endpoint, node: p.info?.name ?? p.endpoint, ledger: p.info?.ledger ?? null, name: body.anchor.name ?? id, price: body.anchor.price ?? null, currency: body.anchor.currency ?? null } : null;
+        } catch { return null; }
+      }))).find(Boolean) ?? null;
+      const out = found ? { holder: found } : null;
+      lookupCache.set(id, { at: Date.now(), hint: out });
+      return out;
+    })();
+    if (!hint?.holder) return miss();
+    const h = hint.holder as { endpoint: string; node: string; ledger: string | null; name: string };
+    const mismatch = !!h.ledger && h.ledger !== market.ledger.kind;
+    return new HttpError(404, mismatch
+      ? `patch not found here: "${h.name}" is published by ${h.node} on the ${h.ledger === 'ain' ? 'AIN' : 'local'} ledger, and this node reads the ${market.ledger.kind === 'ain' ? 'AIN chain' : 'local record DAG'} — it can never appear in this catalogue. Trade with that node directly (--node ${h.endpoint}), or re-init this one with \`ainize init --force --ledger ${h.ledger}${h.ledger === 'ain' ? ' --ain-provider <url>' : ''}\`.`
+      : `patch not found here yet: "${h.name}" is published by ${h.node} (${h.endpoint}) and has not reached this node's records — trade with that node directly (--node ${h.endpoint}), or wait for the next gossip round.`,
+      { patch_id: id, holder: h, ledger_mismatch: mismatch, own_ledger: market.ledger.kind });
+  };
+
+  router.get('/api/patches/:id', wrap(async (req) => {
+    const e = await market.entry(req.params.id as string);
+    if (!e) throw await unknownPatch(req.params.id as string);
+    if (e.status === 'DRAFT' && !isNodeOwner(req)) throw notFound('patch not found');
+    const map = await market.entryMap();
+    const visible = relativeVisible(req, e);
+    /**
+     * Items 195, 318: a child used to be a name and a status chip. What the ancestor actually needs to see is what
+     * it is SOLD FOR — a child priced under its base is the base at a discount — and what it has paid them.
+     */
+    const earnings = sameAddr(e.anchor.author, market.address) ? await market.derivativeEarnings(e.anchor.id, map) : null;
+    const earnedFrom = new Map((earnings?.children ?? []).map((c) => [c.id, c]));
+    const lineage = { parents: e.anchor.parents.map((p) => map.get(p)).filter(visible).map((x) => ({ id: x.anchor.id, name: x.anchor.name, author: x.anchor.author, status: x.status, price: x.anchor.price, currency: x.anchor.currency, author_name: x.anchor.author_name ?? null })),
+      children: e.children.map((c) => map.get(c)).filter(visible).map((x) => ({ id: x.anchor.id, name: x.anchor.name, author: x.anchor.author, status: x.status, price: x.anchor.price, currency: x.anchor.currency, author_name: x.anchor.author_name ?? null,
+        sales: earnedFrom.get(x.anchor.id)?.sales ?? null, earned: earnedFrom.get(x.anchor.id)?.amount ?? null })),
+      ...(earnings ? { earned: { amount: earnings.amount, currency: earnings.currency, sales: earnings.sales } } : {}) };
+    const conflicts = (await market.conflicts(e.anchor.id).catch(() => [])).filter((c) => visible(map.get(c.patch_id)));
+    const branches = (await market.branches()).filter((b) => b.patch_ids.includes(e.anchor.id)).map((b) => ({ name: b.name, context: b.context }));
+    /**
+     * Lineage (design §12.5) + item 270: a delta child needs its base stack loaded first, and buying the child
+     * alone buys a file that answers nothing until they are under it. `requires` is now the WHOLE stack, deepest
+     * first (a base's own bases included), each with its price, its seller and whether this node already holds it;
+     * `quote` adds up what the family actually costs from here. Fields that were already here keep their meaning.
+     */
+    const quote = await market.quoteFor(e, map);
+    const requires = quote.requires.map((r) => ({
+      id: r.id, name: r.name, held: r.held, price: r.known ? r.price : null,
+      currency: r.currency, author: r.author, author_name: r.author_name ?? null, gateway_url: r.gateway_url ?? null,
+      depth: r.depth, known: r.known, licensed: r.licensed, purchased: r.purchased, mine: r.mine,
+    }));
+    return {
+      ...redactContributors(e), lineage, conflicts, branches, requires, quote,
+      /**
+       * What one sale at this price pays, to whom, by name (items 189, 318) — from the same `royaltyPlan` that
+       * settles it. `publish --parents` used to say nothing about the split until the first settlement, and the
+       * parents' own prices were on no screen, so undercutting your own base was invisible on both sides.
+       */
+      split: await market.saleSplit(e, undefined, map),
+      dataset_held: !!e.anchor.dataset?.sha256 && market.datasets.has(e.anchor.dataset.sha256),
+      owned: sameAddr(e.anchor.author, market.address), purchased: !!market.store.getPurchase(e.anchor.id), has_body: market.blobs.has(e.anchor.patch_sha256),
+      applied: market.isApplied(e.anchor.id), gateway_url: (e.anchor as PatchAnchor & { gateway_url?: string }).gateway_url ?? null,
+      /**
+       * Where the seller answers TODAY (item 275). `gateway_url` above is the address frozen into the immutable
+       * anchor: a node that changed its port keeps a listing that looks open and cannot be entered. This one is
+       * resolved from the peers this node currently sees, and says where the answer came from.
+       */
+      gateway: market.gatewaysFor(e.anchor, (await market.ledger.nodes().catch(() => [])).map((n) => ({ address: n.body.address, endpoint: n.body.endpoint, last_seen: n.body.last_seen })))[0] ?? null,
+      // the author's own takedown, when there is one (item 148)
+      retired_at: (e as MarketEntry).retired_at ?? null, retire_reason: (e as MarketEntry).retire_reason ?? null,
+      // …and the author's own re-pricings (item 278): what it sells for now, what it was published at, and when
+      // it changed — so a discount on the page is a fact a buyer can check rather than a claim.
+      list_price: (e as MarketEntry).list_price ?? null, repriced_at: (e as MarketEntry).repriced_at ?? null,
+      price_history: (e as MarketEntry).price_history ?? [],
+      /**
+       * Why an announced knowledge is still not verified (item 154). The publish-time model check only fires on a
+       * node whose engine answers; when it cannot, the author used to get `ANNOUNCED 0/2` and no error anywhere on
+       * their own machine. Null until it has genuinely waited, and null once the quorum is met.
+       */
+      stalled: market.verificationStall(e),
+      /**
+       * Item 254 — the minutes BEFORE the first attestation. The status is still ANNOUNCED while two verifiers are
+       * executing the benchmark, so a consumer could not tell "nobody picked it up" from "almost done". Null once
+       * the quorum is met.
+       */
+      verifying: market.verificationProgress(e),
+    };
+  }));
+
+  // ------------------------------------------------------------ published training sets (lineage design §12.3)
+  /** The entry behind `/api/patches/:id/dataset*`, its sha, and who is asking (teaching key or operator). */
+  const datasetOf = async (req: Request) => {
+    const e = await market.entry(req.params.id as string);
+    const operator = isNodeOwner(req);
+    if (!e || (e.status === 'DRAFT' && !operator)) throw notFound('patch not found');
+    const sha = e.anchor.dataset?.sha256;
+    if (!sha) throw new HttpError(404, 'dataset_unavailable: this knowledge has no published training set');
+    const address = teacherOf(req);
+    const access = accessOf(e.anchor);
+    const owner = !!address && ((e.anchor.contributors ?? []).some((c) => c.address.toLowerCase() === address.toLowerCase() || c.signer?.toLowerCase() === address.toLowerCase()) || e.anchor.author.toLowerCase() === address.toLowerCase());
+    return { e, sha, operator, address, access, owner: owner || operator };
+  };
+  router.get('/api/patches/:id/dataset', wrap(async (req) => {
+    const { e, sha, access, address, owner } = await datasetOf(req);
+    const held = market.datasets.has(sha);
+    const m = market.datasets.manifest(sha);
+    const meta = { sha256: sha, rows: e.anchor.dataset!.rows, access, license: e.anchor.dataset!.license ?? null, parents: e.anchor.dataset!.parents ?? [], held, include_notes: m?.include_notes ?? false, benchmark_samples: m?.benchmark_samples ?? null, merkle_root: m?.merkle_root ?? null };
+    if (!owner) {
+      if (access === 'private') throw new HttpError(403, 'dataset_private: the creator kept the training set private — only the verification questions on the record are public', meta);
+      if (access === 'derivative' && !address) throw new HttpError(403, 'dataset_derivative_only: this training set is available to people building on this knowledge — sign the request with a teaching key to preview it, and ask for a derive token to fetch it', meta);
+    }
+    if (!held) throw new HttpError(404, 'dataset_unavailable: training set not available on this node (no peer holds it)', meta);
+    const preview = publishedRows(market.datasets.rows(sha).slice(0, 20), m?.include_notes ?? false);
+    // Item 312: the creator of the material can see who took it and who kept the promise. Keys are never shown to
+    // anyone else — the counts on the public page are `built on N times`, which is what a stranger may know.
+    const derives = owner
+      ? market.store.deriveIntentsFor(e.anchor.id).map((d) => ({ child_key: d.child_key, first_at: d.first_at, last_at: d.last_at, fetches: d.fetches, declared_by: d.declared_by }))
+      : undefined;
+    return { ...meta, preview, ...(derives ? { derives } : {}) };
+  }));
+  router.get('/api/patches/:id/dataset/rows', wrap(async (req, res) => {
+    const { sha, access, owner } = await datasetOf(req);
+    if (!owner && access !== 'public') throw new HttpError(403, access === 'private' ? 'dataset_private: the creator kept the training set private' : 'dataset_derivative_only: fetch it through a derive intent (POST /api/patches/:id/derive-intent) and /p2p/dataset/:sha');
+    const bytes = market.datasets.rowsBytes(sha);
+    if (!bytes) throw new HttpError(404, 'dataset_unavailable: training set not available on this node (no peer holds it)');
+    res.status(200).set({ 'content-type': 'application/x-ndjson; charset=utf-8', 'content-length': String(bytes.length), 'x-content-sha256': sha, 'content-disposition': `attachment; filename="dataset-${sha.slice(0, 12)}.jsonl"` }).send(bytes);
+  }));
+  router.get('/api/patches/:id/dataset/manifest', wrap(async (req) => {
+    const { sha, access, address, owner } = await datasetOf(req);
+    if (!owner && access === 'private') throw new HttpError(403, 'dataset_private: the creator kept the training set private');
+    if (!owner && access === 'derivative' && !address) throw new HttpError(403, 'dataset_derivative_only: sign the request with a teaching key');
+    const m = market.datasets.manifest(sha);
+    if (!m) throw new HttpError(404, 'dataset_unavailable: training set not available on this node (no peer holds it)');
+    return { manifest: m };
+  }));
+  /**
+   * A signed derive intent (design §6.1): the teaching key says it is building on this knowledge; counted on the
+   * knowledge ("built on N times") and answered with a token that unlocks `/p2p/dataset/:sha` for a derivative set.
+   */
+  router.post('/api/patches/:id/derive-intent', wrap(async (req) => {
+    const address = requireTeacher(req);
+    const e = await market.entry(req.params.id as string);
+    if (!e || e.status === 'DRAFT') throw notFound('patch not found');
+    const access = accessOf(e.anchor);
+    if (access === 'private') throw new HttpError(403, 'dataset_private: the creator kept the training set private, so nobody can build on it');
+    const { child_key } = z.object({ child_key: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional() }).parse(req.body ?? {});
+    if (child_key && child_key.toLowerCase() !== address.toLowerCase()) throw new HttpError(400, 'invalid: child_key must be the teaching key that signed this request');
+    const out = market.deriveIntent(e, address);
+    // The commitment is the answer, not a side effect: the caller is told, in the same breath as the token, what they
+    // have just promised — that anything published from these questions has to name this knowledge as its parent.
+    return { ...out, holders: [market.publicUrl, ...market.p2p.datasetHolders(out.sha256)], held: market.datasets.has(out.sha256),
+      terms: `recorded: ${address} is building on ${e.anchor.id}. A lesson trained on these questions must name ${e.anchor.id} as its base, or this node will refuse to publish it.` };
+  }));
+  /**
+   * *Copy and continue* (design §12.3, Story B): the knowledge's published questions become a dataset of the caller's,
+   * with the knowledge as its parent and every row carrying `from`. Idempotent — the same bytes give the same dataset.
+   */
+  router.post('/api/patches/:id/fork', wrap(async (req, res) => {
+    const address = requireTeacher(req);
+    const t = visitorGate(req, address);
+    const body = z.object({ name: z.string().max(80).optional() }).parse(req.body ?? {});
+    const out = await t.forkPatch(req.params.id as string, { address, ip: req.ip }, { name: body.name });
+    res.status(out.created ? 201 : 200);
+    return { dataset_id: out.dataset.id, dataset: out.dataset, inherited_rows: out.inherited_rows, created: out.created, parent: out.parent, license: out.license };
+  }));
+
+  router.get('/api/patches/:id/records', wrap(async (req) => {
+    const id = req.params.id as string;
+    const all = await market.ledger.list();
+    const recs = all.filter((r) => { const b = r.body as Record<string, unknown>; return b.id === id || b.patch_id === id || b.old_patch_id === id || b.new_patch_id === id; });
+    return { records: recs };
+  }));
+
+  router.get('/api/patches/:id/events', wrap(async (req) => {
+    const operator = isNodeOwner(req);
+    const e = await market.entry(req.params.id as string);
+    if (e?.status === 'DRAFT' && !operator) throw notFound('patch not found');
+    return { events: publicEvents(market.store.events({ patch_id: req.params.id as string, limit: Number(req.query.limit ?? 200) }), operator) };
+  }));
+
+  /**
+   * Explore shelves (SC-17). Four rows a visitor can act on: what is selling, what people are building ON, what is
+   * newly published, and what this node's visitors asked for that nobody has taught yet. Every number is one this
+   * node can defend: sales come from settle records (price-0 and self-purchases excluded, §10), *built on* is
+   * children plus derive intents, *asked* is the open-question counters — never a guess.
+   */
+  router.get('/api/explore/shelves', wrap(async (req) => {
+    const q = z.object({ limit: z.coerce.number().min(1).max(20).default(6) }).parse(req.query);
+    const map = await market.entryMap();
+    const items = (await market.catalog()).filter((e) => e.status !== 'DRAFT' && e.status !== 'REJECTED' && e.status !== 'RETIRED');
+    const card = (e: CatalogEntry, extra: Record<string, unknown>) => ({
+      id: e.anchor.id, name: e.anchor.name, author: e.anchor.author, author_name: e.anchor.author_name ?? null, status: e.status,
+      price: e.anchor.price, currency: e.anchor.currency, rows: e.anchor.rows, topic_path: e.anchor.topic_path,
+      requires: (e.anchor.base?.stack ?? []).map((b) => ({ id: b.patch_id, name: map.get(b.patch_id)?.anchor.name ?? b.patch_id })),
+      ...extra,
+    });
+    const byBuilt = items.map((e) => ({ e, n: market.builtOnCount(e, map) })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n).slice(0, q.limit);
+    const bySales = items.map((e) => ({ e, s: market.salesOf(e) })).filter((x) => x.s.sales_30d > 0).sort((a, b) => b.s.sales_30d - a.s.sales_30d).slice(0, q.limit);
+    const fresh = [...items].sort((a, b) => b.anchor.created_at - a.anchor.created_at).slice(0, q.limit);
+    // "Asked for (this node)": open questions grouped by the topic they were asked about, with the knowledge they
+    // were asked of. `nobody_teaches` = every knowledge holding that question is still the one that could not answer it.
+    const asked = new Map<string, { topic: string; count: number; people: number; patches: Set<string> }>();
+    for (const { patch_id } of market.store.issueCounts()) {
+      const e = map.get(patch_id);
+      if (!e || e.status === 'DRAFT') continue;
+      for (const i of market.store.listIssues(patch_id, { limit: 200 })) {
+        if (i.kind === 'own_miss') continue;                    // its own question, not a gap in the market
+        const topic = i.topic ?? e.anchor.topic_path ?? e.anchor.benchmark.schema;
+        const cur = asked.get(topic) ?? { topic, count: 0, people: 0, patches: new Set<string>() };
+        cur.count += i.count; cur.people = Math.max(cur.people, i.people); cur.patches.add(patch_id);
+        asked.set(topic, cur);
+      }
+    }
+    return {
+      shelves: [
+        { id: 'selling', items: bySales.map(({ e, s }) => card(e, { sales_30d: s.sales_30d, sales_all: s.sales_all })) },
+        { id: 'built_on', items: byBuilt.map(({ e, n }) => card(e, { built_on: n })) },
+        { id: 'fresh', items: fresh.map((e) => card(e, { created_at: e.anchor.created_at })) },
+      ],
+      asked: [...asked.values()].sort((a, b) => b.count - a.count).slice(0, q.limit).map((x) => ({ topic: x.topic, count: x.count, people: x.people, patches: [...x.patches] })),
+      scope: { sales: 'network', built_on: 'network+node', asked: 'node' },
+    };
+  }));
+
+  // ------------------------------------------------------------ family tree, signals, open questions (design §12.5)
+  /**
+   * The family tree (SC-9). Read-only and ungated by `teach.lineage` — knowing where a knowledge came from is not a
+   * creator affordance (§18 gating); only *Build on this* is. Ancestors are walked through `parents[]`, descendants
+   * through the catalog's derived children, versions through supersede records; the walk is cycle-safe and capped.
+   */
+  router.get('/api/patches/:id/tree', wrap(async (req) => {
+    const q = z.object({ depth: z.coerce.number().min(1).max(TREE_MAX_DEPTH).default(4), dir: z.enum(['up', 'down', 'both']).default('both') }).parse(req.query);
+    const e = await market.entry(req.params.id as string);
+    if (!e || (e.status === 'DRAFT' && !isNodeOwner(req))) throw notFound('patch not found');
+    return market.lineageTree(e.anchor.id, { depth: q.depth, dir: q.dir, visible: relativeVisible(req, e) });
+  }));
+
+  /** SC-11 — what this knowledge is doing. `network` comes from the ledger and the peer table; `node` is this node's own 30 days, labelled. */
+  router.get('/api/patches/:id/signals', wrap(async (req) => {
+    const e = await market.entry(req.params.id as string);
+    if (!e || (e.status === 'DRAFT' && !isNodeOwner(req))) throw notFound('patch not found');
+    const s = await market.signalsOf(e);
+    return { patch_id: e.anchor.id, network: { scope: 'network', ...s.network }, node: { scope: 'node', ...s.node } };
+  }));
+
+  /**
+   * SC-12 "What to add on top of this". Counts are public; the TEXT of a question is returned only when it is already
+   * public on the record (an `own_miss` resolves its prompt from `benchmark.samples[sample_index]`) or when the person
+   * who reported it chose *Share* (§10). Everything else is a count and a cluster id.
+   */
+  router.get('/api/patches/:id/issues', wrap(async (req) => {
+    const q = z.object({ kind: z.enum(['own_miss', 'preflight', 'free_wrong', 'request', 'gap']).optional(), status: z.enum(['open', 'covered', 'all']).default('open'), limit: z.coerce.number().min(1).max(200).default(50) }).parse(req.query);
+    const e = await market.entry(req.params.id as string);
+    if (!e || (e.status === 'DRAFT' && !isNodeOwner(req))) throw notFound('patch not found');
+    const samples = e.anchor.benchmark.samples ?? [];
+    const items = market.store.listIssues(e.anchor.id, q).map((i) => ({
+      id: i.id, kind: i.kind, count: i.count, people: i.people, topic: i.topic,
+      // an own miss is a question the anchor already publishes — reading it back off the record stores nothing new
+      text: i.text ?? (i.kind === 'own_miss' && i.sample_index !== null ? samples[i.sample_index]?.prompt ?? null : null),
+      sample_index: i.sample_index, status: i.status,
+      covered_by: i.status.startsWith('covered_by:') ? i.status.slice('covered_by:'.length) : null,
+      first_seen: i.first_seen, last_seen: i.last_seen,
+    }));
+    const counts = market.store.listIssues(e.anchor.id, { limit: 500 }).reduce((m, i) => { m[i.kind] = (m[i.kind] ?? 0) + 1; return m; }, {} as Record<string, number>);
+    return { patch_id: e.anchor.id, total: items.length, counts, items };
+  }));
+
+  /** SC-12 *Ask the creator to add…* — a buyer's own request. Their own text is theirs to share, so `share` decides whether it is kept. */
+  router.post('/api/patches/:id/issues', wrap(async (req, res) => {
+    const body = z.object({ kind: z.literal('request').default('request'), topic: z.string().max(120).optional(), text: z.string().min(1).max(PROMPT_MAX), share: z.boolean().default(false) }).parse(req.body ?? {});
+    const e = await market.entry(req.params.id as string);
+    if (!e || e.status === 'DRAFT') throw notFound('patch not found');
+    const address = teacherOf(req);
+    const visitor = market.visitorId(address ? `key:${address.toLowerCase()}` : `ip:${req.ip}`);
+    if (market.chatQuota(`req:${visitor}`, 20, 3600_000, true) < 0) throw new HttpError(429, 'quota_requests: too many requests from here this hour');
+    const issue = market.store.bumpIssue(e.anchor.id, 'request', market.questionCluster(body.text), { text: body.share ? body.text : null, topic: body.topic ?? null, visitor });
+    res.status(201);
+    return { id: issue.id, kind: issue.kind, count: issue.count, people: issue.people, shared: !!issue.text };
+  }));
+
+  router.get('/api/benchmarks/:schema', wrap(async (req) => {
+    const schema = req.params.schema as string;
+    const items = (await market.catalog()).filter((e) => e.anchor.benchmark.schema === schema && e.status !== 'DRAFT');
+    if (!items.length) throw notFound('no patches for that benchmark schema');
+    return { schema, items };
+  }));
+
+  router.get('/api/ledger', wrap(async (req) => {
+    // The window is the NEWEST `limit` records. A ledger bigger than the window cannot be paged backwards, so the
+    // cap is high enough to export a demo chain in one call and every caller is expected to compare what it got
+    // with `info.records` and say when it is showing only part of the record (web: the "most recent N of M" line).
+    const q = z.object({ since: z.coerce.number().optional(), kind: z.string().optional(), limit: z.coerce.number().max(5000).default(200) }).parse(req.query);
+    const recs = await market.ledger.list({ since: q.since, kind: q.kind as never, limit: q.limit });
+    return { info: await market.ledger.info(), records: recs.reverse() };
+  }));
+  router.get('/api/ledger/verify', wrap(async () => market.ledger.verify()));
+  router.get('/api/ledger/graph', wrap(async () => {
+    const cat = await market.catalog();
+    const nodes = cat.filter((e) => e.status !== 'DRAFT').map((e) => ({ id: e.anchor.id, name: e.anchor.name, author: e.anchor.author, status: e.status, model: e.anchor.model.id_M, schema: e.anchor.benchmark.schema, branch: e.anchor.branch }));
+    const edges: { from: string; to: string; type: string }[] = [];
+    for (const e of cat) {
+      for (const p of e.anchor.parents) edges.push({ from: e.anchor.id, to: p, type: 'extends' });
+      for (const s of e.supersedes) edges.push({ from: e.anchor.id, to: s, type: 'supersedes' });
+    }
+    let chain: unknown = null;
+    if (market.ledger instanceof AinLedger) chain = await market.ledger.graph().catch(() => null);
+    return { nodes, edges, chain };
+  }));
+
+  router.get('/api/branches', wrap(async (req) => {
+    // Item 269: fixtures and archived tracks are hidden by default. `?include_test=1` / `?include_archived=1` is how
+    // the owner's own screens (and the e2e suite) still see everything they wrote.
+    const q = z.object({ include_test: z.coerce.boolean().default(false), include_archived: z.coerce.boolean().default(false) }).parse(req.query);
+    const branches = await market.branches({ includeTest: q.include_test && isNodeOwner(req), includeArchived: q.include_archived });
+    const subs = await market.ledger.subscriptions();
+    const nodes = await market.knownNodes();
+    return { branches: await Promise.all(branches.map(async (b) => {
+      const state = new Map<string, boolean>();
+      for (const r of subs) if (r.body.branch === b.name) state.set(r.body.node, r.body.action === 'subscribe');
+      return {
+        ...b,
+        subscribers: [...state.entries()].filter(([, v]) => v).map(([k]) => nodes.find((n) => n.address === k) ?? { address: k }),
+        // Item 257 — `patch_ids` is the whole history of the track; `current` is what a subscriber actually loads
+        // (a version retired by a newer member of the same track is kept as history and never bought again).
+        current: await market.currentTrackIds(b),
+      };
+    })), mine: await market.mySubscriptions() };
+  }));
+  /**
+   * Item 234 — routing used to match on ANY key and take the first tie. `?partial=1` is how a caller asks for a
+   * best-effort match; without it a track that does not answer every key the caller named is not an answer.
+   */
+  router.get('/api/route', wrap(async (req) => {
+    const { partial, ...context } = req.query as Record<string, string>;
+    return market.route(context, { partial: partial === '1' || partial === 'true' });
+  }));
+  /**
+   * How long a node record stays on the default answer (item 140). Node records are permanent, so `/api/nodes`
+   * used to return every one ever written — 122 rows for a network of three, 120 of them dead, on the CLI and on
+   * /network. `?all=1` still returns the lot.
+   */
+  const NODES_RECENT_MS = 24 * 3600_000;
+  router.get('/api/nodes', wrap(async (req) => {
+    // visitors count knowledge files of public knowledge only (hidden test anchors / drafts are not part of the public catalog)
+    // `blobs_advertised` is what the node itself said it holds: `blobs` is filtered through THIS node's catalogue, so a
+    // peer on another ledger — whose anchors this node can never read — showed BLOBS 0 while holding four (item 170).
+    const own = market.ledger.kind;
+    const all = req.query.all === '1' || req.query.all === 'true';
+    const known = await market.knownNodes();
+    // A node this one is peered with is never "old", whatever the record says: it is on the network now.
+    const peerEndpoints = new Set(market.p2p.peers().map((p) => p.endpoint.replace(/\/+$/, '')));
+    const fresh = known.filter((n) => sameAddr(n.address, market.address) || peerEndpoints.has((n.endpoint ?? '').replace(/\/+$/, '')) || Date.now() - (n.last_seen ?? 0) < NODES_RECENT_MS);
+    const shown = all ? known : fresh;
+    const dup = market.duplicateNodeAddresses(known);
+    const nodes = await Promise.all(shown.map(async (n) => ({
+      ...n, blobs: await market.publicBlobs(n.blobs ?? []), blobs_advertised: (n.blobs ?? []).length,
+      ledger_mismatch: n.address !== market.address && !!n.ledger && n.ledger !== own,
+      // item 139: two nodes on one identity. The registry keeps one of them and nothing said the other existed.
+      ...(dup.has(n.address?.toLowerCase() ?? '') ? { duplicate_endpoints: dup.get(n.address.toLowerCase()) } : {}),
+    })));
+    const peers = market.p2p.peers().map((p) => ({
+      ...p,
+      reachable: p.failures === 0 && p.last_seen > 0,
+      ledger: p.info?.ledger ?? null,
+      ledger_mismatch: !!p.info?.ledger && p.info.ledger !== own,
+    }));
+    // Endpoints the operator removed: gossip may not re-add them, and `peers ls` says so rather than leaving the
+    // operator to wonder why a peer they keep hearing about is not in the table (item 137).
+    return {
+      nodes, peers, blocked: market.p2p.blocked(), self: market.address, ledger: own, peer_status: market.p2p.health(),
+      // item 140: what the filter left out, so a surface can offer the rest instead of pretending this is everything.
+      nodes_total: known.length, nodes_hidden: all ? 0 : known.length - shown.length, nodes_window_ms: NODES_RECENT_MS, all,
+    };
+  }));
+  router.get('/api/events', wrap(async (req) => ({
+    events: publicEvents(market.store.events({
+      since: req.query.since ? Number(req.query.since) : undefined,
+      limit: Number(req.query.limit ?? 200),
+      kind: req.query.kind as string | undefined,
+      level: EVENT_LEVELS.includes(req.query.level as (typeof EVENT_LEVELS)[number]) ? (req.query.level as (typeof EVENT_LEVELS)[number]) : undefined,
+    }), isNodeOwner(req)),
+  })));
+  router.get('/api/chain', wrap(async () => market.chainStatus()));
+
+  // ------------------------------------------------------------ operator actions
+  router.get('/api/me/patches', requireOwner, wrap(async () => ({ items: (await market.catalogAll()).filter((e) => e.anchor.author === market.address) })));
+  router.get('/api/me/purchases', requireOwner, wrap(async () => {
+    const map = await market.entryMap();
+    return { items: await Promise.all(market.store.listPurchases().map(async (p) => {
+      const e = map.get(p.patch_id) ?? null;
+      // item 346: what has happened TO this knowledge since the money moved. The buyer used to be the only party
+      // with no signal at all — the seller was told about a challenge, a FAIL and a supersede, and the person
+      // serving the answers was not.
+      return {
+        ...p, entry: e, applied: market.isApplied(p.patch_id),
+        // Item 280: who this purchase paid, by name — the split has been on the settle record all along and the
+        // buyer's own screens showed a tx hash. Item 362: and whether a track bought it rather than the operator.
+        payees: e ? await market.namePayees(e, p.royalty ?? undefined, p.amount) ?? [] : [],
+        challenged: e?.open_challenge ?? null,
+        failed_verifications: (e?.attestations ?? []).filter((a) => !a.passed).map((a) => ({ verifier: a.verifier, verifier_name: a.verifier_name ?? null, score: a.score, created_at: a.created_at })),
+        superseded_by: e?.superseded_by ?? [],
+        disputes: e ? market.disputesFor(e.anchor.id).length : 0,
+      };
+    })) };
+  }));
+  /**
+   * The wallet. Its royalty lines used to be the SELLER's promise reported as money received (item 311): a settle
+   * record naming this address became a row on "creator revenue share received" whether or not anything ever moved,
+   * and the only place the truth lived was the seller's own `payouts` table, which the ancestor cannot see. Each row
+   * now carries its own state — `credited` (local play money, already in the balance derived here), `paid`/`pending`
+   * /`failed` (asked the seller's node, which answers `GET /p2p/payouts/:settle_hash`), or `unconfirmed` (nothing
+   * but the record) — plus the totals for each, so the three numbers can be reconciled on one screen.
+   *
+   * `verification` is the same money seen by the other party (item 325): what this node earned by verifying.
+   */
+  router.get('/api/me/wallet', requireOwner, wrap(async () => {
+    const setts = await market.ledger.settlements();
+    const me = market.address.toLowerCase();
+    const sales = setts.filter((s) => sameAddr(s.body.seller, market.address)).map((s) => s.body);
+    const map = await market.entryMap();
+    /*
+     * Item 316 — `find()` took the FIRST key that folded to this address, and a settle record can carry the same
+     * person twice: once as typed on a contributor claim, once checksummed as an ancestor author (item 309). The
+     * second spelling was money the wallet never showed. Sum every key that folds to the same person.
+     */
+    const mineIn = (r: Record<string, string> | undefined): [string, string] | undefined => {
+      const hits = Object.entries(r ?? {}).filter(([a]) => a.toLowerCase() === me);
+      if (!hits.length) return undefined;
+      const total = hits.reduce((n, [, amt]) => n + Number(amt || 0), 0);
+      return [hits[0][0], String(Math.round(total * 1e6) / 1e6)];
+    };
+    const rows = setts.filter((s) => !sameAddr(s.body.seller, market.address) && mineIn(s.body.royalty));
+    const reports = await market.payoutReports(rows.map((s) => ({ hash: s.hash, seller: s.body.seller })));
+    // Item 314: a `payout` record on the shared ledger is the seller's own signed statement that the transfer
+    // happened, with the tx hash and the key it was written under — evidence, where `payoutReports` is the seller
+    // being asked over HTTP and answering for itself.
+    const onRecord = new Map((await market.payoutRecords().catch(() => [])).filter((p) => sameAddr(p.to, market.address)).map((p) => [`${p.settle_hash}:${p.to.toLowerCase()}`, p] as const));
+    const royalties = rows.map((s) => {
+      const [, amount] = mineIn(s.body.royalty)!;      // every spelling of this address, added up (item 316)
+      const e = map.get(s.body.patch_id);
+      const kind = e?.verifiers.some((v) => v.toLowerCase() === me) ? 'verification' as const : 'lineage' as const;
+      const rep = reports.get(s.hash);
+      const rec = onRecord.get(`${s.hash}:${me}`);
+      const state = s.body.scheme === 'local-credit' ? 'credited' as const : rec ? 'paid' as const : (rep?.status ?? 'unconfirmed' as const);
+      return {
+        patch_id: s.body.patch_id, amount, created_at: s.body.created_at,       // the shape every older client reads
+        kind, state, settle_hash: s.hash, seller: s.body.seller, seller_name: e?.anchor.author_name ?? null,
+        buyer: s.body.buyer, currency: s.body.currency, scheme: s.body.scheme,
+        tx_hash: rec?.tx_hash ?? rep?.tx_hash ?? null, reported_at: rep?.at ?? null, last_error: rep?.last_error ?? null,
+        // Where the "paid" comes from: a signed record on the ledger, or the seller answering for itself (item 314).
+        evidence: (rec ? 'record' : rep?.status === 'paid' ? 'seller_reported' : null) as 'record' | 'seller_reported' | null,
+        transfer_key: rec?.transfer_key ?? null,
+        days: Math.floor((Date.now() - s.body.created_at) / 86_400_000),
+      };
+    });
+    const sum = (xs: typeof royalties) => String(Math.round(xs.reduce((n, r) => n + Number(r.amount || 0), 0) * 1e6) / 1e6);
+    const summary = market.payouts.summary();
+    return { ...(await market.chainStatus()), sales, royalties, purchases: market.store.listPurchases().length,
+      royalty_totals: {
+        owed: sum(royalties),
+        credited: sum(royalties.filter((r) => r.state === 'credited')),
+        paid: sum(royalties.filter((r) => r.state === 'paid')),
+        unconfirmed: sum(royalties.filter((r) => r.state === 'unconfirmed' || r.state === 'pending' || r.state === 'failed')),
+      },
+      verification: royalties.filter((r) => r.kind === 'verification'),
+      verification_total: sum(royalties.filter((r) => r.kind === 'verification')),
+      verifier_share: effectiveVerifierShare(undefined, market.cfg.market.verifierShare),
+      // Item 277: what this node gave away. A knowledge priced 0 writes no settlement, so these are downloads that
+      // appear in no sales figure anywhere — without this line the seller of 74 free lessons sees "0 sales" and
+      // concludes nobody wanted them.
+      free_downloads: market.freeDownloads(),
+      // Item 279: AIN that arrived for a knowledge and did not cover its price. It is NOT this node's money — it is
+      // held for the address that sent it, and the operator is the only one who can hand it back.
+      held_for_buyers: market.store.heldPartials(50),
+      payouts: { ...summary, items: market.store.listPayouts({ status: ['pending', 'failed'], limit: 50 }) } };
+  }));
+  /**
+   * Send AIN out of this node's wallet (item 320). The money verbs were all read-only or inward: a creator who had
+   * earned could spend it only by buying knowledge through the same node. A local-ledger node answers 409 with the
+   * reason — its balance is development credit and there is nothing to send.
+   */
+  router.post('/api/me/wallet/send', requireOwner, wrap(async (req) => {
+    const b = z.object({ to: z.string(), amount: z.coerce.number(), memo: z.string().max(200).optional() }).parse(req.body ?? {});
+    return market.walletSend(b.to, b.amount, { memo: b.memo });
+  }));
+  // Royalty payouts (spec §6.4 / §9.3): every AIN transfer attempt owed to a creator or data provider, newest first.
+  router.get('/api/me/payouts', requireOwner, wrap(async (req) => {
+    const q = z.object({ status: z.enum(['pending', 'paying', 'paid', 'failed']).optional(), address: z.string().optional(), limit: z.coerce.number().int().min(1).max(1000).optional() }).parse(req.query);
+    return { items: market.store.listPayouts({ status: q.status, address: q.address, limit: q.limit ?? 200 }), summary: market.payouts.summary(), max_attempts: market.payouts.maxAttempts, retry_ms: market.payouts.retryMs, wallet: !!market.payouts.wallet };
+  }));
+  router.post('/api/me/payouts/:id/retry', requireOwner, wrap(async (req) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) throw bad('payout id must be a positive integer');
+    return { payout: await market.payouts.retry(id) };
+  }));
+  /**
+   * Rebuild what this node owes from its own settlements and pay what is due (item 313). A settle written before
+   * the payouts table existed, a wiped data dir or a crash between the append and the enqueue used to leave a
+   * public debt with no row — unpayable by any button in the product.
+   */
+  router.post('/api/me/payouts/reconcile', requireOwner, wrap(async () => market.reconcilePayouts()));
+
+  router.post('/api/patches', requireOwner, upload.single('file'), wrap(async (req) => {
+    // item 129: multer has already written the whole body into <dataDir>/uploads. `createDraft` copies it into the
+    // blob store, so the temp copy is dead the moment this handler returns — and on every rejection below it is dead
+    // immediately. Nothing used to unlink it, on either path.
+    try {
+      const body = z.object({
+        id: z.string().optional(), name: z.string().min(2), description: z.string().optional(), model_id: z.string().min(1),
+        benchmark: z.string().transform((s) => JSON.parse(s)).or(z.object({}).passthrough()), price: z.string().regex(PRICE_RE, 'price must be a non-negative number').optional(),
+        billing: billingEnum, license: z.string().optional(),
+        parents: z.string().optional().transform((s) => (s ? s.split(',').map((x) => x.trim()).filter(Boolean) : [])),
+        branch: z.string().optional(), topic_path: z.string().optional(), path: z.string().optional(),
+        // Item 188 — what this knowledge IS to its bases. The row counts behind the claim are measured by the node
+        // from the two bodies; the caller only names the kind.
+        kind: z.enum(DERIVATION_KINDS as unknown as [string, ...string[]]).optional(),
+        // item 267: the day the DATA is true of, declared by the publisher (`YYYY-MM-DD`; validated in createDraft)
+        as_of: z.string().optional(),
+        visibility: z.enum(['public', 'test']).optional(),
+        contributors: z.string().transform((s) => JSON.parse(s)).or(z.array(z.object({}).passthrough())).optional(),
+        // lineage (design §12.4): an operator may publish the training set beside the body — a local jsonl/csv path,
+        // pinned under its canonical sha with the chosen access and licence
+        dataset_file: z.string().optional(), dataset_access: z.enum(DATASET_ACCESS_LEVELS).optional(), dataset_license: z.string().optional(),
+        // §12.4: an operator may register a knowledge that was trained ON TOP of others — the ordered stack that has to
+        // be loaded underneath it. `pre_state_sha256` is never taken on trust: it is recomputed from the file here.
+        base_stack: z.string().optional().transform((s) => (s ? s.split(',').map((x) => x.trim()).filter(Boolean) : [])),
+        export: z.enum(['delta', 'squash']).optional(),
+        derivation: z.string().transform((s) => JSON.parse(s)).or(z.object({}).passthrough()).optional(),
+        // publish past `duplicate_body` (bytes this node already published on this subject) and `model_mismatch`
+        // (a model this node cannot test) — never past another author's body (items 154, 240, 363)
+        force: z.coerce.boolean().optional(),
+      }).parse(req.body);
+      const file = req.file?.path ?? body.path;
+      if (!file) throw bad('upload a .npz file or give a local `path`');
+      if (!req.file && !existsSync(file)) throw bad(`path not found on node: ${file}`);
+      let dataset: PatchAnchor['dataset'] | undefined;
+      if (body.dataset_file) {
+        if (!existsSync(body.dataset_file)) throw bad(`dataset_file not found on node: ${body.dataset_file}`);
+        const license = body.dataset_license ?? body.license ?? 'CC-BY-4.0';
+        if (!isDatasetLicense(license)) throw bad(`bad_license: "${license}" is not one of CC0-1.0, CC-BY-4.0, CC-BY-SA-4.0, ODC-By-1.0, Proprietary`);
+        const parsed = parseDataset(readFileSync(body.dataset_file), { filename: body.dataset_file, maxRows: 100_000, maxSourceLines: 500_000 });
+        if (!parsed.rows.length) throw bad('dataset_empty: that file has no usable questions');
+        const access = body.dataset_access ?? 'private';
+        const samples = ((body.benchmark as { samples?: { prompt: string; expect: string }[] }).samples ?? []);
+        const pinned = market.datasets.pin(canonicalBytes(parsed.rows), { source: 'upload', license, access, parents: [], row_origin: [], changed: [], removed: [], contrast_used: [], pii_scan: { ok: parsed.summary.pii === 0, rows: parsed.report.filter((r) => r.status === 'pii' && r.index !== null).map((r) => r.index!) }, declaration: { source: 'own', license, no_pii: parsed.summary.pii === 0 }, include_notes: false, model_id: body.model_id }, samples);
+        dataset = { sha256: pinned.sha256, rows: pinned.rows, source: 'upload', access, license };
+      }
+      let base: PatchAnchor['base'] | undefined;
+      if (body.base_stack.length) {
+        const stack: { patch_id: string; patch_sha256: string }[] = [];
+        for (const id of body.base_stack) {
+          const e = await market.entry(id);
+          if (!e) throw bad(`base_unknown: ${id} is not a knowledge on this node`);
+          stack.push({ patch_id: id, patch_sha256: e.anchor.patch_sha256 });
+        }
+        const a = readNpzMember(file, 'addrs'), b = readNpzMember(file, 'before');
+        const dim = b.header.shape[1] ?? 1;
+        base = {
+          stack, export: body.export ?? 'delta',
+          pre_state_sha256: preStateSha256(new BigInt64Array(a.body.buffer, a.body.byteOffset, a.body.length / 8), new Float32Array(b.body.buffer, b.body.byteOffset, b.body.length / 4), dim),
+        };
+      }
+      const anchor = await market.createDraft({
+        id: body.id, name: body.name, description: body.description, model: { id_M: body.model_id }, benchmark: body.benchmark as never,
+        price: body.price, billing: body.billing, license: body.license, parents: body.parents, branch: body.branch, topic_path: body.topic_path, as_of: body.as_of,
+        file, keepInPlace: !req.file, visibility: body.visibility, contributors: body.contributors as never, force: body.force, ...(dataset ? { dataset } : {}),
+        ...(base ? { base } : {}), ...(body.derivation ? { derivation: body.derivation as never } : {}),
+        ...(body.kind ? { kind: body.kind as never } : {}),
+      });
+      return { anchor };
+    } finally { dropTemp(req); }
+  }));
+  router.patch('/api/patches/:id', requireOwner, wrap(async (req) => {
+    const patch = z.object({
+      name: z.string().min(2).optional(), description: z.string().optional(), price: z.string().regex(PRICE_RE, 'price must be a non-negative number').optional(), branch: z.string().optional(),
+      benchmark: z.object({}).passthrough().optional(), license: z.string().optional(), billing: billingEnum,
+      topic_path: z.string().optional(), visibility: z.enum(['public', 'test']).optional(), origin: z.enum(['operator', 'teach']).optional(),
+      as_of: z.string().nullable().optional(),
+      contributors: z.array(z.object({}).passthrough()).nullable().optional(),
+    }).parse(req.body ?? {});
+    // only the keys the caller sent reach updateDraft: `'contributors' in patch` with an undefined value would wipe the list on
+    // every unrelated PATCH (e.g. `{origin:'teach'}` from `ainize patch import`); `contributors: null` clears it explicitly.
+    const update = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined).map(([k, v]) => [k, k === 'contributors' && v === null ? [] : v]));
+    return { anchor: market.updateDraft(req.params.id as string, update as never) };
+  }));
+  router.delete('/api/patches/:id', requireOwner, wrap(async (req) => { market.deleteDraft(req.params.id as string); return { ok: true }; }));
+  /**
+   * DRAFT → ANNOUNCED. The response carries what the publisher has to know the moment the record is written
+   * (item 147): how many reachable peers on this network actually verify, against the quorum this node needs. With
+   * fewer verifiers than the quorum nothing announced here can ever be VERIFIED, and the CLI says so instead of
+   * promising that "verifiers will now attest".
+   */
+  /**
+   * DRAFT → ANNOUNCED. `replaces` (item 248) is the publisher DECLARING which of their own listings this version
+   * retires — the daily case, where today's facts touch different rows from yesterday's and nothing overlaps —
+   * and `auto_supersede: false` keeps every overlapping listing of theirs on sale (a dated snapshot kept on purpose).
+   */
+  router.post('/api/patches/:id/announce', requireOwner, wrap(async (req) => {
+    const body = z.object({ replaces: z.array(z.string()).optional(), auto_supersede: z.boolean().optional() }).parse(req.body ?? {});
+    const id = req.params.id as string;
+    const record = await market.announce(id, { replaces: body.replaces, autoSupersede: body.auto_supersede });
+    return { record, retires: market.pendingSupersedes(id), verifiers: await market.verifierReach(), visibility: record.body.visibility ?? 'public' };
+  }));
+  /**
+   * The exit (item 148): an author-signed `retire` record takes their own knowledge off sale for good. The anchor
+   * stays on the permanent record, the catalogue drops it, /x402/patch/:id answers 410, and everyone who already
+   * bought it keeps their copy and their download rights.
+   */
+  router.post('/api/patches/:id/retire', requireOwner, wrap(async (req) => {
+    const { reason } = z.object({ reason: z.string().max(500).optional() }).parse(req.body ?? {});
+    return market.retire(req.params.id as string, reason ?? '');
+  }));
+  router.post('/api/patches/:id/verify', requireOwner, wrap(async (req) => {
+    if (!deps.verifier) throw bad('this node is not a verifier');
+    const e = await market.entry(req.params.id as string);
+    if (!e) throw notFound();
+    // `recheck` (item 339): measure again on purpose and put the result on the record, WITHOUT taking the seller off
+    // sale. A verifier with a doubt used to have only two options — stay silent, or challenge — and most operators
+    // will not attack a listing to record a measurement.
+    const b = z.object({ recheck: z.boolean().optional() }).parse(req.body ?? {});
+    return { attestation: await deps.verifier.verifyOne(e.anchor, { recheck: b.recheck }) };
+  }));
+  // A challenge stops every sale of a knowledge and spends another operator's GPU minutes on the re-run, so the API
+  // no longer invents a reason for a caller that did not give one (item 328): `market.challenge` refuses a body
+  // without one, an address may hold only one open challenge per anchor, and a dismissed one has a cool-down.
+  router.post('/api/patches/:id/challenge', requireOwner, wrap(async (req) => {
+    const challenge = await market.challenge(req.params.id as string, String(req.body?.reason ?? ''));
+    return { ok: true, challenge, record: await market.challengeRecord(market.address) };
+  }));
+  /**
+   * A settled buyer records that the knowledge did not work, and the seller answers on the same record (item 347).
+   *
+   * This is not a challenge: it stops no sale, spends nobody's GPU minutes and asks no verifier for anything. It is
+   * the record that a sale was contested — the one risk a buyer carries and could not get back, and which the
+   * network never learned about, so a bad seller's record stayed clean.
+   */
+  router.post('/api/patches/:id/dispute', requireOwner, wrap(async (req) => {
+    const b = z.object({ reason: z.string(), settle_hash: z.string().optional() }).parse(req.body ?? {});
+    const dispute = await market.dispute(req.params.id as string, b.reason, { role: 'claim', settleHash: b.settle_hash });
+    return { ok: true, dispute, disputes: market.disputesFor(req.params.id as string) };
+  }));
+  router.post('/api/patches/:id/dispute/answer', requireOwner, wrap(async (req) => {
+    const b = z.object({ reason: z.string(), settle_hash: z.string() }).parse(req.body ?? {});
+    const dispute = await market.dispute(req.params.id as string, b.reason, { role: 'answer', settleHash: b.settle_hash });
+    return { ok: true, dispute, disputes: market.disputesFor(req.params.id as string) };
+  }));
+  router.get('/api/patches/:id/disputes', wrap(async (req) => {
+    const e = await market.entry(req.params.id as string);
+    if (!e) throw notFound();
+    const all = market.disputesFor(e.anchor.id);
+    return {
+      patch_id: e.anchor.id, seller: e.anchor.author,
+      items: all.filter((d) => d.role === 'claim').map((d) => ({
+        ...d, answer: all.find((x) => x.role === 'answer' && x.settle_hash === d.settle_hash) ?? null,
+      })),
+      seller_record: market.disputeRecordOf(e.anchor.author),
+    };
+  }));
+
+  router.post('/api/patches/:id/buy', requireOwner, wrap(async (req) => {
+    const b = z.object({ apply: z.boolean().optional(), bundle: z.boolean().optional(), with_required: z.boolean().optional(), max_total: z.number().optional(), again: z.boolean().optional() }).parse(req.body ?? {});
+    // The bases underneath are bought first, deepest first, one settlement each (design §12.4, item 270). The design
+    // spells this `?bundle=1` and this node has always taken it as `with_required` in the body; both are accepted,
+    // because a buyer's agent reading §12.4 and an older client reading this node's own OpenAPI must both work.
+    // `max_total` refuses the whole family before any money moves, so a budget is a budget for the purchase and not
+    // for one item of it. Without `again`, a knowledge this node has already paid for is collected on that receipt
+    // rather than bought a second time (item 271).
+    const bundle = b.bundle ?? b.with_required ?? ['1', 'true', 'yes'].includes(String(req.query.bundle ?? '').toLowerCase());
+    return market.buy(req.params.id as string, { apply: !!b.apply, withRequired: bundle, maxTotal: b.max_total, again: !!b.again });
+  }));
+  /**
+   * What a purchase would cost from here: the price, the bases that have to come with it, and the family total
+   * (item 270). Public, because the numbers are the ones already on the catalogue and a buyer has to see them
+   * BEFORE paying, not after.
+   */
+  router.get('/api/patches/:id/quote', wrap(async (req) => {
+    const e = await market.entry(req.params.id as string);
+    if (!e || (e.status === 'DRAFT' && !isNodeOwner(req))) throw notFound('patch not found');
+    return market.quoteFor(e);
+  }));
+  /**
+   * Re-price a published knowledge (item 278). Anchors are immutable, so this appends a signed `price` record that
+   * the catalogue folds over the anchor — the quote, the 402 and the charge all read `anchor.price`, so they move
+   * together. Only the author's own records count, and every price ever set stays on the ledger.
+   */
+  router.post('/api/patches/:id/price', requireOwner, wrap(async (req) => {
+    const b = z.object({ price: z.string(), reason: z.string().max(500).optional() }).parse(req.body ?? {});
+    return market.setPrice(req.params.id as string, b.price, b.reason ?? '');
+  }));
+  /**
+   * Who gets what per sale, at any price (item 322). Public for a published knowledge, operator-only for a draft:
+   * the point is to see the split BEFORE the price goes on the permanent record. `?price=` prices a figure the
+   * caller is considering — every branch of `royaltyPlan` is proportional to the amount, so the preview and the
+   * settlement can never disagree.
+   */
+  router.get('/api/patches/:id/split', wrap(async (req) => {
+    const e = await market.entry(req.params.id as string);
+    if (!e || (e.status === 'DRAFT' && !isNodeOwner(req))) throw notFound('patch not found');
+    const q = z.object({ price: z.coerce.number().min(0).optional() }).parse(req.query);
+    return market.saleSplit(e, q.price);
+  }));
+  /** Every price this knowledge has been sold at, oldest first (item 278) — public, so a discount can be checked. */
+  router.get('/api/patches/:id/price', wrap(async (req) => {
+    const e = await market.entry(req.params.id as string) as (MarketEntry | null);
+    if (!e || (e.status === 'DRAFT' && !isNodeOwner(req))) throw notFound('patch not found');
+    return {
+      patch_id: e.anchor.id, price: e.anchor.price, currency: e.anchor.currency,
+      list_price: e.list_price ?? e.anchor.price, repriced_at: e.repriced_at ?? null,
+      history: [{ price: e.list_price ?? e.anchor.price, currency: e.anchor.currency, reason: 'published at this price', created_at: e.anchor.created_at }, ...(e.price_history ?? [])],
+    };
+  }));
+  /**
+   * Collect a knowledge this node has already paid for, without paying again (item 273): a re-issued manifest
+   * against the recorded payment, or the body itself over the signed peer path the settlement already unlocks.
+   */
+  router.post('/api/patches/:id/collect', requireOwner, wrap(async (req) => market.collect(req.params.id as string)));
+  /**
+   * Payments that left this node and were never answered with a manifest (item 274). Money on the chain and no
+   * body: this is where an operator sees it, and `POST /api/patches/:id/collect` is how it is finished.
+   */
+  router.get('/api/me/pending-payments', requireOwner, wrap(async () => ({
+    // Only rows that COST something: a 'quoted' row is a 402 this node answered and never paid, which owes nobody
+    // anything. `paid` means the money left and no manifest came back.
+    items: market.store.listPending({ status: ['paid'], limit: 200 }).map((r) => ({ ...r, payload: undefined })),
+  })));
+  /**
+   * Where an address's local credit came from (item 364). Local credit is ISSUED by this node — one recorded,
+   * capped grant per address — so a balance is a sum of records, not a number every keypair is born with. Public:
+   * every settlement it is derived from is already on the public ledger.
+   */
+  const creditOf = async (address: string) => {
+    const grant = market.store.getGrant(address);
+    const issuance = market.creditIssuance();
+    // Item 369: the rows that produced the balance, so a refusal can say WHICH of "you spent it" and "this seller
+    // grants less than the last one" is true.
+    const statement = await market.creditStatement(address);
+    return {
+      address, currency: market.cfg.market.currency, balance: statement.balance, statement,
+      grant: grant ? { amount: grant.amount, reason: grant.reason, granted_at: grant.granted_at } : null,
+      would_grant: !grant && issuance.issues && issuance.addresses < issuance.cap ? issuance.per_address : null,
+      issued_by: { address: market.address, name: market.cfg.name ?? null, url: market.publicUrl },
+      issuance,
+      // Said once, here, so no surface has to invent it: this is not money.
+      note: issuance.issues
+        ? `CREDIT is issued by this node (${issuance.addresses}/${issuance.cap} addresses funded with ${issuance.per_address} each) for trying the market out — it is not money, it is worthless anywhere else, and another node may fund the same address with a different amount`
+        : 'this node sells for AIN and issues no local credit',
+    };
+  };
+  router.get('/api/credit/:address', wrap(async (req) => creditOf(req.params.address as string)));
+  router.get('/api/me/credit', requireOwner, wrap(async () => creditOf(market.address)));
+  // §12.4 — `with_base` loads everything the knowledge was trained on top of, in order, under one runtime lock;
+  // without it an add-on whose base is not loaded is refused (409 needs_base) instead of writing rows over the wrong table.
+  // Item 212 — with `async: true` the POST answers 202 with a job and the caller polls GET /api/runtime/jobs/:id.
+  // The shared model lock has no upper bound on how long it is held (another node's live test, a verification), and
+  // a synchronous POST that outlived the HTTP client's header timeout was reported as "cannot reach node", exit 2,
+  // minutes before the node ran it anyway.
+  router.post('/api/patches/:id/apply', requireOwner, wrap(async (req, res) => {
+    const { with_base, async: wantJob } = z.object({ with_base: z.boolean().optional(), async: z.boolean().optional() }).parse(req.body ?? {});
+    const id = req.params.id as string;
+    if (!(await market.entry(id))) throw notFound('patch not found');
+    if (wantJob) {
+      const job = market.startRuntimeJob('apply', id, async (onEnter) => (await market.applyPatch(id, 'manual', { withBase: with_base, onEnter })).text);
+      res.status(202);
+      return { job: market.runtimeJob(job.id) };
+    }
+    // `order` is the chain this knowledge sits on, ancestors first (SC-15 `apply.order`): the screen that asked for
+    // the load can name what went under it without re-deriving a stack the node has already resolved.
+    const out = await market.applyPatch(id, 'manual', { withBase: with_base });
+    return { result: out.text, order: out.order, loaded: out.loaded, stack: await market.stack() };
+  }));
+  const unload = async (req: { params: Record<string, unknown>; body?: Record<string, unknown> }, res: { status: (n: number) => unknown }) => {
+    const { cascade, async: wantJob } = z.object({ cascade: z.boolean().optional(), async: z.boolean().optional() }).parse(req.body ?? {});
+    const id = req.params.id as string;
+    if (!(await market.entry(id))) throw notFound('patch not found');
+    if (wantJob) {
+      const job = market.startRuntimeJob('remove', id, (onEnter) => market.removePatch(id, { cascade, onEnter }));
+      res.status(202);
+      return { job: market.runtimeJob(job.id) };
+    }
+    return { result: await market.removePatch(id, { cascade }), stack: await market.stack() };
+  };
+  router.post('/api/patches/:id/remove', requireOwner, wrap(unload as never));
+  router.delete('/api/patches/:id/apply', requireOwner, wrap(unload as never));
+  router.post('/api/patches/:id/forget', requireOwner, wrap(async (req) => {
+    const { all_sharing } = z.object({ all_sharing: z.boolean().optional() }).parse(req.body ?? {});
+    return market.forgetBody(req.params.id as string, { allSharing: all_sharing });
+  }));
+  router.get('/api/patches/:id/conflicts', wrap(async (req) => {
+    const e = await market.entry(req.params.id as string);
+    if (!e || (e.status === 'DRAFT' && !isNodeOwner(req))) throw notFound('patch not found');
+    // Overlap partners that are private drafts are only shown to the operator; hidden test anchors stay hidden (see relativeVisible).
+    const map = await market.entryMap();
+    const conflicts = (await market.conflicts(e.anchor.id)).filter((c) => relativeVisible(req, e)(map.get(c.patch_id)));
+    return { conflicts };
+  }));
+
+  router.post('/api/branches', requireOwner, wrap(async (req) => {
+    const b = z.object({
+      name: z.string(), description: z.string().default(''), context: z.record(z.string(), z.string()).default({}), patch_ids: z.array(z.string()).default([]),
+      // item 269: a fixture track says so when it is created, and is on no public list from then on
+      visibility: z.enum(['public', 'test']).optional(), archived: z.boolean().optional(),
+    }).parse(req.body);
+    return { branch: await market.createBranch(b.name, b.description, b.context, b.patch_ids, { visibility: b.visibility, archived: b.archived }) };
+  }));
+  /**
+   * What following this track costs, per period (item 359). There was no subscription in the product at all: prices
+   * are per anchor, so the most loyal subscriber to a daily track was the most expensive customer, and a curator
+   * who assembles other people's knowledge was paid nothing for the assembling. The fee is the curator's; the
+   * knowledge on the track is still bought from whoever published it.
+   */
+  router.post('/api/branches/:name/terms', requireOwner, wrap(async (req) => {
+    const b = z.object({
+      price: z.string().regex(PRICE_RE, 'price must be a non-negative number').nullable().optional(),
+      currency: z.string().optional(), period_days: z.coerce.number().int().min(1).max(365).optional(),
+    }).parse(req.body ?? {});
+    const name = decodeURIComponent(req.params.name as string);
+    const terms = b.price === null || b.price === undefined ? null : { price: b.price, currency: b.currency ?? market.cfg.market.currency, period_days: b.period_days ?? 30 };
+    return { branch: await market.setBranchTerms(name, terms) };
+  }));
+  /** What one period costs, whether this node's is paid, and what the track's own last 30 days actually cost. */
+  router.get('/api/branches/:name/subscription', wrap(async (req) => market.subscriptionQuote(decodeURIComponent(req.params.name as string))));
+  /** Item 269 — the owner is done with a track: it comes off /network, off the router and out of `branch ls`. */
+  router.post('/api/branches/:name/archive', requireOwner, wrap(async (req) => {
+    const { archived } = z.object({ archived: z.boolean().default(true) }).parse(req.body ?? {});
+    return { branch: await market.archiveBranch(decodeURIComponent(req.params.name as string), archived) };
+  }));
+  router.post('/api/branches/:name/patches', requireOwner, wrap(async (req) => {
+    const { patch_id, force } = z.object({ patch_id: z.string().min(1), force: z.boolean().optional() }).parse(req.body ?? {});
+    return { branch: await market.addToBranch(decodeURIComponent(req.params.name as string), patch_id, { force }) };
+  }));
+  /** Item 357 — what subscribing would spend, item by item, before anything is spent. */
+  const quoteBranch = async (req: { params: Record<string, unknown> }) => ({ quote: await market.quoteBranch(decodeURIComponent(req.params.name as string)) });
+  router.post('/api/branches/:name/quote', requireOwner, wrap(quoteBranch as never));
+  router.get('/api/branches/:name/quote', requireOwner, wrap(quoteBranch as never));
+  // The answer says what was bought, loaded and skipped; a partial acquisition is a 409 and nothing is broadcast.
+  router.post('/api/branches/:name/subscribe', requireOwner, wrap(async (req) => {
+    // item 214: `replace` is the caller saying yes to loading the track over knowledge already in the model
+    const { replace } = z.object({ replace: z.boolean().default(false) }).parse(req.body ?? {});
+    return market.subscribe(decodeURIComponent(req.params.name as string), 'subscribe', { replace });
+  }));
+  router.post('/api/branches/:name/unsubscribe', requireOwner, wrap(async (req) => market.subscribe(decodeURIComponent(req.params.name as string), 'unsubscribe')));
+  /** Item 255 — bring a subscribed track up to date now (the 20-second tick does the same thing). */
+  router.post('/api/branches/:name/sync', requireOwner, wrap(async (req) => market.syncSubscription(decodeURIComponent(req.params.name as string), { retryNow: true })));
+
+  router.post('/api/runtime/complete', requireOwner, wrap(async (req) => {
+    const { prompt, max_tokens, raw } = z.object({
+      prompt: z.string().min(1).max(2000), max_tokens: z.coerce.number().min(1).max(256).default(16),
+      /** `raw: true` = no stop sequences and no degeneracy guard — exactly what this endpoint sent before D1. */
+      raw: z.boolean().default(false),
+    }).parse(req.body);
+    const out = await market.runtime.completeDetailed(prompt, { maxTokens: max_tokens, ...(raw ? { sampling: null } : {}) });
+    // `text` stays the shown (guarded) answer for existing callers; raw_text is only present when it was cut.
+    return {
+      text: out.content, finish_reason: out.finish_reason ?? null,
+      truncated: out.truncated ?? null, shown_chars: out.shown_chars ?? out.content.length, raw_chars: out.raw_chars ?? out.content.length,
+      ...(out.raw_content !== undefined ? { raw_text: out.raw_content } : {}),
+    };
+  }));
+  // `applied` is an ORDERED stack now (bottom first), and `stack` says what each layer sits on and whether the
+  // journal that would undo it is still there (design §5.4, §8).
+  router.get('/api/runtime', wrap(async () => {
+    const stack = await market.stack();
+    return {
+      ...(await market.runtime.status(true)), applied: stack.map((l) => l.patch_id), stack, journal_dir: market.runtime.journalDir(),
+      patch_dir: market.runtime.patchDir(), patch_dir_source: market.runtime.patchDirSource(),
+      queue: market.runtime.queueState(),
+      // item 215: `applied` is a store lookup. This is the last time anything actually looked at the table.
+      checked: market.runtimeCheck(),
+    };
+  }));
+  router.get('/api/runtime/stack', wrap(async () => ({ stack: await market.stack(), journal_dir: market.runtime.journalDir() })));
+  /** Item 212 — where a queued apply/remove is, and what the shared model is doing while it waits. */
+  router.get('/api/runtime/jobs', requireOwner, wrap(async () => ({ jobs: market.listRuntimeJobs().slice(0, 50) })));
+  router.get('/api/runtime/jobs/:id', requireOwner, wrap(async (req) => {
+    const job = market.runtimeJob(req.params.id as string);
+    if (!job) throw notFound('no such runtime job (a node restart forgets queued jobs — check `ainize patch stack`)');
+    return { job };
+  }));
+  /** What `patch.py check` measures against the live table for one knowledge: is its base underneath, row for row? */
+  router.get('/api/patches/:id/check', requireOwner, wrap(async (req) => {
+    const e = await market.entry(req.params.id as string);
+    if (!e) throw new HttpError(404, 'patch not found');
+    const blob = market.blobs.get(e.anchor.patch_sha256);
+    if (!blob) throw new HttpError(409, 'patch body not present on this node');
+    const check = await market.runtime.exclusive(`check:${e.anchor.id}`, () => market.runtime.check(blob.path));
+    if (!check) throw new HttpError(503, 'the patch hook could not be reached (ENGRAM_HOOK=1?)');
+    return { patch_id: e.anchor.id, export: e.anchor.base?.export ?? null, base_stack: (e.anchor.base?.stack ?? []).map((b) => b.patch_id), ...check };
+  }));
+
+  router.post('/api/peers', requireOwner, wrap(async (req) => {
+    const ep = String(req.body.endpoint);
+    // Adding is also the way BACK from a removal: gossip may not re-add a removed endpoint, but the operator may (item 137).
+    const { unblocked } = market.p2p.addPeer(ep);
+    market.cfg.peers = [...new Set([...market.cfg.peers, ep])];
+    deps.saveConfig();
+    return { ok: true, unblocked };
+  }));
+  router.delete('/api/peers', requireOwner, wrap(async (req) => {
+    const ep = String(req.body.endpoint);
+    // `removed` is the fact the CLI needs to stop reporting success for a peer that was never there (item 138);
+    // `blocked` is what keeps the next gossip round from teaching it straight back (item 137).
+    // `block: false` detaches without banning — the pre-item-137 behaviour, for a caller that means "forget this one
+    // for now" (the e2e cleanup) rather than "keep it out".
+    const out = market.p2p.removePeer(ep, { block: req.body?.block !== false });
+    market.cfg.peers = market.cfg.peers.filter((p) => p !== ep && p !== req.body.endpoint);
+    deps.saveConfig();
+    if (out.removed) market.log('info', 'p2p', out.blocked
+      ? `peer ${ep} removed by the operator and blocked from re-discovery (\`ainize peers add ${ep}\` re-admits it)`
+      : `peer ${ep} removed by the operator (not blocked: gossip may learn it again)`, null, { endpoint: ep, blocked: out.blocked });
+    return { ok: true, ...out };
+  }));
+  router.post('/api/chain/setup', requireOwner, wrap(async () => {
+    if (!(market.ledger instanceof AinLedger)) throw bad('node is not on the AIN ledger');
+    return market.ledger.setupApp();
+  }));
+
+  // ------------------------------------------------------------ ChatMode (live test)
+  router.get('/api/chat/patches', wrap(async (req) => {
+    // hidden contributor names are redacted here too (public response), like /api/catalog and /api/patches/:id
+    // Item 108 — the operator's own unannounced drafts are testable on this node and POST /api/chat loads them, so
+    // the picker that calls itself the list of what can be tested here lists them too. Anonymous callers see none.
+    const rows = await market.chatCatalog({ ownDrafts: isNodeOwner(req) });
+    const items = rows.filter((r) => r.testable).map((r) => redactContributors(r.entry));
+    // Item 297 — knowledge this node's model could run but cannot load: it used to be absent from the picker
+    // entirely (no row, no price, no seller), so the chained purchase the product is built on had no first step.
+    const elsewhere = rows.filter((r) => !r.testable).map((r) => {
+      const a = redactContributors(r.entry).anchor;
+      return {
+        patch_id: a.id, name: a.name, author: a.author, author_name: a.author_name ?? null,
+        price: a.price, currency: a.currency, status: r.entry.status, rows: a.rows, queries: a.benchmark.queries,
+        reason: r.reason, buyable: r.buyable, requests: r.requests,
+        /**
+         * How many peers advertise this body — so "we do not have it" can be told apart from "nobody has it".
+         *
+         * `not_held` used to carry the hedge "the publisher may be offline", which is the right thing to say when
+         * a holder exists and is not answering, and the wrong thing when the count is zero. Zero means no node
+         * this one has heard of is carrying the body at all: the anchor outlived the only copy, and no amount of
+         * waiting will produce it. A visitor who was sent a link deserves that stated rather than implied, and a
+         * node operator reading it deserves to know which of the two failures they are looking at.
+         */
+        holders: market.p2p?.holders(a.patch_sha256).length ?? 0,
+        // Where the seller answers TODAY, not the address frozen into the anchor (item 275): this row is what a
+        // visitor is pointed at, and a seller that changed its port would be a dead link here.
+        gateway_url: market.gatewaysFor(a)[0]?.url ?? (a as PatchAnchor & { gateway_url?: string }).gateway_url ?? null,
+      };
+    });
+    // `lessons`: the caller's private drafts (teach mode), only with a verified teaching-key signature
+    const teacher = teachAuth.verify(req);
+    const q = market.runtime.queueState();
+    return {
+      items, elsewhere, runtime: await market.runtime.status(), lock: q.lock,
+      // D3: `now` is the node's clock — the client measures "held for 40s" against it instead of the browser's,
+      // and `queue` says how many live tests of this node are waiting behind the shared model.
+      now: Date.now(), queue: { running: q.running, waiting: market.chatQueue.waiting() },
+      // `applied` is what this node keeps loaded; `dirty` is what a live test found on the shared model that this
+      // node never loaded — a leftover from another process, which the next test unloads and does not put back.
+      applied: market.pinnedPatchIds(), dirty: market.recentDirty(), overlaps: market.chatOverlaps(items),
+      operator: isNodeOwner(req),
+      ...(teacher ? { lessons: deps.teach ? await deps.teach.lessonsFor(teacher) : ([] as CatalogEntry[]), teacher } : {}),
+    };
+  }));
+  /**
+   * Item 297 — "I want to test or build on this and it is not on this node". Buying is operator-only, so this is the
+   * only first step a visitor has: it writes one `demand` event the operator sees in the log, with the price and the
+   * command that would satisfy it.
+   */
+  router.post('/api/chat/patches/:id/request', wrap(async (req) => {
+    const operator = isNodeOwner(req);
+    const visitor = market.visitorId(operator ? `operator:${market.address}` : `ip:${req.ip}`);
+    return market.requestPatch(req.params.id as string, visitor);
+  }));
+  let sourceBusy = 0;
+  let sourceWindow = 0;
+  let sourceCalls = 0;
+  router.post('/api/chat/source', wrap(async (req, res) => {
+    if (!isSignedIn(req)) throw new HttpError(401, 'Sign in with your wallet to query live sources');
+    const body = sourceRequest.parse(req.body);
+    const now = Date.now();
+    if (now - sourceWindow >= 60000) { sourceWindow = now; sourceCalls = 0; }
+    if (sourceBusy >= 2 || sourceCalls >= 12) {
+      res.setHeader('Retry-After', '60');
+      throw new HttpError(429, 'Live source capacity reached; retry in one minute');
+    }
+    sourceCalls++;
+    sourceBusy++;
+    try { return await readLiveSource(body); }
+    catch { throw new HttpError(502, 'Live provider lookup failed. No cached or invented result was substituted. Check the name/symbol and server provider configuration.'); }
+    finally { sourceBusy--; }
+  }));
+  router.post('/api/chat', wrap(async (req, res) => {
+    const history = z.array(z.object({ role: z.enum(['system', 'user', 'assistant']), content: z.string().min(1).max(4000) })).min(1).max(24);
+    /** The question both columns must answer: the last message of the array (compared verbatim across the three). */
+    const tail = (m?: { role: string; content: string }[]) => (m ? JSON.stringify(m[m.length - 1]) : null);
+    const body = z.object({
+      // `patch_ids: []` means "just the model this node serves" — teach mode's conversational door before any
+      // knowledge exists, and the only thing a visitor can ask on a node with an empty catalog.
+      patch_id: z.string().min(1).optional(), patch_ids: z.array(z.string().min(1)).max(MAX_CHAT_PATCHES).optional(),
+      mode: z.enum(['base', 'patched', 'compare']).default('compare'),
+      messages: history,
+      /**
+       * Compare mode with a history: the per-column conversations. `messages_base` replays what the BASE model
+       * answered, `messages_patched` what the patched model answered; a column without its own array falls back to
+       * `messages`. Replaying the patched answer to the un-patched model would teach it the knowledge mid-test.
+       */
+      messages_base: history.optional(), messages_patched: history.optional(),
+      max_tokens: z.coerce.number().min(1).max(1024).default(200), thinking: z.boolean().default(false),
+      /** D3: the client's own id for this live test — lets it ask GET /api/chat/status and cancel while queued. */
+      request_id: z.string().min(1).max(64).optional(),
+    }).refine((b) => (b.patch_id ? 1 : 0) + (b.patch_ids ? 1 : 0) === 1, { message: 'exactly one of patch_id / patch_ids is required', path: ['patch_ids'] })
+      // A comparison is only a comparison if both columns are asked the same thing.
+      .refine((b) => !b.messages_base || tail(b.messages_base) === tail(b.messages), { message: 'messages_base must end with the same message as messages — both columns answer one question', path: ['messages_base'] })
+      .refine((b) => !b.messages_patched || tail(b.messages_patched) === tail(b.messages), { message: 'messages_patched must end with the same message as messages — both columns answer one question', path: ['messages_patched'] })
+      .parse(req.body);
+    const operator = isNodeOwner(req);
+    const caller = teachAuth.verify(req);
+    /**
+     * The turn's identity stays keyed on the address: GET /api/chat/status, the cancel route and the "this answer is
+     * wrong" report all look a turn up by the same visitor id, and they see only the request, not the cookie.
+     */
+    const visitor = market.visitorId(operator ? `operator:${market.address}` : `ip:${req.ip}`);
+    /**
+     * Finding 59 — two buckets: this BROWSER (or its teaching key), which is the allowance the page reports, and
+     * this ADDRESS, which is the shared-model protection. Both are checked before anything is sent and both are
+     * spent afterwards, so neither can be escaped by clearing a cookie or by sharing an office router.
+     */
+    const browser = browserId(req, res);
+    const network = operator ? null : market.visitorId(`ip:${req.ip}`);
+    const mine = operator ? null : caller ? market.visitorId(`key:${caller.toLowerCase()}`) : browser ? market.visitorId(`try:${browser}`) : network;
+    /** When the personal bucket IS the address bucket, its refusal is about the address — say so in those words. */
+    const mineIsShared = mine === network;
+    // check (without consuming) first; a failed/hung request must not burn a free try
+    // the machine-readable code matters: without it the browser cannot tell this HOURLY budget from the DAILY lesson
+    // limit, and told the visitor to "come back tomorrow" for a quota that refills within the hour. `quota_reset` says
+    // WHEN the hour is up, so the page can count down instead of guessing.
+    if (mine && market.chatQuota(mine, CHAT_TRIES_PER_HOUR, 3600_000, true) < 0) {
+      throw new HttpError(429, mineIsShared
+        ? `quota_chat_network: this address has used all ${CHAT_TRIES_PER_HOUR} free live tests for this hour — everyone sharing it shares them`
+        : 'quota_chat: free live-test quota exhausted for this hour — buy the patch or run your own node',
+      { quota_reset: market.chatQuotaResetsAt(mine), quota_scope: mineIsShared ? 'network' : 'you', ...(mineIsShared ? { quota_limit: CHAT_TRIES_PER_HOUR } : {}) });
+    }
+    if (network && !mineIsShared && market.chatQuota(network, CHAT_TRIES_PER_NETWORK_HOUR, 3600_000, true) < 0) {
+      if (mine) market.refundChatQuota(mine);   // the caller's own try was reserved a line ago and is not being spent
+      throw new HttpError(429, `quota_chat_network: this network has used all ${CHAT_TRIES_PER_NETWORK_HOUR} free live tests for this hour — everyone sharing this address shares them`, { quota_reset: market.chatQuotaResetsAt(network), quota_scope: 'network', quota_limit: CHAT_TRIES_PER_NETWORK_HOUR });
+    }
+    // private drafts (taught lessons) are testable only by their owner (signed x-ainize-auth) or the operator
+    // The tries are already taken. A request that fails or hangs gets them back, which is what "a failed request
+    // must not burn a free try" always meant — it just used to be implemented by not taking them at all, so
+    // concurrent callers each measured an untouched counter and every one of them passed.
+    let out;
+    try {
+      out = await market.chat({ ...body, requestId: body.request_id, messagesBase: body.messages_base, messagesPatched: body.messages_patched, patchIds: body.patch_ids ?? [body.patch_id!], visitor, caller: { operator, address: caller } });
+    } catch (e) {
+      if (mine) market.refundChatQuota(mine);
+      if (network && !mineIsShared) market.refundChatQuota(network);
+      throw e;
+    }
+    const remaining = mine ? market.chatQuota(mine, CHAT_TRIES_PER_HOUR, 3600_000, false) : Infinity;
+    return { ...out, remaining_quota: Number.isFinite(remaining) ? remaining : null, quota_limit: operator ? null : CHAT_TRIES_PER_HOUR };
+  }));
+  /**
+   * D3 — "is my request still queued?". Public, free (no quota), and answers about the caller's own request only:
+   * an unknown or foreign request_id is reported as 'gone', never as someone else's state.
+   */
+  router.get('/api/chat/status', wrap(async (req) => {
+    const { request_id } = z.object({ request_id: z.string().min(1).max(64) }).parse(req.query);
+    const operator = isNodeOwner(req);
+    const visitor = market.visitorId(operator ? `operator:${market.address}` : `ip:${req.ip}`);
+    const q = market.runtime.queueState();
+    return { ...market.chatQueue.status(request_id, visitor), lock: q.lock, running: q.running, waiting: market.chatQueue.waiting(), now: Date.now() };
+  }));
+  /**
+   * D3 — give up waiting. While the request is still queued nothing has been sent to the model, so the runner
+   * returns without touching the shared table and no free try is consumed; once it is running the work (and the
+   * charge) stands and the caller is told exactly that instead of being left to guess.
+   */
+  router.post('/api/chat/cancel', wrap(async (req) => {
+    const { request_id } = z.object({ request_id: z.string().min(1).max(64) }).parse(req.body);
+    const operator = isNodeOwner(req);
+    const visitor = market.visitorId(operator ? `operator:${market.address}` : `ip:${req.ip}`);
+    return market.chatQueue.cancel(request_id, visitor);
+  }));
+  /**
+   * SC-13 — "this answer is wrong". `share: false` (the default) counts the question and keeps nothing: the node
+   * stores a keyed cluster id, so *asked {c} times* is true without the text ever being written. `share: true` is the
+   * visitor's own decision to send the text to the creator, taken per turn, and only then is it stored (§10).
+   * The turn must be one this visitor actually asked — the prompt comes from the node's own record of it, never from
+   * the request body, so nobody can attribute a question to a knowledge they never tested.
+   */
+  router.post('/api/chat/feedback', wrap(async (req) => {
+    const body = z.object({
+      turn_id: z.string().min(1).max(64),
+      patch_ids: z.array(z.string().min(1)).max(MAX_CHAT_PATCHES).optional(),
+      verdict: z.literal('wrong').default('wrong'),
+      share: z.boolean().default(false),
+    }).parse(req.body ?? {});
+    const operator = isNodeOwner(req);
+    const visitor = market.visitorId(operator ? `operator:${market.address}` : `ip:${req.ip}`);
+    const turn = market.turn(body.turn_id, visitor);
+    if (!turn) throw new HttpError(404, 'turn_unknown: that live test is not one this node remembers for you (it may have been restarted)');
+    const ids = (body.patch_ids?.length ? body.patch_ids.filter((x) => turn.patch_ids.includes(x)) : turn.patch_ids);
+    if (!ids.length) throw bad('no_patch: a wrong answer is reported against a knowledge that was loaded for that turn');
+    const cluster = market.questionCluster(turn.prompt);
+    const out: { patch_id: string; issue_id: string; count: number; people: number; shared: boolean }[] = [];
+    for (const id of ids) {
+      const e = await market.entry(id);
+      if (!e || (e.status === 'DRAFT' && !operator)) continue;
+      market.store.bumpSignals(id, { marked_wrong: 1 }, { visitor });
+      // a question the knowledge PUBLISHES is its own miss (the prompt is already on the record); anything else is a
+      // free question, whose text exists here only with consent
+      const sample = (e.anchor.benchmark.samples ?? []).findIndex((sm) => questionKey(sm.prompt) === questionKey(turn.prompt));
+      const issue = sample >= 0
+        ? market.store.bumpIssue(id, 'own_miss', cluster, { sample_index: sample, visitor })
+        : market.store.bumpIssue(id, 'free_wrong', cluster, { text: body.share ? turn.prompt : null, visitor });
+      out.push({ patch_id: id, issue_id: issue.id, count: issue.count, people: issue.people, shared: !!issue.text });
+    }
+    if (!out.length) throw notFound('patch not found');
+    return { turn_id: body.turn_id, shared: body.share, items: out };
+  }));
+
+  router.get('/api/me/settings', requireOwner, wrap(async () => ({ settings: market.settings() })));
+  router.patch('/api/me/settings', requireOwner, wrap(async (req) => {
+    const patch = z.object({ notifications: z.enum(['all', 'sales', 'none']).optional(), display_name: z.string().min(1).max(64).optional(), payout_address: z.string().optional() }).parse(req.body);
+    const settings = market.updateSettings(patch);
+    deps.saveConfig();
+    return { settings };
+  }));
+
+  // ------------------------------------------------------------ teach mode — visitors (spec §6.2; signed x-ainize-auth, see teach-auth.ts)
+  const needTeach = (): TeachWorker => { if (!deps.teach) throw new HttpError(503, 'teaching_disabled: the teach worker is not running on this node'); return deps.teach; };
+  // verified once per request (the replay cache makes a second verification of the same header fail by design)
+  const teacherOf = (req: Request): string | null => {
+    const r = req as Request & { _teacher?: string | null };
+    if (r._teacher === undefined) r._teacher = teachAuth.verify(req);
+    return r._teacher;
+  };
+  const requireTeacher = (req: Request): string => {
+    const a = teacherOf(req);
+    if (!a) throw new HttpError(401, 'invalid_signature: x-ainize-auth header missing, expired, replayed or invalid (`<address>:<ts>:<sig>:v2` over "teach:<node>:<METHOD>:<path>:<ts>[:<sha256 body>]", or the legacy `teach:<ts>` form)');
+    return a;
+  };
+  /** Every visitor teach route: worker present, policy enabled, key/IP not banned. */
+  const visitorGate = (req: Request, address: string | null): TeachWorker => { const t = needTeach(); t.assertEnabled(); t.assertNotBanned(address, req.ip); return t; };
+  const jobOr404 = (t: TeachWorker, id: string): TeachJobRow => { const j = t.get(id); if (!j) throw notFound('lesson not found'); return j; };
+  /** Owner (signed) or operator. */
+  const ownerJob = (req: Request, id: string, opts: { operator?: boolean } = {}): { t: TeachWorker; j: TeachJobRow; address: string | null; operator: boolean } => {
+    const t = needTeach(); const j = jobOr404(t, id); const address = teacherOf(req); const operator = isNodeOwner(req);
+    if (t.isOwner(j, address)) { t.assertEnabled(); t.assertNotBanned(address, req.ip); return { t, j, address, operator: false }; }
+    if (opts.operator !== false && operator) return { t, j, address, operator: true };
+    if (!address) throw new HttpError(401, 'invalid_signature: x-ainize-auth header missing, expired or invalid');
+    throw new HttpError(403, 'not_owner: this lesson belongs to a different teaching key');
+  };
+  const factSchema = z.object({ prompt: z.string().min(1).max(PROMPT_MAX), answer: z.string().min(1).max(ANSWER_MAX), alt_prompt: z.string().max(PROMPT_MAX).optional(), base_answer: z.string().max(4000).optional() });
+  const addressParam = (v: string): string => { if (!/^0x[0-9a-fA-F]{40}$/.test(v)) throw bad('address must be an AIN address (0x + 40 hex)'); return v; };
+
+  // ------------------------------------------------------------ teach mode — datasets (design §7.1–§7.2)
+  /**
+   * The upload multer is its OWN instance: `dest` under the teach directory, exactly one file, and a hard byte ceiling.
+   * The operator instance (4 GB) must never be reachable from a visitor route.
+   */
+  const datasetUpload = multer({ dest: join(market.cfg.dataDir, 'teach', 'incoming'), limits: { fileSize: DATASET_MAX_BYTES_CEILING, files: 1, fields: 12 } });
+  mkdirSync(join(market.cfg.dataDir, 'teach', 'incoming'), { recursive: true });
+  const isMultipart = (req: Request) => (req.header('content-type') ?? '').toLowerCase().startsWith('multipart/');
+
+  /**
+   * The teach gate for uploads, registered BEFORE multer on the same chain (design §7.1 ordering rule): worker present →
+   * enabled → key/IP not banned → content-length → per-IP-per-minute limiter → byte quota. Registering the upload
+   * middleware first (the pattern `/api/patches` uses) would let a banned key write megabytes on every request.
+   */
+  const datasetGate = (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      const t = needTeach();
+      // a multipart body cannot be covered by the v2 body hash, so the client signs the sha256 header instead (§D14)
+      const r = req as Request & { _teacher?: string | null };
+      if (r._teacher === undefined) r._teacher = isMultipart(req) ? teachAuth.verify(req, 'teach', req.header('x-ainize-dataset-sha256') ?? null) : teachAuth.verify(req);
+      const address = requireTeacher(req);
+      t.assertEnabled();
+      t.assertNotBanned(address, req.ip);
+      const bytes = isMultipart(req) ? Number(req.header('content-length') ?? 0) : Buffer.byteLength(JSON.stringify(req.body ?? {}));
+      t.datasets.gate(address, req.ip, bytes);
+      next();
+    } catch (e) { next(e); }
+  };
+
+  const rowSchema = z.object({ prompt: z.string().min(1).max(PROMPT_MAX), answer: z.string().min(1).max(ANSWER_MAX), alt_prompt: z.string().max(PROMPT_MAX).optional(), note: z.string().max(500).optional() });
+  const rowsOpSchema = z.union([
+    z.object({ op: z.literal('remove'), indexes: z.array(z.number().int().min(0)).min(1).max(2000) }),
+    // finding 48 — take out a row the parser REFUSED, by the source line the report carries it under
+    z.object({ op: z.literal('drop_rejected'), lines: z.array(z.number().int().min(0)).min(1).max(2000) }),
+    z.object({ op: z.literal('append'), rows: z.array(rowSchema).min(1).max(2000) }),
+    z.object({ op: z.literal('replace'), index: z.number().int().min(0), row: rowSchema }),
+  ]);
+  const parseOptSchema = z.object({
+    format: z.enum(['jsonl', 'json', 'csv', 'tsv', 'txt']).optional(), delimiter: z.string().min(1).max(4).optional(),
+    has_header: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(), encoding: z.string().max(32).optional(),
+    layout: z.enum(['tsv', 'qa', 'blocks', 'prompts']).optional(),
+    columns: z.union([z.string(), z.record(z.string(), z.union([z.string(), z.number()]))]).optional(),
+  });
+  const toParse = (b: z.infer<typeof parseOptSchema>) => ({
+    ...(b.format ? { format: b.format } : {}), ...(b.delimiter ? { delimiter: b.delimiter === '\\t' ? '\t' : b.delimiter } : {}),
+    ...(b.has_header !== undefined ? { hasHeader: b.has_header === true || b.has_header === 'true' } : {}),
+    ...(b.encoding ? { encoding: b.encoding } : {}), ...(b.layout ? { layout: b.layout } : {}),
+    ...(b.columns ? { columns: (typeof b.columns === 'string' ? JSON.parse(b.columns) : b.columns) as Record<string, string | number> } : {}),
+  });
+
+  // Registered BEFORE `/api/teach/datasets/:id` so the literal `samples` segment can never be read as a dataset id.
+  router.get('/api/teach/samples', wrap(async (_req, res) => { res.set('cache-control', 'public, max-age=3600'); return { samples: needTeach().datasets.samples() }; }));
+  router.get('/api/teach/samples/:kind', wrap(async (req, res) => {
+    const body = needTeach().datasets.sampleBytes(req.params.kind as string);
+    res.set('cache-control', 'public, max-age=3600').type('application/x-ndjson; charset=utf-8').set('content-disposition', `attachment; filename="sample-${req.params.kind}.jsonl"`).send(body);
+  }));
+
+  router.post('/api/teach/datasets', datasetGate, datasetUpload.single('file'), wrap(async (req, res) => {
+    const t = needTeach(); const address = requireTeacher(req);
+    try {
+      if (req.file) {
+        const meta = parseOptSchema.extend({ name: z.string().max(80).optional(), retention: z.enum(['keep', 'delete_after_training']).optional() }).parse(req.body ?? {});
+        const declared = req.header('x-ainize-dataset-sha256');
+        const bytes = readFileSync(req.file.path);
+        const out = t.datasets.create({
+          owner: address, ip: req.ip, source: 'upload', bytes, filename: req.file.originalname,
+          name: meta.name, retention: meta.retention, parse: toParse(meta), declaredSha256: declared,
+        });
+        res.status(out.created ? 201 : 200);
+        return out;
+      }
+      const body = z.object({
+        source: z.enum(['chat', 'inline', 'sample']).default('chat'), rows: z.array(rowSchema).max(2000).optional(),
+        sample: z.string().max(40).optional(), name: z.string().max(80).optional(), retention: z.enum(['keep', 'delete_after_training']).optional(),
+      }).parse(req.body ?? {});
+      const out = body.source === 'sample'
+        ? t.datasets.createFromSample(body.sample ?? 'ko-facts', { owner: address, ip: req.ip, name: body.name, retention: body.retention })
+        : t.datasets.create({ owner: address, ip: req.ip, source: body.source, rows: body.rows ?? [], name: body.name, retention: body.retention });
+      res.status(out.created ? 201 : 200);
+      return out;
+    } finally { dropTemp(req); }
+  }));
+
+  router.get('/api/teach/datasets', wrap(async (req) => { const address = requireTeacher(req); const t = visitorGate(req, address); return { items: t.datasets.listMine(address) }; }));
+  router.get('/api/teach/datasets/:id', wrap(async (req) => {
+    const t = needTeach();
+    return { dataset: t.datasets.view(t.datasets.owned(req.params.id as string, teacherOf(req), isNodeOwner(req))) };
+  }));
+  router.get('/api/teach/datasets/:id/rows', wrap(async (req) => {
+    const t = needTeach();
+    const d = t.datasets.owned(req.params.id as string, teacherOf(req), isNodeOwner(req));
+    const q = z.object({
+      offset: z.coerce.number().int().min(0).default(0), limit: z.coerce.number().int().min(1).max(200).default(50), status: z.string().max(20).default('all'),
+      // SC-5: which rows are mine, which came from the knowledge this set was copied from, which of its answers I changed
+      origin: z.enum(['all', 'mine', 'inherited', 'changed', 'conflicts']).default('all'),
+    }).parse(req.query);
+    const page = t.datasets.reportPage(d, q);
+    return { total: page.total, source_rows: page.source_rows, offset: page.offset, limit: page.limit, summary: page.summary, origins: page.origins, items: page.rows };
+  }));
+  router.post('/api/teach/datasets/:id/reparse', wrap(async (req) => {
+    const address = requireTeacher(req); const t = visitorGate(req, address);
+    const body = parseOptSchema.parse(req.body ?? {});
+    return t.datasets.reparse(t.datasets.owned(req.params.id as string, address), toParse(body));
+  }));
+  router.patch('/api/teach/datasets/:id', wrap(async (req) => {
+    const address = requireTeacher(req); const t = visitorGate(req, address);
+    const body = z.object({ name: z.string().max(80).optional(), retention: z.enum(['keep', 'delete_after_training']).optional(), rows_op: rowsOpSchema.optional() }).parse(req.body ?? {});
+    return t.datasets.patch(t.datasets.owned(req.params.id as string, address), body as { name?: string; retention?: 'keep' | 'delete_after_training'; rows_op?: RowsOp });
+  }));
+  router.post('/api/teach/datasets/:id/fork', wrap(async (req, res) => {
+    const address = requireTeacher(req); const t = visitorGate(req, address);
+    const body = z.object({ name: z.string().max(80).optional(), rows_op: rowsOpSchema.optional() }).parse(req.body ?? {});
+    const out = t.datasets.fork(t.datasets.owned(req.params.id as string, address), { owner: address, ip: req.ip, name: body.name, rows_op: body.rows_op as RowsOp | undefined });
+    res.status(out.created ? 201 : 200);
+    return out;
+  }));
+  router.delete('/api/teach/datasets/:id', wrap(async (req) => {
+    const t = needTeach();
+    const operator = isNodeOwner(req);
+    const d = t.datasets.owned(req.params.id as string, teacherOf(req), operator);
+    return t.datasets.remove(d, operator && d.owner.toLowerCase() !== (teacherOf(req) ?? '').toLowerCase() ? 'operator' : 'owner');
+  }));
+  router.get('/api/teach/datasets/:id/download', wrap(async (req, res) => {
+    const t = needTeach();
+    const d = t.datasets.owned(req.params.id as string, teacherOf(req), isNodeOwner(req));
+    const format = req.query.format === 'csv' ? 'csv' : 'jsonl';
+    const out = t.datasets.download(d, format);
+    res.status(200).type(out.contentType).set({ 'content-disposition': `attachment; filename="${out.filename}"`, 'x-content-sha256': out.sha256 }).send(out.body);
+  }));
+
+  router.get('/api/teach/policy', wrap(async (req, res) => { res.set('cache-control', 'public, max-age=10'); return needTeach().policy(req.ip); }));
+  /**
+   * Item 171 — can this caller teach with this knowledge on this node? The same rules `contextTargets` applies, asked
+   * before a dataset is uploaded, so `--patch krx-all-2761` fails in front of the side effect instead of behind it.
+   */
+  router.get('/api/teach/bases/:id', wrap(async (req) => {
+    const address = requireTeacher(req);
+    const t = visitorGate(req, address);
+    return t.knowledgeFor(req.params.id as string, { address, operator: isNodeOwner(req) });
+  }));
+  router.post('/api/teach/preflight', wrap(async (req) => {
+    const address = requireTeacher(req); const t = visitorGate(req, address);
+    const raw = z.object({
+      patch_ids: z.array(z.string().min(1)).max(MAX_CHAT_PATCHES).default([]),
+      // lineage §12.1: the knowledge these questions would be taught ON TOP OF vs the ones loaded for comparison
+      base_ids: z.array(z.string().min(1)).max(2).optional(), context_ids: z.array(z.string().min(1)).max(MAX_CHAT_PATCHES).optional(),
+      facts: z.array(factSchema).min(1).max(8).optional(),
+      dataset_id: z.string().min(1).optional(), offset: z.number().int().min(0).optional(), limit: z.number().int().min(1).max(8).optional(),
+    }).parse(req.body);
+    // `{dataset_id, offset?, limit?}` probes at most `preflight.perCall` questions per call and never more than
+    // `preflight.sampleRows` of one dataset — the response says what was sampled, so no whole-dataset claim is possible.
+    let sampled: { checked: number; of: number } | undefined;
+    let facts = raw.facts;
+    if (raw.dataset_id) {
+      const slice = t.preflightSlice(t.datasets.owned(raw.dataset_id, address), raw.offset ?? 0, raw.limit);
+      facts = slice.facts; sampled = slice.sampled;
+    }
+    if (!facts?.length) throw bad('send either `facts` or a `dataset_id` with questions in it');
+    // the base is loaded too, so `patch_ids` here is "everything the probe runs with" for quota purposes
+    const baseIds = raw.base_ids ?? [];
+    const body = { patch_ids: [...new Set([...(raw.context_ids ?? raw.patch_ids), ...baseIds])], facts };
+    // Preflight spends live-test units in proportion to the model calls it drives (facts + context blobs), charged to the
+    // IP AND the teaching key — one of them alone is free to spoof / mint (security review: preflight DoS).
+    const units = t.preflightUnits({ patchIds: body.patch_ids, facts: body.facts });
+    /**
+     * The same buckets the live test spends, and taken before the model runs (item 376).
+     *
+     * Two things were wrong. The units were peeked and only committed afterwards, so thirty concurrent pre-flights
+     * all measured an untouched counter, all passed, and each drove its own round on the shared serving GPU — the
+     * budget `preflightSlice` calls "the budget that actually protects the model". And the keys were raw
+     * `ip:<addr>` / `key:<addr>` strings while `/api/chat` keys on `market.visitorId(...)` hashes: different
+     * entries in the same map, so a pre-flight did not in fact draw on the live-test budget its comment says it
+     * spends, and either door could exhaust the model while the other still read "free tries remaining".
+     */
+    const buckets = [market.visitorId(`ip:${req.ip}`), market.visitorId(`key:${address.toLowerCase()}`)];
+    const taken: string[] = [];
+    for (const b of buckets) {
+      if (market.chatQuota(b, 20, 3600_000, true, units) < 0) {
+        for (const done of taken) market.refundChatQuota(done, units);
+        throw new HttpError(429, `quota_chat: free live-test quota exhausted for this hour (this pre-flight needs ${units} unit(s)) — try again later`, { quota_reset: market.chatQuotaResetsAt(b) });
+      }
+      taken.push(b);
+    }
+    try {
+      return await t.preflight({ address, ip: req.ip, patchIds: body.patch_ids, baseIds, facts: body.facts, sampled });
+    } catch (e) {
+      for (const b of taken) market.refundChatQuota(b, units);
+      throw e;
+    }
+  }));
+  /**
+   * Design §12.2 — what combining two knowledges would mean, before anything is built. Read-only: it resolves both
+   * parents (the same refusals as building on one), compares their training sets by the parser key and their files
+   * row by row, and reports which of the three build tiers is possible. Costs no live-model call, so it is not
+   * metered against the chat quota — the two files are read from disk.
+   */
+  router.post('/api/teach/merge/preview', wrap(async (req) => {
+    const address = requireTeacher(req); const t = visitorGate(req, address);
+    const body = z.object({ a: z.string().min(1), b: z.string().min(1) }).parse(req.body);
+    return t.mergePreview(body.a, body.b, { address });
+  }));
+  const trainingSchema = z.object({
+    effort: z.enum(['quick', 'balanced', 'thorough']).optional(),
+    max_steps: z.number().int().min(1).max(200).optional(), eval_every: z.number().int().min(1).max(100).optional(),
+    rows_limit: z.number().int().min(1).max(2000).optional(), row_offset: z.number().int().min(0).max(2000).optional(),
+    check_side_effects: z.boolean().optional(), use_alt: z.boolean().optional(),
+  });
+  router.post('/api/teach/jobs', wrap(async (req, res) => {
+    const address = requireTeacher(req); const t = visitorGate(req, address);
+    // backward compatible: `{dataset_id}` XOR the legacy `{facts}` (which materialises a dataset server-side)
+    const body = z.object({
+      patch_ids: z.array(z.string().min(1)).max(MAX_CHAT_PATCHES).default([]), builds_on_context: z.boolean().default(false),
+      // lineage (design §12.1): what the lesson is trained ON TOP OF (≤ 2; two = merge, later) vs `patch_ids` / `context_ids` loaded for comparison
+      // the cap is enforced in `createJob` (`too_many_bases`), not here: a request refused by the schema says
+      // "invalid request", and a creator who names three knowledges deserves the sentence that explains the rule
+      base_ids: z.array(z.string().min(1)).max(8).optional(), context_ids: z.array(z.string().min(1)).max(MAX_CHAT_PATCHES).optional(),
+      mode: z.enum(['scratch', 'extend', 'fork', 'merge']).optional(), inherit: z.boolean().optional(), export: z.enum(['delta', 'squash']).optional(), force: z.boolean().optional(),
+      // merge (§12.2): what the creator chose for each question the two knowledges answer differently, and how the
+      // combined knowledge should be built
+      resolutions: z.record(z.string(), z.union([z.enum(['a', 'b', 'drop']), z.object({ answer: z.string().min(1).max(ANSWER_MAX) })])).optional(),
+      tier: z.enum(['union', 'retrain', 'rebuild']).optional(),
+      // "yes, these answers are meant to replace the base's" (§12.1 base_unresolved_conflicts)
+      confirm_conflicts: z.boolean().optional(),
+      facts: z.array(factSchema).min(1).max(8).optional(),
+      dataset_id: z.string().min(1).optional(), selected_indexes: z.array(z.number().int().min(0)).max(2000).optional(),
+      // what an interactive pre-flight measured on those rows; the node re-checks each claim against the row's answer
+      known: z.array(z.object({ index: z.number().int().min(0), base_answer: z.string().max(4000) })).max(2000).optional(),
+      training: trainingSchema.optional(),
+      contributor: z.object({ name: z.string().max(80).optional() }).optional(), name: z.string().max(80).optional(),
+    }).parse(req.body);
+    let baseIds = body.base_ids ?? [];
+    let buildsOn = body.builds_on_context;
+    const contextIds = body.context_ids ?? body.patch_ids;
+    // legacy `builds_on_context: true` = "record the loaded knowledges as parents"; with lineage on it becomes a real
+    // base (design §12.1), announced with a Deprecation header — off, it keeps meaning declared parents
+    if (buildsOn && !baseIds.length && market.teach().lineage && contextIds.length) {
+      baseIds = [contextIds[0]]; buildsOn = false;
+      res.set('deprecation', 'true').set('x-ainize-deprecated', 'builds_on_context: send base_ids (the knowledge you build on) and context_ids (loaded for comparison) instead');
+    }
+    if (body.mode === 'extend' && !baseIds.length) throw bad('invalid: mode extend needs base_ids');
+    // Design §9 / §12.1: two bases IS a merge, and it has its own body (`resolutions`, `tier`) and its own path — the
+    // merged training set is built by the node, not uploaded, so `dataset_id` / `facts` have no meaning here.
+    if (body.mode === 'merge' || baseIds.length === 2) {
+      if (baseIds.length !== 2) throw bad('invalid: combining takes exactly two knowledges — send both in base_ids');
+      const job = await t.createMergeJob({
+        address, contributorName: body.contributor?.name, name: body.name, ip: req.ip,
+        a: baseIds[0], b: baseIds[1], resolutions: body.resolutions, tier: body.tier, training: body.training, force: body.force,
+      });
+      res.status(202);
+      return { job, quota: t.jobQuota(address, req.ip) };
+    }
+    if (!body.dataset_id && !body.facts?.length) throw bad('send either `dataset_id` or `facts`');
+    const job = await t.createJob({
+      address, contributorName: body.contributor?.name, name: body.name, ip: req.ip, patchIds: contextIds, buildsOn,
+      facts: body.facts, datasetId: body.dataset_id, selectedIndexes: body.selected_indexes, known: body.known, training: body.training,
+      baseIds, inherit: body.inherit, exportMode: body.export, force: body.force, mode: body.mode, confirmConflicts: body.confirm_conflicts,
+    });
+    res.status(202);
+    return { job, quota: t.jobQuota(address, req.ip) };
+  }));
+  router.get('/api/teach/jobs', wrap(async (req) => { const address = requireTeacher(req); const t = visitorGate(req, address); return { items: t.listMine(address) }; }));
+  router.get('/api/teach/jobs/:id', wrap(async (req) => {
+    const t = needTeach(); const j = jobOr404(t, req.params.id as string);
+    const address = teacherOf(req);
+    // warms the catalog cache the view reads synchronously, so "Built on {name}" is a name and not an id
+    if (j.bases?.length) await market.catalog().catch(() => undefined);
+    return { job: t.isOwner(j, address) || isNodeOwner(req) ? t.view(j) : t.publicView(j) };
+  }));
+  router.delete('/api/teach/jobs/:id', wrap(async (req) => { const { t, j, operator } = ownerJob(req, req.params.id as string); return t.cancel(j, operator ? 'operator' : 'owner'); }));
+  router.post('/api/teach/jobs/:id/retry', wrap(async (req, res) => {
+    const { t, j, address } = ownerJob(req, req.params.id as string, { operator: false });
+    const body = z.object({ facts: z.array(factSchema).min(1).max(8), name: z.string().max(80).optional() }).parse(req.body);
+    const job = await t.createJob({ address: address!, contributorName: j.contributor_name ?? undefined, name: body.name ?? j.name ?? undefined, ip: req.ip, patchIds: j.context, buildsOn: j.builds_on, facts: body.facts, parentJob: j.id });
+    res.status(202);
+    return { job, quota: t.jobQuota(address!, req.ip) };
+  }));
+  router.post('/api/teach/jobs/:id/retrain', wrap(async (req, res) => {
+    const { t, j, address } = ownerJob(req, req.params.id as string, { operator: false });
+    const body = z.object({ dataset_id: z.string().min(1).optional(), selected_indexes: z.array(z.number().int().min(0)).max(2000).optional(), training: trainingSchema.optional(), name: z.string().max(80).optional() }).parse(req.body ?? {});
+    const job = await t.retrain(j, address!, { ...body, ip: req.ip });
+    res.status(202);
+    return { job, quota: t.jobQuota(address!, req.ip) };
+  }));
+  router.get('/api/teach/jobs/:id/events', wrap(async (req) => {
+    const { t, j } = ownerJob(req, req.params.id as string);
+    const q = z.object({ since: z.coerce.number().int().min(0).optional(), limit: z.coerce.number().int().min(1).max(200).default(200) }).parse(req.query);
+    const rows = market.store.events({ kind: 'teach', limit: 1000 })
+      .filter((e) => (e.data as { job_id?: string } | null)?.job_id === j.id && (!q.since || e.seq > q.since))
+      .sort((a, b) => a.seq - b.seq).slice(-q.limit);
+    // the owner is not the operator: the same redaction /api/events applies (draft ids, keys, prompts stay out)
+    const events = publicEvents(rows, isNodeOwner(req)).map((e) => ({ seq: e.seq, ts: e.ts, level: e.level, message: e.message, data: e.data }));
+    void t;
+    return { events, cursor: events.length ? events[events.length - 1].seq : (q.since ?? 0) };
+  }));
+  router.post('/api/teach/jobs/:id/recheck', wrap(async (req) => { const { t, j } = ownerJob(req, req.params.id as string); return t.recheck(j); }));
+  router.get('/api/teach/jobs/:id/publish-challenge', wrap(async (req) => {
+    const { t, j, address } = ownerJob(req, req.params.id as string, { operator: false });
+    const raw = req.query.payout_address;
+    const payout = raw === 'none' || raw === 'null' ? null : typeof raw === 'string' && raw ? raw : undefined;
+    return await t.publishChallenge(j, address!, payout);
+  }));
+  router.post('/api/teach/jobs/:id/publish', wrap(async (req) => {
+    const { t, j, address } = ownerJob(req, req.params.id as string, { operator: false });
+    const body = z.object({
+      name: z.string().min(2).max(80), description: z.string().max(2000).optional(), price: z.string().max(32).optional(), license: z.string().max(80).optional(),
+      payout_address: z.string().nullable().optional(), claim_sig: z.string().min(1), consent: z.object({ permanent: z.boolean(), rights: z.boolean() }),
+      // a teaching key named after the lesson was queued — the sheet shows that name, so the record must carry it
+      contributor: z.object({ name: z.string().max(80).optional() }).optional(),
+      // the training set (design §12.1): who may read it, under which licence, with or without notes, and where it came from
+      dataset: z.object({
+        access: z.enum(DATASET_ACCESS_LEVELS).optional(), license: z.string().max(80).optional(), include_notes: z.boolean().optional(),
+        declaration: z.object({ source: z.enum(['own', 'public', 'licensed']), license: z.string().max(80).optional(), no_pii: z.boolean() }).nullable().optional(),
+      }).optional(),
+    }).parse(req.body);
+    return t.publish(j, address!, body);
+  }));
+  router.post('/api/teach/jobs/:id/save', wrap(async (req) => { const { t, j, address } = ownerJob(req, req.params.id as string); return t.save(j, address ?? `operator:${market.address}`); }));
+  router.get('/api/teach/jobs/:id/recipe', wrap(async (req, res) => {
+    const t = needTeach(); const j = jobOr404(t, req.params.id as string);
+    if (!t.tokenOk(j, typeof req.query.token === 'string' ? req.query.token : undefined)) throw new HttpError(401, 'invalid_signature: download token missing, wrong or expired — make a new link from Your knowledge');
+    res.set('content-disposition', 'attachment; filename="recipe.json"');
+    return t.recipeJson(j);
+  }));
+  router.get('/api/teach/jobs/:id/local-run', wrap(async (req, res) => {
+    const t = needTeach(); const j = jobOr404(t, req.params.id as string);
+    const token = typeof req.query.token === 'string' ? req.query.token : undefined;
+    if (!t.tokenOk(j, token)) throw new HttpError(401, 'invalid_signature: download token missing, wrong or expired — make a new link from Your knowledge');
+    res.status(200).type('text/markdown; charset=utf-8').set('content-disposition', 'attachment; filename="RUN-LOCALLY.md"').send(await t.runLocallyMd(j, token!));
+  }));
+  router.get('/api/teacher/:address', wrap(async (req) => needTeach().teacherProfile(addressParam(req.params.address as string))));
+  /**
+   * The person who is owed the money asks this node to try the transfer again (item 306).
+   *
+   * A payout that has exhausted its 20 automatic attempts, or was interrupted by a restart, leaves the teacher's page
+   * saying "transfer failed — still owed by 0x…" with nothing to do about it: the retry was operator-only, no
+   * visitor-callable route existed, and the operator's only prompt was one warn line in an event feed. Signed with
+   * the teaching key that is owed the money, at most once every ten minutes, and it writes an event naming them.
+   */
+  router.post('/api/teach/payouts/:id/nudge', wrap(async (req) => {
+    const address = requireTeacher(req);
+    visitorGate(req, address);
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) throw bad('payout id must be a positive integer');
+    return market.payouts.nudge(id, address);
+  }));
+  /**
+   * A verifier's record (item 337). The verification tab printed a name and a short address with no link, and
+   * nothing anywhere aggregated what a verifier had actually done — so "node-b · Passed" weighed exactly as much as
+   * a key created five minutes ago, and careful work could not be told from a rubber stamp.
+   */
+  router.get('/api/verifiers/:address', wrap(async (req) => market.verifierProfile(addressParam(req.params.address as string))));
+
+  // ------------------------------------------------------------ teach mode — operator (spec §6.4)
+  const policyView = async (t: TeachWorker) => ({ policy: market.teachSettings(), effective: market.teach(), trainer: await t.trainerState(true) });
+  router.get('/api/me/teach/policy', requireOwner, wrap(async () => policyView(needTeach())));
+  router.patch('/api/me/teach/policy', requireOwner, wrap(async (req) => {
+    const t = needTeach();
+    const b = z.object({
+      // every field is nullable: `null` clears the override so the node falls back to config.json (item 125)
+      enabled: z.boolean().nullable().optional(), publish: z.enum(['review', 'auto', 'never']).nullable().optional(), facts_per_job: z.number().int().min(1).max(8).nullable().optional(),
+      jobs_per_key_per_day: z.number().int().min(0).max(1000).nullable().optional(), jobs_per_ip_per_day: z.number().int().min(0).max(1000).nullable().optional(), queue_max: z.number().int().min(1).max(100).nullable().optional(),
+      contributor_share: z.number().min(0).max(0.9).nullable().optional(), draft_ttl_days: z.number().int().min(1).max(90).nullable().optional(),
+      paused_reason: z.string().max(200).nullable().optional(), blocked_topics: z.string().max(500).nullable().optional(),
+      // teach mode v2 limits; `rows_per_job` is an explicit override that DISABLES the measured derivation
+      dataset_max_bytes: z.number().int().min(1000).max(DATASET_MAX_BYTES_CEILING).nullable().optional(),
+      dataset_max_rows: z.number().int().min(1).max(100_000).nullable().optional(),
+      rows_per_job: z.number().int().min(1).max(1000).nullable().optional(),
+      rows_per_key_per_day: z.number().int().min(0).max(100_000).nullable().optional(),
+      rows_per_ip_per_day: z.number().int().min(0).max(100_000).nullable().optional(),
+      datasets_per_key_per_day: z.number().int().min(0).max(1000).nullable().optional(),
+      dataset_ttl_days: z.number().int().min(1).max(90).nullable().optional(),
+      declaration_rows: z.number().int().min(1).max(100_000).nullable().optional(),
+      queued_rows_max: z.number().int().min(1).max(1_000_000).nullable().optional(),
+      check_call_budget: z.number().int().min(24).max(500).nullable().optional(),
+    }).parse(req.body ?? {});
+    if (b.blocked_topics) { try { new RegExp(b.blocked_topics, 'i'); } catch { throw bad('blocked_topics must be a valid regular expression'); } }
+    market.updateTeachPolicy({
+      enabled: b.enabled, publish: b.publish, factsPerJob: b.facts_per_job, jobsPerKeyPerDay: b.jobs_per_key_per_day, jobsPerIpPerDay: b.jobs_per_ip_per_day,
+      queueMax: b.queue_max, contributorShare: b.contributor_share, draftTtlDays: b.draft_ttl_days,
+      ...('paused_reason' in b ? { pausedReason: b.paused_reason } : {}), ...('blocked_topics' in b ? { blockedTopics: b.blocked_topics } : {}),
+      ...('dataset_max_bytes' in b ? { datasetMaxBytes: b.dataset_max_bytes } : {}), ...('dataset_max_rows' in b ? { datasetMaxRows: b.dataset_max_rows } : {}),
+      ...('rows_per_job' in b ? { rowsPerJob: b.rows_per_job } : {}),
+      ...('rows_per_key_per_day' in b ? { rowsPerKeyPerDay: b.rows_per_key_per_day } : {}), ...('rows_per_ip_per_day' in b ? { rowsPerIpPerDay: b.rows_per_ip_per_day } : {}),
+      ...('datasets_per_key_per_day' in b ? { datasetsPerKeyPerDay: b.datasets_per_key_per_day } : {}), ...('dataset_ttl_days' in b ? { datasetTtlDays: b.dataset_ttl_days } : {}),
+      ...('declaration_rows' in b ? { declarationRows: b.declaration_rows } : {}), ...('queued_rows_max' in b ? { queuedRowsMax: b.queued_rows_max } : {}),
+      ...('check_call_budget' in b ? { checkCallBudget: b.check_call_budget } : {}),
+    } as Parameters<typeof market.updateTeachPolicy>[0]);
+    t.invalidatePolicy();
+    return policyView(t);
+  }));
+  /**
+   * What visitors have uploaded to the operator's machine. Shipping the upload route without this would leave an
+   * operator hosting content they cannot see or delete, so it lands in the same PR (design §5.10).
+   */
+  router.get('/api/me/teach/datasets', requireOwner, wrap(async (req) => {
+    const q = z.object({ limit: z.coerce.number().int().min(1).max(1000).default(200) }).parse(req.query);
+    const t = needTeach();
+    market.log('info', 'teach', 'operator opened the uploaded-datasets moderation view');
+    return { items: t.datasets.listAll(q.limit) };
+  }));
+  router.get('/api/me/teach/jobs', requireOwner, wrap(async () => ({ items: needTeach().listAll() })));
+  router.post('/api/me/teach/jobs/:id/approve', requireOwner, wrap(async (req) => { const t = needTeach(); return t.announceJob(jobOr404(t, req.params.id as string)); }));
+  router.post('/api/me/teach/jobs/:id/reject', requireOwner, wrap(async (req) => {
+    const t = needTeach(); const { reason } = z.object({ reason: z.string().min(1).max(500) }).parse(req.body ?? {});
+    t.reject(jobOr404(t, req.params.id as string), reason);
+    return { ok: true, status: 'REJECTED' };
+  }));
+  router.post('/api/me/teach/jobs/:id/cancel', requireOwner, wrap(async (req) => { const t = needTeach(); return t.cancel(jobOr404(t, req.params.id as string), 'operator'); }));
+  router.get('/api/me/teach/contributors', requireOwner, wrap(async () => ({ items: market.store.listContributors() })));
+  router.post('/api/me/teach/contributors/:address', requireOwner, wrap(async (req) => {
+    const address = addressParam(req.params.address as string);
+    const { hidden } = z.object({ hidden: z.boolean().optional() }).parse(req.body ?? {});
+    if (!market.store.getContributor(address)) market.store.touchContributor(address, {});
+    if (hidden !== undefined) market.store.setContributorHidden(address, hidden);
+    return { ok: true, contributor: market.store.getContributor(address) };
+  }));
+  router.get('/api/me/teach/bans', requireOwner, wrap(async () => ({ items: market.store.listBans() })));
+  router.post('/api/me/teach/bans', requireOwner, wrap(async (req) => {
+    const b = z.object({ kind: z.enum(['address', 'ip']), value: z.string().min(1).max(200), reason: z.string().max(500).optional() }).parse(req.body ?? {});
+    const ban = market.store.addBan(b.kind, b.value, b.reason ?? null);
+    market.log('warn', 'teach', `${b.kind} ${b.value} blocked by the operator${b.reason ? `: ${b.reason}` : ''}`);
+    return { ban };
+  }));
+  router.delete('/api/me/teach/bans/:id', requireOwner, wrap(async (req) => { market.store.deleteBan(Number(req.params.id)); return { ok: true }; }));
+
+  // ------------------------------------------------------------ aindrive (files & change history)
+  router.get('/api/drive', wrap(async () => {
+    if (!deps.drive) throw notFound('drive integration disabled');
+    return deps.drive.status();
+  }));
+  router.get('/api/drive/changes', wrap(async (req) => {
+    if (!deps.drive) throw notFound('drive integration disabled');
+    const path = String(req.query.path ?? '');
+    if (!path || path.includes('..') || path.startsWith('/')) throw bad('path must be relative to the drive folder');
+    return deps.drive.changes(path);
+  }));
+  router.post('/api/drive', requireOwner, wrap(async (req) => {
+    if (!deps.drive) throw notFound('drive integration disabled');
+    const { action } = z.object({ action: z.enum(['up', 'stop', 'sync', 'login', 'status']) }).parse(req.body);
+    if (action === 'up') return deps.drive.up();
+    if (action === 'stop') return deps.drive.stop();
+    if (action === 'sync') return deps.drive.sync();
+    if (action === 'status') return { cli: await deps.drive.cliStatus(), ...deps.drive.status() };
+    return { ok: false, message: `pairing needs a browser: ${deps.drive.status().login_hint}` };
+  }));
+
+  // ------------------------------------------------------------ x402 trading (seller side)
+  router.get('/x402/patch/:id', wrap(async (req, res) => {
+    const id = req.params.id as string;
+    let e = await market.entry(id);
+    if (!e || !e.sellable) { await market.refreshLedger(); e = await market.entry(id); }
+    if (!e || e.status === 'DRAFT') throw notFound('patch not found');
+    if (e.anchor.author !== market.address) throw new HttpError(409, `not sold here; gateway is ${(e.anchor as PatchAnchor & { gateway_url?: string }).gateway_url ?? 'unknown'}`);
+    // 410 Gone: the publisher retired it (item 148). Before the quorum check, because a retired knowledge is not
+    // "not listed yet" — it is withdrawn, and the gate must stop charging for it whether or not the body is still here.
+    if (e.status === 'RETIRED') throw new HttpError(410, challengedMessage(e));
+    // A challenged entry is locked, not discounted: no price is honest while a verifier disputes the result (item 153).
+    // Before the quorum check: since item 330 a pre-challenge attestation no longer counts, so a disputed knowledge
+    // reads 0/2 here — and "not listed yet" would be the wrong sentence for something that was on sale this morning.
+    if (e.open_challenge || e.status === 'CHALLENGED') throw new HttpError(423, challengedMessage(e));
+    if (!e.quorum_ok) throw new HttpError(423, `patch not listed yet (verification ${e.passed}/${e.quorum})`);
+    if (!e.sellable) throw new HttpError(423, challengedMessage(e));
+    const resource = `/x402/patch/${id}`;
+    const header = req.header(X402_HEADER_PAYMENT);
+    /*
+     * Item 277 — free is free. This gate answered 402 whatever the price, so taking a knowledge priced at 0 cost a
+     * funded identity, a signed intent and a settle record naming the taker on every peer's ledger: the cheapest
+     * way into the sharing economy was the one with the most permanent public cost, and it padded every sold /
+     * revenue / popular figure with 0-value sales. A price of 0 now hands over the manifest to whoever asks, with
+     * no nonce, no signature, no settlement and no name — counted on this node as a download.
+     */
+    if (Number(e.anchor.price || 0) === 0) {
+      const manifest = market.freeManifest(e);
+      const text = JSON.stringify(manifest);
+      res.status(200).set(X402_HEADER_CURRENCY, e.anchor.currency)
+        .set('x-payment-response', JSON.stringify({ settled: false, free: true, price: e.anchor.price, reason: 'price 0: nothing was charged and no sale was recorded' }))
+        .set('x-content-sha256', sha256Hex(text)).type('application/json').send(text);
+      return;
+    }
+    if (!header) {
+      // The 402 carries the whole quote: the price, what the family costs, and the bases the buyer must own for
+      // this knowledge to do anything (item 270). `requires` is empty on a knowledge that stands alone.
+      const reqs = await market.requirementsFor(e, resource);
+      res.status(402).set(X402_HEADER_REQUIRED, market.encodeRequirements(reqs)).set('www-authenticate', 'x402').json({ x402Version: 1, error: 'payment required', requirements: reqs, accepts: reqs });
+      return;
+    }
+    const out = await market.settlePayment(e, resource, header);
+    if (!out.settlement) throw new HttpError(402, out.error ?? 'payment failed');
+    const settlement = out.settlement;
+    const manifest = market.issueManifest(e, settlement.buyer);
+    const text = JSON.stringify(manifest);
+    res.status(200)
+      .set(X402_HEADER_TX, settlement.tx_hash).set(X402_HEADER_CURRENCY, settlement.currency)
+      // `replayed` = this payment was already settled and the manifest was re-issued to the payer; nothing was
+      // charged a second time (item 273). A first sale is unchanged: {settled:true, tx, royalty}.
+      .set('x-payment-response', JSON.stringify({ settled: true, tx: settlement.tx_hash, royalty: settlement.royalty, ...(out.replayed ? { replayed: true, settled_at: settlement.created_at } : {}) }))
+      .set('x-content-sha256', sha256Hex(text))
+      .type('application/json').send(text);
+  }));
+
+  /**
+   * The curation fee for one period of a track this node owns (item 359) — the same 402 loop as a knowledge, with
+   * a track as its subject. There is no body and no manifest: what a period buys is the curating, and the record
+   * of it is the settlement.
+   */
+  router.get('/x402/branch/:name', wrap(async (req, res) => {
+    const name = decodeURIComponent(req.params.name as string);
+    const b = (await market.allBranches()).find((x) => x.name === name);
+    if (!b) throw notFound('track not found');
+    if (!sameAddr(b.owner, market.address)) throw new HttpError(409, `${name} is curated by ${b.owner}, not by this node`);
+    if (!b.terms || Number(b.terms.price) <= 0) throw new HttpError(409, `${name} is free to follow: it has no curation fee`);
+    const resource = `/x402/branch/${encodeURIComponent(name)}`;
+    const header = req.header(X402_HEADER_PAYMENT);
+    if (!header) {
+      const reqs = await market.requirementsForBranch(b, resource);
+      res.status(402).set(X402_HEADER_REQUIRED, market.encodeRequirements(reqs)).set('www-authenticate', 'x402').json({ x402Version: 1, error: 'payment required', requirements: reqs, accepts: reqs });
+      return;
+    }
+    const out = await market.settleBranchPayment(b, resource, header);
+    if (!out.settlement) throw new HttpError(402, out.error ?? 'payment failed');
+    const body = JSON.stringify({
+      branch: b.name, owner: b.owner, period_days: b.terms.period_days, paid_at: out.settlement.created_at,
+      paid_until: out.settlement.created_at + b.terms.period_days * 86_400_000, patch_ids: b.patch_ids,
+    });
+    res.status(200).set(X402_HEADER_TX, out.settlement.tx_hash).set(X402_HEADER_CURRENCY, out.settlement.currency)
+      .set('x-payment-response', JSON.stringify({ settled: true, tx: out.settlement.tx_hash, royalty: out.settlement.royalty, ...(out.replayed ? { replayed: true } : {}) }))
+      .set('x-content-sha256', sha256Hex(body)).type('application/json').send(body);
+  }));
+
+  // ------------------------------------------------------------ p2p protocol
+  router.get('/p2p/info', wrap(async () => market.selfInfo()));
+  /**
+   * Peer hello. The body is a CLAIM — `address`, `roles`, `blobs` — and before this route checked a signature the
+   * claim was enough to become a "verifier" on this node and download every paid body for free (item 326). The
+   * endpoint is still remembered from an unsigned hello (that is only gossip, and it costs nothing to be wrong
+   * about), but the address and the roles are recorded only when the caller signs `hello:<its endpoint>` with the
+   * key it claims — so a role claim is now as accountable as an attestation.
+   */
+  router.post('/p2p/hello', wrap(async (req) => {
+    const info = req.body as { endpoint?: string; address?: string };
+    const endpoint = (info?.endpoint ?? '').replace(/\/+$/, '');
+    if (!endpoint || !info?.address || sameAddr(info.address, market.address)) return market.selfInfo();
+    const signer = verifyAuthHeader(req.header('x-ainize-auth'), `hello:${endpoint}`);
+    if (signer && sameAddr(signer, info.address)) {
+      market.store.upsertPeer(endpoint, { address: info.address, info: info as never, last_seen: Date.now(), failures: 0, last_error: null });
+    } else {
+      market.store.upsertPeer(endpoint);
+      market.log('debug', 'p2p', `unsigned hello from ${endpoint} claiming ${info.address.slice(0, 10)}…${(info as { roles?: string[] }).roles?.length ? ` and the roles ${(info as { roles?: string[] }).roles!.join(', ')}` : ''} — endpoint remembered, claim not recorded (it must sign hello:<endpoint>)`, null, { endpoint, claimed: info.address });
+    }
+    return market.selfInfo();
+  }));
+
+  /**
+   * What this node DID about one settlement's royalties — the public half of item 311. An ancestor's node can see
+   * the settle record naming it, but whether the money moved lived only in the seller's private `payouts` table;
+   * this route answers for one settle hash, so the ancestor's wallet can say `paid` / `pending` / `failed` with the
+   * seller's own tx hash instead of reporting the seller's promise as money received.
+   */
+  router.get('/p2p/payouts/:hash', wrap(async (req) => {
+    const hash = String(req.params.hash ?? '');
+    const items = market.store.listPayouts({ limit: 5000 }).filter((r) => r.settle_hash === hash)
+      .map((r) => ({ address: r.address, amount: r.amount, currency: r.currency, status: r.status, tx_hash: r.tx_hash, attempts: r.attempts, last_error: r.last_error, updated_at: r.updated_at }));
+    // A local-credit sale is settled by the record itself: there is no transfer to report, and saying so is not the
+    // same as "we have no rows for you".
+    const settle = (await market.ledger.settlements()).find((x) => x.hash === hash);
+    return { settle_hash: hash, seller: market.address, scheme: settle?.body.scheme ?? null, known: !!settle, items };
+  }));
+  router.get('/p2p/peers', wrap(async () => ({ peers: [market.publicUrl, ...market.p2p.peers().map((p) => p.endpoint)] })));
+  router.get('/p2p/records', wrap(async (req) => {
+    const since = Number(req.query.since ?? 0);
+    const limit = Math.min(1000, Number(req.query.limit ?? 500));
+    if (!market.ledger.sync) return { records: [], cursor: since };
+    return market.ledger.sync(since, limit);
+  }));
+  router.post('/p2p/records', wrap(async (req) => {
+    const recs = (req.body?.records ?? []) as LedgerRecord[];
+    let added = 0; const rejected: string[] = [];
+    for (const r of recs.slice(0, 500)) {
+      try { if (await market.ledger.ingest(r)) added++; } catch (e) { rejected.push(`${r.hash?.slice(0, 12)}: ${(e as Error).message}`); }
+    }
+    if (added) { market.invalidate(); market.log('info', 'p2p', `received ${added} record(s) via push`); }
+    // On the AIN ledger records are not ingested from peers — the push is a hint that the chain has new state: re-read it now.
+    if (!added && recs.length && market.ledger.kind === 'ain') market.refreshLedgerSoon();
+    return { added, rejected };
+  }));
+  router.get('/p2p/blobs', wrap(async () => ({ blobs: market.blobs.list().map((b) => ({ sha256: b.sha256, size_bytes: b.size_bytes, rows: b.rows })) })));
+  router.get('/p2p/blob/:sha', wrap(async (req, res) => {
+    const sha = req.params.sha as string;
+    const blob = market.blobs.get(sha);
+    if (!blob) throw notFound('blob not held by this node');
+    const requester = verifyAuthHeader(req.header('x-ainize-auth'), `blob:${sha}`);
+    const token = typeof req.query.token === 'string' ? req.query.token : undefined;
+    if (!(await market.mayDownload(sha, requester, token))) throw new HttpError(402, 'payment required: buy the patch via /x402/patch/:id (its author, a buyer holding a download token, and a verifier while it is being verified can fetch it)');
+    const size = statSync(blob.path).size;
+    // The save sheet and RUN-LOCALLY.md both name the file `lesson-<slug>-<id>.npz`, and every command in that document
+    // is written against that name — so a browser download that lands as `<sha>.npz` breaks the copy-paste. `?name=` is
+    // an optional, sanitised display name; the bytes and `x-content-sha256` are unchanged.
+    const asked = typeof req.query.name === 'string' ? req.query.name.replace(/[^A-Za-z0-9._-]/g, '').slice(0, 80) : '';
+    const filename = /^[A-Za-z0-9][A-Za-z0-9._-]*\.npz$/.test(asked) ? asked : `${sha}.npz`;
+    res.status(200).set({ 'content-type': 'application/octet-stream', 'content-length': String(size), 'x-content-sha256': sha, 'content-disposition': `attachment; filename="${filename}"` });
+    createReadStream(blob.path).pipe(res);
+  }));
+
+  /**
+   * A publisher OFFERS its patch body to this node, so a node nobody can reach can still be a seller.
+   *
+   * Every other blob transfer here is a pull — the fetcher goes to the holder. That suits a consumer behind a
+   * firewall and fails a PUBLISHER behind one: the verifier has to reach in, cannot, and the anchor sits at
+   * ANNOUNCED for ever with no error raised anywhere. This is the one direction that has to be a push.
+   *
+   * WHY ACCEPTING IS SAFE, and it is not a matter of trusting the caller:
+   *
+   *   - the sha in the path must name an anchor this node already knows, from the gossiped ledger. An
+   *     offer for a body nobody has announced is refused, so this is not open storage.
+   *   - the uploader must sign as that anchor's AUTHOR. Only the publisher can place their own bytes.
+   *   - `importFile` rehashes the file and refuses a mismatch, and rejects anything that is not a patch
+   *     (`addrs` missing). So a relay cannot be made to serve content other than what the author published
+   *     — the signed anchor already fixes the hash, and the bytes are checked against it.
+   *
+   * Off unless `p2p.relayBlobs`, and bounded by `p2p.maxRelayBytes`: holding bytes for other people is a cost
+   * and a node should say yes to it deliberately.
+   */
+  router.post('/p2p/blob/:sha', upload.single('blob'), wrap(async (req) => {
+    const sha = String(req.params.sha ?? '').toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(sha)) throw bad('sha must be a 64-character hex sha256');
+    const cfgP2p = market.cfg.p2p ?? {};
+    if (!cfgP2p.relayBlobs) throw new HttpError(403, 'relay_disabled: this node does not hold blobs for other nodes (p2p.relayBlobs)');
+
+    const file = (req as Request & { file?: { path: string; size: number } }).file;
+    if (!file) throw bad('attach the patch body as multipart field `blob`');
+    const cleanup = () => { try { unlinkSync(file.path); } catch { /* already gone */ } };
+
+    try {
+      const max = cfgP2p.maxRelayBytes ?? 0;
+      if (max > 0 && file.size > max) throw new HttpError(413, `blob is ${file.size} bytes; this node relays at most ${max} (p2p.maxRelayBytes)`);
+
+      // The anchor must already be known, and the offer must be signed by ITS author. Both together are what
+      // make this a relay rather than free storage for anyone who can reach the port.
+      const entry = (await market.catalogAll()).find((e) => e.anchor.patch_sha256 === sha);
+      if (!entry) throw notFound(`no anchor known to this node names ${sha.slice(0, 12)} — announce it first, so the offer can be checked against a signed record`);
+      const offerer = verifyAuthHeader(req.header('x-ainize-auth'), `blob:${sha}`);
+      if (!offerer || !sameAddr(offerer, entry.anchor.author)) {
+        throw new HttpError(403, `only the author of ${entry.anchor.id} may place its body here`);
+      }
+
+      if (market.blobs.get(sha)) return { ok: true, sha256: sha, already_held: true };
+      // importFile rehashes and refuses a mismatch — the signed anchor fixes the hash, this checks the bytes.
+      const { blob } = await market.blobs.importFile(file.path, { copy: true, expectSha: sha });
+      market.log('info', 'blob', `relaying ${sha.slice(0, 12)} for ${entry.anchor.id} (${blob.size_bytes} bytes) on behalf of ${entry.anchor.author.slice(0, 10)}`, entry.anchor.id);
+      return { ok: true, sha256: sha, size_bytes: blob.size_bytes, already_held: false };
+    } finally {
+      cleanup();
+    }
+  }));
+
+  // published training sets between nodes (lineage design §6.6): same gate as /p2p/blob, plus the access level
+  const datasetGateP2p = async (req: Request, sha: string) => {
+    if (!market.datasets.has(sha)) throw notFound('dataset not held by this node');
+    const requester = verifyAuthHeader(req.header('x-ainize-auth'), `dataset:${sha}`);
+    const token = req.header('x-ainize-derive') ?? (typeof req.query.token === 'string' ? req.query.token : undefined);
+    const ok = await market.mayReadDataset(sha, requester, token);
+    if (!ok.ok) throw new HttpError(ok.reason === 'dataset_unknown' ? 404 : 403, ok.reason === 'dataset_private' ? 'dataset_private: the creator kept this training set private' : ok.reason === 'dataset_derivative_only' ? 'dataset_derivative_only: post a derive intent to the knowledge (POST /api/patches/:id/derive-intent) and send its token in x-ainize-derive' : 'dataset_unknown: no listed knowledge names this training set');
+  };
+  router.get('/p2p/datasets', wrap(async () => ({ datasets: market.datasets.list().map((b) => ({ sha256: b.sha256, rows: b.rows, size_bytes: b.size_bytes, access: b.access, license: b.license })) })));
+  router.get('/p2p/dataset/:sha', wrap(async (req, res) => {
+    const sha = req.params.sha as string;
+    await datasetGateP2p(req, sha);
+    const bytes = market.datasets.rowsBytes(sha)!;
+    res.status(200).set({ 'content-type': 'application/x-ndjson; charset=utf-8', 'content-length': String(bytes.length), 'x-content-sha256': sha, 'content-disposition': `attachment; filename="dataset-${sha.slice(0, 12)}.jsonl"` }).send(bytes);
+  }));
+  router.get('/p2p/dataset/:sha/manifest', wrap(async (req) => {
+    const sha = req.params.sha as string;
+    await datasetGateP2p(req, sha);
+    return market.datasets.manifest(sha) ?? {};
+  }));
+  router.get('/p2p/dataset/:sha/benchmark', wrap(async (req, res) => {
+    const sha = req.params.sha as string;
+    await datasetGateP2p(req, sha);
+    const p = market.datasets.benchmarkPath(sha);
+    if (!existsSync(p)) throw notFound('no benchmark list for this training set');
+    res.status(200).set({ 'content-type': 'application/x-ndjson; charset=utf-8' }).send(readFileSync(p));
+  }));
+
+  // ------------------------------------------------------------ errors
+  router.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    // D3: giving up while queued is not a failure — it is an outcome the client asked for, and nothing was charged.
+    if (err instanceof ChatCancelledError) return res.status(499).json({ error: err.message, cancelled: true, charged: false });
+    // A live test that waited out the shared lock is temporarily unavailable, not broken: say so as 503 + Retry-After
+    // instead of the generic 500 the "shared runtime busy" throw used to fall through to.
+    if (err instanceof Error && /shared runtime busy/.test(err.message)) { res.set('retry-after', '30'); return res.status(503).json({ error: err.message, busy: true }); }
+    // TeachError.details carries what a bare {error} cannot: the per-row report of a failed upload, the quota that is left
+    if (err instanceof TeachError) return res.status(err.status).json({ error: err.message, ...(err.details ?? {}) });
+    if (err instanceof HttpError) return res.status(err.status).json({ error: err.message, ...err.body });
+    if (err instanceof PayoutError) return res.status(err.status).json({ error: err.message });
+    if (err instanceof z.ZodError) return res.status(400).json({ error: 'invalid request', issues: err.issues });
+    // typed domain errors from Market / core validation: caller mistakes are 4xx, never 500
+    if (err instanceof ValidationError) return res.status(400).json({ error: err.message });
+    if (err instanceof ConflictError) return res.status(409).json({ error: err.message, ...(err.details ?? {}) });
+    if (err instanceof NotFoundError) return res.status(404).json({ error: err.message });
+    if (err instanceof MarketError) return res.status(err.status).json({ error: err.message, ...(err.details ?? {}) });
+    const msg = (err as Error)?.message ?? String(err);
+    // Market / runtime errors carry the status they mean (400 bad input, 404 unknown, 409 conflict, 503 model unavailable).
+    const status = (err as { status?: unknown })?.status;
+    if (typeof status === 'number' && status >= 400 && status < 600) return res.status(status).json({ error: msg });
+    console.error('[api]', msg);
+    res.status(500).json({ error: msg });
+  });
+  return router;
+}
