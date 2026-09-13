@@ -1,0 +1,191 @@
+import { useParams } from 'react-router';
+import styled from 'styled-components';
+import { errorMessage, useInfoQuery, useNudgePayoutMutation, useTeacherQuery } from '@/api/api';
+import { useT } from '@/i18n';
+import { useTitle } from '@/utils/useTitle';
+import { Alert } from '@/components/ui/Form';
+import { Button } from '@/components/ui/Button';
+import { CenterProgress, CopyButton, Description, Empty, Mono, PageWrapper, StatusChip, StyledLink, SubTitle, Title, TitleRow } from '@/components/ui/Misc';
+import { Table, TableBody, TableData, TableHead, TableHeader, TableRow, TableWrapper } from '@/components/ui/Table';
+import { currentTeacherKey, isAddress, shortKey } from '@/lib/teacherKey';
+import { num, shortAddr, shortHash } from '@/utils/format';
+import { useDateTime, useElapsed } from '@/utils/useFormat';
+
+const Stats = styled.div`margin-top: 16px; display: flex; flex-wrap: wrap; gap: 16px 32px; padding: 20px 24px; background: #fff; border: 1px solid ${(p) => p.theme.color.LIGHT_GREY};`;
+const Stat = styled.div<{ $tone?: string }>`
+  display: flex; flex-direction: column; min-width: 96px;
+  b { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; color: ${(p) => (p.$tone === 'bad' ? p.theme.color.ERROR : p.$tone === 'warn' ? p.theme.color.WARNING : p.theme.color.BLACK)}; }
+  span { margin-top: 4px; font-size: 12px; color: ${(p) => p.theme.color.GREY}; }
+`;
+const AddrLine = styled.div`margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13px; color: ${(p) => p.theme.color.GREY};`;
+const Pay = styled.span<{ $s: string }>`font-weight: 600; color: ${(p) => (p.$s === 'paid' ? p.theme.color.SUCCESS : p.$s === 'failed' ? p.theme.color.ERROR : p.theme.color.WARNING)};`;
+/**
+ * What the verifiers said about a lesson that did not pass (item 304). "Failed verification" was the whole story a
+ * teacher was given, on a public record they had just been told is permanent — while the score sat one click away
+ * on the knowledge page and the question the model got wrong was signed into the attestation itself.
+ */
+const Rejected = styled.div`
+  margin-top: 6px; padding: 8px 10px; border-left: 2px solid ${(p) => p.theme.color.ERROR}; background: #fdf4f5;
+  font-size: 12px; line-height: 1.6; color: ${(p) => p.theme.color.BLACK}; text-align: left; word-break: break-word;
+  b { font-weight: 600; }
+  dl { margin: 6px 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; }
+  dt { color: ${(p) => p.theme.color.GREY}; }
+  dd { margin: 0; }
+  dd.bad { color: ${(p) => p.theme.color.ERROR}; }
+`;
+
+/** /teacher/:address — public data-provider page: taught knowledge + earnings reconciled from the public record (spec §4.1 step 9, §9.3). */
+export default function TeacherPage() {
+  const { address = '' } = useParams<{ address: string }>();
+  const { t } = useT();
+  const elapsed = useElapsed();
+  const dateTime = useDateTime();
+  const valid = isAddress(address);
+  const { data, error, isLoading } = useTeacherQuery(address, { skip: !valid, pollingInterval: 15_000 });
+  const { data: info } = useInfoQuery();
+  const [nudge, nudgeState] = useNudgePayoutMutation();
+  const mine = currentTeacherKey()?.address.toLowerCase() === address.toLowerCase();
+  useTitle(data?.name ? `${t('teacher.title')} · ${data.name}` : t('teacher.title'));
+
+  if (!valid) return <PageWrapper><Alert $tone="error">{t('teacher.not_found')}</Alert></PageWrapper>;
+  if (isLoading) return <PageWrapper><CenterProgress /></PageWrapper>;
+  if (error || !data) return <PageWrapper><Alert $tone="error">{t('common.error', { message: errorMessage(error) })}</Alert></PageWrapper>;
+  const e = data.earnings;
+  const cur = e.currency;
+  const nodeName = info?.node.name ?? 'this node';
+  /** item 298 — a lesson can only be sold where enough independent verifiers can look at it. */
+  const v = data.verification;
+  const cannotSell = !!v && v.verifiers < v.quorum;
+  /** item 299 — on a local ledger "Paid" is a line in one node's book, not money that moved. */
+  const playMoney = (data.ledger?.kind ?? (cur === 'CREDIT' ? 'local' : undefined)) === 'local';
+  /** How long a lesson has been waiting, and how many verifiers actually looked (never "0 of 2" with no age). */
+  /** What this lesson actually paid the teacher: their own earnings rows for it, summed (item 308). */
+  const lessonShare = (patchId: string): string => {
+    const n = e.items.filter((it) => it.patch_id === patchId).reduce((sum, it) => sum + Number(it.amount ?? 0), 0);
+    return Number.isFinite(n) ? String(Math.round(n * 1e6) / 1e6) : '0';
+  };
+  const waiting = (l: { status: string; verified: boolean; created_at?: number; attestations?: number; quorum?: number }) =>
+    !l.verified && ['ANNOUNCED', 'VERIFYING', 'PENDING_REVIEW'].includes(l.status) && l.created_at !== undefined
+      ? t('teacher.awaiting', { age: elapsed(l.created_at), n: l.attestations ?? 0, quorum: l.quorum ?? v?.quorum ?? 2 })
+      : null;
+
+  return (
+    <PageWrapper>
+      <TitleRow>
+        <Title>{t('teacher.title')}{data.name ? ` · ${data.name}` : ''}</Title>
+      </TitleRow>
+      <Description>{t('teacher.subtitle')}</Description>
+      <AddrLine>
+        <Mono title={data.address} data-testid="teacher-address">{data.address}</Mono>
+        <CopyButton text={data.address} label={t('common.copy')} />
+        {data.hidden && <span>{t('teacher.hidden')}</span>}
+      </AddrLine>
+      {mine && <Alert $tone="info" style={{ marginTop: 16 }}>{t('teacher.your_page')} <StyledLink to="/chat?mine=1">{t('teach.mine.title')} →</StyledLink></Alert>}
+      {cannotSell && (
+        <Alert $tone="warning" style={{ marginTop: 16 }} data-testid="teacher-no-verifiers">{t('teacher.no_verifiers', { n: v!.verifiers, quorum: v!.quorum })}</Alert>
+      )}
+      {playMoney && <Description style={{ marginTop: 12 }} data-testid="teacher-credit-note">{t('teacher.credit_ledger')}</Description>}
+
+      <Stats data-testid="teacher-earnings">
+        <Stat><b>{e.owed} {cur}</b><span>{t('teacher.owed')}</span></Stat>
+        <Stat><b>{e.paid} {cur}</b><span>{playMoney ? t('teacher.paid_credit', { node: nodeName }) : t('teacher.paid')}</span></Stat>
+        <Stat $tone={Number(e.pending) > 0 ? 'warn' : undefined}><b>{e.pending} {cur}</b><span>{t('teacher.pending')}</span></Stat>
+        {Number(e.failed) > 0 && <Stat $tone="bad"><b>{e.failed} {cur}</b><span>{t('teacher.failed')}</span></Stat>}
+        <Stat><b>{num(e.sales)}</b><span>{t('teacher.sales')}</span></Stat>
+      </Stats>
+      <Description style={{ marginTop: 8 }}>{t('teach.mine.pending_hint')}</Description>
+
+      <SubTitle $mt={32}>{t('teacher.lessons')}</SubTitle>
+      {data.lessons.length === 0 ? <Empty style={{ marginTop: 12 }}>{t('teacher.lessons_empty')}</Empty> : (
+        <TableWrapper style={{ marginTop: 12 }}>
+          <Table>
+            {/*
+              * Item 308 — the page that exists to show what a teacher earned opened with a number that is not what
+              * they earned: `lessons[].revenue` is the sum of the SALE amounts, and it sat three lines above a table
+              * headed "Your share". Same word for the same thing on both tables now, and the lesson's own share is
+              * summed from the earnings rows below it, so the two can be read against each other.
+              */}
+            <TableHeader><TableRow><TableHead $align="left" $padding="0 0 0 16px">{t('teacher.h.name')}</TableHead><TableHead>{t('teacher.h.status')}</TableHead><TableHead>{t('teacher.h.downloads')}</TableHead><TableHead title={t('teacher.h.sales_total_help')}>{t('teacher.h.sales_total')}</TableHead><TableHead $align="right" $padding="0 16px 0 8px">{t('teacher.h.amount')}</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {data.lessons.map((l) => (
+                <TableRow key={l.id} data-testid="teacher-lesson">
+                  <TableData $align="left" $padding="0 0 0 16px" $weight={600}>{l.status === 'PENDING_REVIEW' ? l.name : <StyledLink to={`/explore?q=${encodeURIComponent(l.id)}`}>{l.name}</StyledLink>}<div style={{ fontSize: 11, color: '#8d8d8f', fontWeight: 400 }}>{l.id}</div></TableData>
+                  <TableData>
+                    {l.status === 'PENDING_REVIEW' ? t('teach.mine.status.review') : <StatusChip status={l.status} />}
+                    {waiting(l) && <div style={{ fontSize: 11, color: '#8d8d8f', fontWeight: 400, marginTop: 4 }} data-testid="teacher-awaiting">{waiting(l)}</div>}
+                    {/* Item 304 — the score, the question, and something to do about it. */}
+                    {(l.results ?? []).filter((r) => !r.passed).map((r) => (
+                      <Rejected key={`${r.verifier}-${r.created_at}`} data-testid="teacher-rejected">
+                        <b>{r.verifier_name ?? shortAddr(r.verifier, 8)}</b> — {t('teacher.rej.score', { score: Object.entries(r.score).map(([k, val]) => `${k} ${val}`).join(' · ') || '—' })}
+                        {r.failures.map((f, i) => (
+                          <dl key={i}>
+                            <dt>{t('teacher.rej.asked')}</dt><dd>{f.prompt}</dd>
+                            <dt>{t('teacher.rej.expected')}</dt><dd>{f.expect}</dd>
+                            <dt>{t('teacher.rej.answered')}</dt><dd className="bad">{f.got || t('teacher.rej.empty')}</dd>
+                          </dl>
+                        ))}
+                        {!r.failures.length && <div style={{ marginTop: 4 }}>{t('teacher.rej.no_questions', { who: r.verifier_name ?? shortAddr(r.verifier, 8) })}</div>}
+                        {mine && l.job_id && <div style={{ marginTop: 6 }}><StyledLink to={`/teach/lesson/${l.job_id}`}>{t('teacher.rej.again')} →</StyledLink></div>}
+                        <div style={{ marginTop: 6, color: '#8d8d8f' }}>{t('teacher.rej.permanent')}</div>
+                      </Rejected>
+                    ))}
+                  </TableData>
+                  <TableData>{num(l.downloads)}</TableData>
+                  <TableData title={t('teacher.h.sales_total_help')}>{l.revenue} {cur}</TableData>
+                  <TableData $align="right" $padding="0 16px 0 8px" data-testid="teacher-lesson-share">{lessonShare(l.id)} {cur}</TableData>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableWrapper>
+      )}
+
+      <SubTitle $mt={32}>{t('teacher.earnings')}</SubTitle>
+      {e.items.length === 0 ? <Empty style={{ marginTop: 12 }}>{t('teacher.items_empty')}</Empty> : (
+        <TableWrapper style={{ marginTop: 12 }}>
+          <Table>
+            <TableHeader><TableRow><TableHead $align="left" $padding="0 0 0 16px">{t('teacher.h.patch')}</TableHead><TableHead $align="left">{t('teacher.h.seller')}</TableHead><TableHead>{t('teacher.h.amount')}</TableHead><TableHead $align="left">{t('teacher.h.state')}</TableHead><TableHead $align="right" $padding="0 16px 0 8px">{t('teacher.h.when')}</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {e.items.map((it) => (
+                <TableRow key={it.settle_hash + it.patch_id}>
+                  <TableData $align="left" $padding="0 0 0 16px" $weight={600}>{it.patch_id}</TableData>
+                  <TableData $align="left" $mono title={it.seller}>{shortAddr(it.seller, 6)}</TableData>
+                  <TableData>{it.amount} {it.currency}</TableData>
+                  <TableData $align="left">
+                    <Pay $s={it.status}>{it.status === 'paid' ? t('teacher.item.paid') : it.status === 'failed' ? t('teacher.item.failed', { seller: shortAddr(it.seller, 6) }) : t('teacher.item.pending')}</Pay>
+                    <div style={{ fontSize: 11, color: '#8d8d8f' }}>
+                      {it.tx_hash ? t('teacher.item.tx', { tx: shortHash(it.tx_hash, 14) }) : it.attempts !== undefined ? t('teacher.item.attempts', { n: it.attempts }) : it.status === 'pending' && it.scheme !== 'local-credit' ? t('teacher.item.other_node', { seller: shortAddr(it.seller, 6), hash: shortHash(it.settle_hash, 12) }) : it.scheme === 'local-credit' ? t('teacher.item.scheme_local') : it.scheme === 'ain-transfer' ? t('teacher.item.scheme_ain') : ''}
+                    </div>
+                    {/* Item 306 — what went wrong, and one button instead of waiting for an operator to notice a warn line. */}
+                    {it.status === 'failed' && it.last_error && <div style={{ fontSize: 11, color: '#e6173e', marginTop: 2 }} data-testid="teacher-payout-error">{t('teacher.item.last_error', { error: it.last_error })}</div>}
+                    {it.status !== 'paid' && it.payout_id !== undefined && mine && (
+                      <div style={{ marginTop: 6 }}>
+                        <Button
+                          size="small" variant="outlined" data-testid="teacher-payout-nudge"
+                          loading={nudgeState.isLoading}
+                          onClick={() => { void nudge(it.payout_id!); }}
+                        >{t('teacher.item.nudge')}</Button>
+                        {nudgeState.isSuccess && nudgeState.originalArgs === it.payout_id && (
+                          <span style={{ marginLeft: 8, fontSize: 11, color: '#8d8d8f' }}>
+                            {nudgeState.data?.retried
+                              ? t('teacher.item.nudge_done', { status: nudgeState.data.payout.status })
+                              : t('teacher.item.nudge_wait', { minutes: Math.ceil((nudgeState.data?.retry_after_ms ?? 0) / 60_000) })}
+                          </span>
+                        )}
+                        {nudgeState.isError && nudgeState.originalArgs === it.payout_id && (
+                          <span style={{ marginLeft: 8, fontSize: 11, color: '#e6173e' }}>{errorMessage(nudgeState.error)}</span>
+                        )}
+                      </div>
+                    )}
+                  </TableData>
+                  <TableData $align="right" $padding="0 16px 0 8px" title={dateTime(it.created_at)}>{elapsed(it.created_at)}</TableData>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableWrapper>
+      )}
+      <Description style={{ marginTop: 16, fontSize: 12 }}>{shortKey(data.address)} · {t('teach.key.address')}</Description>
+    </PageWrapper>
+  );
+}
