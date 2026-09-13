@@ -230,12 +230,13 @@ name and resolves it to the node holding that knowledge.
 
 ### 3. Why this lesson is 82 rows, and not 1,707
 
-The extractor reads 1,707 facts off the pinned responses. Training all of them was tried, and **the product's own
-publish gate refused it** — `locality 3/10`, meaning seven unrelated answers moved.
+The extractor reads 1,707 facts off the pinned responses. The first lesson trained a 119-fact slice of them —
+address→symbol, from the same pull — and **the product's own publish gate refused it**: `locality 3/10`, meaning
+of the ten side-effect prompts that proved repeatable on this model, seven unrelated answers moved.
 
-The cause was measured, not guessed: 119 address→symbol facts touched **49,825 memory rows**, 419 per fact,
-because a 42-character hex address tokenises long and gives every fact an enormous n-gram reach. More training
-passes raise accuracy and footprint together, so no number of epochs satisfies both gates.
+The cause was measured, not guessed: those 119 facts touched **49,825 memory rows**, 419 per fact, because a
+42-character hex address tokenises long and gives every fact an enormous n-gram reach. More training passes raise
+accuracy and footprint together, so no number of epochs satisfies both gates.
 
 So the rule is one line — drop every row carrying a hex address — and 82 survive:
 
