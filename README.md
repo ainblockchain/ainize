@@ -2,7 +2,9 @@
 
 ## ETHOnline 2026 — watch the demo
 
-**[▶ Watch the demo on AIN Drive](https://aindrive.ainetwork.ai/d/IGZEVebpsWb3)**
+**[▶ Watch / download the demo on GitHub](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-demo/ainize-bake-your-memory.mp4)**
+
+[Video file in this repository](video/ainize-bake-your-memory.mp4) · 1080p, audio included. The supplied original is preserved without re-encoding.
 
 The earlier recorded ainize.ai comparison demonstrates MetaMask login → Live Test → **before/after trained-memory comparisons** → ENS resolution.
 Its working Graph examples produce **yvUSDC → G-UNI** and **10% → 2.5%**.

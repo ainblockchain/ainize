@@ -2,10 +2,18 @@
 
 ## Featured demo
 
-[Watch the demo on AIN Drive](https://aindrive.ainetwork.ai/d/IGZEVebpsWb3).
-This is the featured video linked from the root README. Earlier recordings and
-their evidence remain below for reproducibility; their hashes describe those
-archived files, not the replacement AIN Drive video.
+[Watch/download the demo on GitHub](https://github.com/ainblockchain/ainize/releases/download/ethonline2026-demo/ainize-bake-your-memory.mp4)
+or open [the committed MP4](ainize-bake-your-memory.mp4).
+
+The supplied AIN Drive original was downloaded with authorized CLI credentials
+and uploaded unchanged: 34,205,782 bytes, approximately 230 seconds, 1920×1080
+H.264 video with AAC audio. SHA-256:
+`879b3673ad63b4ae614b2d00def57fa7448c9087128c5ad43a9518e3a38c0107`.
+No login to AIN Drive is needed to download the GitHub copy. Both audio and video
+streams passed a full FFmpeg decode check. This does not certify who narrated it.
+
+Earlier recordings and their evidence remain below for reproducibility; their
+hashes describe those archived files, not this replacement video.
 
 ## Earlier: before/after trained memory
 
