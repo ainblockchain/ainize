@@ -30,6 +30,12 @@ knowledge name carrying `ainize.node` and `ainize.patch`. Missing records fail v
 The CLI retains its documented local names-file precedence; use a clean local Ainize home
 when verifying the on-chain path and inspect the reported `source`.
 
+**Check deployed write permissions** performs fresh Sepolia `eth_call` simulations
+against the resolver recorded in `evidence/ens/deployment.json`. It checks that the
+same recorded operator can update `ainize.node` but cannot update `ainize.patch`
+under its current roles. These calls do not persist writes or require a wallet key.
+The result includes the checked block; an administrator can later change roles.
+
 The server listens on loopback only and verifies host and request origin. Requests execute
 fixed commands without a shell. Working datasets are kept in ignored `.demo-work/`;
 they are not automatically substituted for the recorded submission evidence.

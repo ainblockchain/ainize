@@ -2,25 +2,34 @@
 
 ## Human direction and division of work
 
-The team chose the product, Continuity entry, Graph/ENS targets, honesty constraints and deadline.
-The user owns ENS contracts and integration imports; other agents implement Graph and ENS CLI work.
-This assistant was authorized to edit only the submission root (later also temporary capture assets),
-inspect sibling histories, capture real output, test video tooling, and commit/push verified materials.
-Human narration was initially requested, then the user stated narration was unavailable and explicitly
-requested a caption-only artifact. We preserve the narration gap instead of generating a voice.
+The human project owner requested the ETHOnline delivery, product emphasis, and actual demo video.
+The coordinating assistant organized the Continuity/Graph/ENS work, performed contract/source integration
+and subtree imports, built the live demo, and coordinated testing and deployment. Specialist coding
+agents implemented Graph/MCP and ENS CLI/contract work. The submission agent inspected source histories,
+prepared the root package, exercised the real UI, built recording tools and published the video.
+Human narration was initially part of the delegated brief; subsequent direction established that no
+human narrator was available and requested bottom captions. No voice was synthesized.
 
-AI assisted the new `ETHONLINE2026.md`, README judge entry, this spec, continuity/evidence documentation,
-`video/` scripts, shot list, captions, tests, and browser/terminal capture orchestration. Raw Graph
+AI assistance spans the coordinating assistant and specialist agents, including the event changes in
+`integrations/mcp/`, `integrations/cli/`, `integrations/ens/`, `demo/`, `REPRODUCE.sh`, submission/export
+scripts, tests and deployment tooling. AI also assisted `ETHONLINE2026.md`, the README judge entry,
+this spec, continuity/evidence documentation, `video/` scripts, shot list, captions, tests, and capture orchestration. Raw Graph
 responses, generated rows, hashes and browser screenshots come from actual tool executions; they are
 not invented by the language model. The narration script and captions are AI-drafted text.
 No TTS, cloned voice, synthetic narration or music was created. No model performance gain is inferred.
 
-The developer environment identifies this assistant as Codex based on GPT-6; an exact service model
-identifier is not independently recorded. Other agents' models and file-level AI contributions must be
-added by their owners. Meaningful human contribution has not been independently audited here; name the
-people and their actual architecture, contract, implementation, testing and product work before upload.
+Coding assistants were used; exact service model identifiers are not independently recorded, and no
+specific model version is asserted. Historical pre-event AI usage and more granular per-file attribution
+remain to be supplied by their owners. Meaningful human contribution has not been independently audited;
+the team must name actual human product, architecture, implementation and review contributions before
+upload. Do not assign assistant-performed contracts/imports to a human or infer eligibility from this record.
 
-## Task specification retained from the user
+## Delegated work brief retained from the coordinating assistant
+
+The following is the submission-agent delegation, not a verbatim human-authored user request.
+The human objective was a concrete ETHOnline submission and an actual product demo, later emphasizing
+Engram fine-tuning, blockchain data, ENS identities, bottom captions when audio is unavailable, and all
+judge-facing source/evidence in `ainblockchain/ainize`.
 
 > Work ONLY /mnt/newdata/gov/hackathon/ainize root submission repo (currently README only). Goal ETHOnline2026 user Continuity main submission + The Graph AI Continuity + ENS existing integration, 1h deadline. Prepare concrete comprehensive concise ETHONLINE2026.md submission package, honest new/reused boundaries using sibling repo commit histories. Official rules https://ethglobal.com/events/ethonline2026/info/details: mandatory2-4min video >=720p, human voice ONLY (AI TTS banned), no speedup/mobile/music replacing narration, AI contribution disclosure/specs; deadline Sep13 12pmEDT16UTC. Official prize page: Graph live provider, meaningful AI automation reusable tooling; ENS ENSv2 Sepolia functional not hardcoded. Other agents implementing Graph live demo in ainize-mcp and ENS resolution CLI, I handle ENS contracts. Prepare ~3min human narration script, shot list and reproducible .sh ffmpeg video assembly+validation that uses real captured clips and human audio, NEVER synth voice or claim video complete if no audio. Need artifact actual screenshot recording if possible tools ffmpeg installed, browser maybe playwright install. You can add recording helper and simple recording HTML if useful but no fabricated live UI. Tests video validation using real ffprobe etc. Ask us if evidence needed. User auth commit/push after verified. Keep incomplete gates explicit, no fake claims (no verified deployment yet). Aim20min, use apply_patch edits, no secrets.
 
@@ -28,7 +37,8 @@ Follow-up requirements retained: produce a real 128–180 second, at least 720p 
 actual running-demo footage; no synthetic voice; flag missing narration; real terminal output may be
 rendered as recorded evidence. Publish via a GitHub release if possible. Keep all judge-facing materials
 in `ainblockchain/ainize`; the user imports focused source and tests into `integrations/ens`,
-`integrations/mcp`, and `integrations/cli`. Do not modify those directories in this task.
+`integrations/mcp`, and `integrations/cli`. Imports were performed by the coordinating assistant;
+the submission agent did not modify those directories.
 
 ## Implementation plan and acceptance checks
 
