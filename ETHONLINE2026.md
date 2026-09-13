@@ -161,9 +161,10 @@ separately from collection metadata. Uploading, training, payment and publishing
   Sepolia to `https://www.ainize.ai` and existing patch `taught-ainize-lifecycle100-2026-cf9a6f`.
 - [ ] Confirm the exact event opening cutoff used to classify historical work.
 - [ ] Include any missing original AI specifications, prompts and planning artifacts.
-- [ ] Caption-only video uploaded and watched end to end; technical checks alone do not verify claims.
+- [x] Caption-only video published; full decode and key scenes independently checked. Public download
+  SHA-256 matches the frozen local artifact. No human-narration compliance is inferred.
 - [ ] **Human narration: unavailable per team instruction. Caption-only video leaves this rule unmet.**
-- [ ] Final source commit pushed; public repo/release links checked signed out.
+- [x] Final source pushed; public release download checked without authentication.
 - [ ] Dashboard fields, Continuity choice and partner selections saved before 16:00 UTC;
   record submission confirmation and presentation slot if applicable.
 

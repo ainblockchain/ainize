@@ -1,12 +1,13 @@
 # Capture and release evidence
 
 The 150-second product demo combines actual browser actions and explicitly labeled recorded model output.
-The MP4 and original capture clips are prepared for the
+The MP4 and original capture clips are published on the
 [main repository release](https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-review).
-Final checksums, publication status and export metadata are recorded after encoding completes.
+The unauthenticated public MP4 download was verified against the frozen local file's SHA-256.
 
 **Export:** 150.000 seconds, 1280×816, H.264, no audio streams. The original 720-pixel app footage
 is preserved above a separate 96-pixel bottom caption band. Exact bytes and SHA-256 are in the metadata.
+SHA-256: `6e5310c0b34b1e873c5c1bb0fc9ae55c6767ac1094495e329d54e1ef8933309a`.
 [Machine-readable final metadata](final.json) distinguishes technical success from narration compliance.
 
 | Time | Source | Evidence |

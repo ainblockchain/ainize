@@ -12,7 +12,7 @@
   "video_bytes": 2063320,
   "capture_archive_sha256": "c3e2d66589c9494d23ca722301a5a891ee7d9baf756c490c281c1fbfff7a1328",
   "release_url": "https://github.com/ainblockchain/ainize/releases/tag/ethonline2026-review",
-  "publication_status": "draft; validated final asset ready",
+  "publication_status": "published",
   "scene_seconds": [
     80,
     30,
@@ -22,5 +22,8 @@
   "graph_block": 25969129,
   "ens_permission_block": 11696598,
   "canonical_resolution_verified": true,
-  "captions_below_original_720p_footage": true
+  "captions_below_original_720p_footage": true,
+  "public_download_verified": true,
+  "verified_at": "2026-09-13T14:59:20.987687+00:00",
+  "download_url": "https://github.com/ainblockchain/ainize/releases/download/ethonline2026-review/ainize-ethonline2026-caption-only.mp4"
 }
