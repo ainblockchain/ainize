@@ -1,6 +1,6 @@
 # 뉴스 적합도 평가 Agent — 요구사항
 
-작성 2026-09-15 · 갱신 2026-09-16 · 상태: **요구사항 전부 확정**, 레퍼런스 파이프라인 검증 완료, agent 미구현
+작성 2026-09-15 · 갱신 2026-09-16 · 상태: **구현 완료 (§8 1–7), 배포만 남음 (§8-8)**
 
 기사 하나를 받아 **뉴스로서 적합한지**를 네 가지 축으로 채점하는 A2A agent를 만든다. `ainize-node`에서 운영하고,
 A2A URL을 발급받아 `ainize.ai`에 로그인하면 보이게 하며, 같은 화면에서 live test까지 되게 한다.
@@ -308,21 +308,62 @@ curl -s -X POST https://<a2a-url> -H 'Content-Type: application/json' \
 
 ---
 
-## 8. 작업 순서
+## 8. 작업 현황
 
-| # | 작업 | 산출물 | 의존 |
+| # | 작업 | 상태 | 근거 |
 |---|---|---|---|
-| 1 | **③④ 채점 코어** — FK·단어수 | 단위테스트 포함 모듈 | 없음 · **즉시 착수 가능** |
-| 2 | 레퍼런스 수집기 정식화 | 프로토타입 → 캐시·재시도·동시성 포함 모듈 | 검증 완료 |
-| 3 | ①② LLM 채점 + 주제 일치 확인 | 프롬프트 + 구조화 출력 파서 | 없음 · 모델 확정됨 |
-| 4 | A2A 서버 (카드 + `message/send` + 침묵) | `curl` 자가검증 통과 | 1–3 |
-| 5 | `ainize-node` 통합 · URL 발급 | 공개 URL | 4 |
-| 6 | `/agents` 목록 | 로그인 후 확인 | 5 |
-| 7 | live test 화면 | 화면에서 실행 | 5 |
-| 8 | AIN Teams 워크스페이스 초대 · 실사용 검증 | 대화에서 동작 | 5 |
+| 1 | ③④ 채점 코어 — FK·단어수 | ✅ | `news-agent/src/text.mjs` |
+| 2 | 레퍼런스 수집기 | ✅ | `src/reference.mjs` — 실측 5건 **1.9초** |
+| 3 | ①② LLM 채점 + 주제 일치 | ✅ | `src/score.mjs` — 노드 Qwen |
+| 4 | A2A 서버 | ✅ | `src/server.mjs` — 문서 §2.2 자가검증 전항목 통과 |
+| 5 | `ainize-node` 통합 · URL 발급 | ✅ | `ainize-node/src/agents.ts` — 프록시 경유 **9.3초** |
+| 6 | `/agents` 목록 | ✅ | `ainize-web/src/pages/AgentsPage.tsx` |
+| 7 | live test | ✅ | 같은 페이지 |
+| 8 | AIN Teams 워크스페이스 초대 | ⏸ **배포 대기** | 아래 |
 
-**막힌 것이 없다.** 1번은 외부 의존성이 전혀 없고, 2번은 동작이 확인됐고, 3번의 모델도 확정됐다.
-1번부터 순서대로 진행한다.
+**테스트 37/37** (news-agent, 네트워크 미사용) · `@ainize/core` 89/89 · node·web 타입체크 클린.
+게시: `@ainize/core@0.3.2`, `@ainize/node@0.3.2`.
+
+### 8-1. 초대 요건은 이미 충족했다
+
+AIN Teams 문서 §2.2 자가검증을 **노드가 프록시하는 URL에** 그대로 돌린 결과(2026-09-16):
+
+| 검사 | 결과 |
+|---|---|
+| 카드에 `name` | ✅ `"News Fitness"` |
+| `protocolVersion == "0.3.0"` | ✅ |
+| `jsonrpc == "2.0"` / `id` 에코 | ✅ |
+| `result.kind == "message"` / `role == "agent"` | ✅ |
+| `messageId` · `contextId` 존재 | ✅ |
+| 빈 `parts` = 침묵 | ✅ |
+
+### 8-2. 남은 단계는 배포 하나다
+
+지금 URL이 `http://127.0.0.1:3799/...` 라서 워크스페이스가 닿을 수 없다. 확인된 사실:
+
+```
+GET https://www.ainize.ai/api/agents  →  502 (nginx)
+```
+
+운영 노드가 아직 구버전이라 `/api/agents` 라우트 자체가 없다. 따라서 필요한 작업은 **세 줄**이다.
+
+1. 운영 노드를 **`@ainize/node@0.3.2`** 로 올린다 (게시 완료)
+2. 그 호스트에서 agent 프로세스를 띄운다 — `node news-agent/src/server.mjs` (의존성 없음, `PORT=4010`)
+3. 노드 `config.json` 에 한 줄 추가하고 재시작
+
+```json
+"agents": [
+  { "id": "news-fitness", "name": "News Fitness", "upstream": "http://127.0.0.1:4010" }
+]
+```
+
+그러면 공개 A2A URL이 다음과 같이 서고, 이 주소를 워크스페이스에 붙여넣으면 8번이 끝난다.
+
+```
+https://www.ainize.ai/agents/news-fitness
+```
+
+**이 단계는 운영 서버 접근 권한이 필요해 코드로 대신할 수 없다.** 배포 전까지 §8-8은 열려 있다.
 
 ---
 
