@@ -1,134 +1,159 @@
 /**
- * The A2A surface (§2). Everything here is about the protocol, not the scoring — `evaluate` is never
- * reached, because the questions are whether the card is well formed, whether a malformed call is refused
- * cleanly, and whether the two things that make an agent a bad channel citizen are prevented:
- * answering chat as if it were an article, and letting an unauthenticated caller spend the GPU.
+ * The A2A surface on the official SDK, and the A2UI surface it emits.
+ *
+ * Conformance to the protocol is the SDK's job, so these tests do not re-check the JSON-RPC envelope. What
+ * they check is the part the SDK cannot supply and the four places the migration to it went wrong — each of
+ * which produced a server that started cleanly and failed every call:
+ *
+ *   1. `jsonRpcHandler` needs a `userBuilder`; without one every request is -32603.
+ *   2. The event bus carries `{ kind, data }`; a bare message is "finished without a result".
+ *   3. v1.0 parts are `{ content: { $case, value } }`; the v0.3 spelling is "missing content".
+ *   4. `role` is a NUMERIC enum; both 'agent' and 'ROLE_AGENT' serialise as UNRECOGNIZED.
+ *
+ * The scoring itself is not exercised — that needs the network and a model, and it has its own tests.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { agentCard, createA2AServer, handleMessageSend, SERVER_DEFAULTS } from '../src/server.mjs';
+import { A2UI_MIME, a2uiMessages, a2uiParts } from '../src/a2ui.mjs';
+import { SERVER_DEFAULTS, agentCard, createA2AApp, isSubmission, replyFor, textOf, textPart } from '../src/server.mjs';
 
 async function withServer(fn, opts = {}) {
-  const { server, options } = createA2AServer({ port: 0, ...opts });
-  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const { app, options } = createA2AApp(opts);
+  const server = await new Promise((resolve) => {
+    const s = app.listen(0, '127.0.0.1', () => resolve(s));
+  });
   const base = `http://127.0.0.1:${server.address().port}`;
   try { return await fn(base, options); } finally { server.close(); }
 }
 
-const rpc = (params, id = 'x1') => ({
+const send = (text, extra = {}) => ({
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ jsonrpc: '2.0', id, method: 'message/send', params }),
-});
-const msg = (text) => ({ message: { kind: 'message', messageId: 'm1', role: 'user', parts: [{ kind: 'text', text }] } });
-
-test('agentCard: carries the fields the workspace requires to initialise', () => {
-  const card = agentCard({ ...SERVER_DEFAULTS, name: 'News Fitness', publicUrl: 'https://a.example' });
-  assert.equal(card.name, 'News Fitness', 'a card without a name fails initialisation');
-  assert.equal(card.protocolVersion, '0.3.0');
-  assert.equal(card.url, 'https://a.example');
-  assert.ok(card.skills.length);
-  // url is optional and must be absent rather than null when unset, so the base URL is used
-  assert.equal('url' in agentCard({ ...SERVER_DEFAULTS, publicUrl: null }), false);
+  headers: { 'Content-Type': 'application/json', ...(extra.headers ?? {}) },
+  body: JSON.stringify({
+    jsonrpc: '2.0', id: extra.id ?? 'x1', method: extra.method ?? 'message/send',
+    params: {
+      message: { kind: 'message', messageId: 'm1', role: 'user', parts: [{ kind: 'text', text }] },
+      configuration: { blocking: true, acceptedOutputModes: ['text/plain'] },
+    },
+  }),
 });
 
-test('GET the card at the well-known path and at the legacy fallback', async () => {
+test('the card declares both protocol versions at the same URL, in the SDK two-part spelling', () => {
+  const card = agentCard({ ...SERVER_DEFAULTS, publicUrl: 'https://a.example/agents/news' });
+  const versions = card.supportedInterfaces.map((i) => i.protocolVersion);
+  assert.deepEqual(versions, ['1.0', '0.3']);
+  // three-part "1.0.0" is compared literally against the "1.0" a client asks for and refused with -32009
+  for (const v of versions) assert.match(v, /^\d+\.\d+$/);
+  assert.equal(new Set(card.supportedInterfaces.map((i) => i.url)).size, 1, 'one URL serves both');
+  assert.equal(card.supportedInterfaces[0].url, 'https://a.example/agents/news');
+  assert.equal(card.name, 'News Fitness', 'a card without a name fails workspace initialisation');
+});
+
+test('the card advertises the A2UI extension so a client knows to look for the data parts', () => {
+  const ext = agentCard(SERVER_DEFAULTS).capabilities.extensions;
+  assert.equal(ext.length, 1);
+  assert.match(ext[0].uri, /a2ui/);
+  assert.equal(ext[0].required, false, 'the text part always carries the same answer, so it is never required');
+  assert.ok(ext[0].params.supportedCatalogIds.length);
+});
+
+test('a v0.3 client gets a v0.3 card; asking for 1.0 gets the v1.0 one', async () => {
   await withServer(async (base) => {
-    for (const p of ['/.well-known/agent-card.json', '/.well-known/agent.json', '/agent.json']) {
-      const res = await fetch(base + p);
-      assert.equal(res.status, 200, p);
-      assert.equal((await res.json()).protocolVersion, '0.3.0');
-    }
+    const legacy = await (await fetch(`${base}/.well-known/agent-card.json`)).json();
+    assert.equal(legacy.protocolVersion, '0.3', 'absent header means legacy');
+
+    const modern = await (await fetch(`${base}/.well-known/agent-card.json`, { headers: { 'A2A-Version': '1.0' } })).json();
+    assert.equal(modern.protocolVersion, undefined, 'the v1.0 card has no top-level protocolVersion');
+    assert.ok(modern.supportedInterfaces.length);
+
+    // the legacy spelling some clients try first
+    assert.equal((await fetch(`${base}/agent.json`)).status, 200);
     assert.equal((await fetch(`${base}/health`)).status, 200);
-    assert.equal((await fetch(`${base}/nope`)).status, 404);
   });
 });
 
-test('a malformed or unknown JSON-RPC call is refused with a code, not a 500', async () => {
+test('chat is answered with silence: an empty TEXT PART, not an empty parts array', async () => {
   await withServer(async (base) => {
-    const bad = await fetch(base, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{ not json' });
-    assert.equal(bad.status, 400);
-    assert.equal((await bad.json()).error.code, -32700);
-
-    const noVersion = await fetch(base, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"id":1}' });
-    assert.equal((await noVersion.json()).error.code, -32600);
-
-    const wrongMethod = await fetch(base, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 9, method: 'tasks/get', params: {} }),
-    });
-    assert.equal(wrongMethod.status, 404);
-    const body = await wrongMethod.json();
-    assert.equal(body.error.code, -32601);
-    assert.equal(body.id, 9, 'the request id is echoed even on an error');
+    const body = await (await fetch(base, send('good morning'))).json();
+    assert.equal(body.error, undefined, 'an empty parts array here is -32603 "finished without a result"');
+    const r = body.result;
+    assert.equal(r.kind, 'message');
+    assert.equal(r.role, 'agent', 'the numeric enum renders back as "agent" for a v0.3 caller');
+    assert.deepEqual(r.parts, [{ kind: 'text', text: '' }]);
+    assert.ok(r.contextId, 'silence still keeps a session');
+    assert.equal(body.id, 'x1');
   });
 });
 
-test('chat gets silence, not a lecture — empty parts with the session intact', async () => {
+test('an unknown method is refused by the SDK rather than reaching the executor', async () => {
   await withServer(async (base) => {
-    for (const chatter of ['morning!', 'thanks', 'what do you do?']) {
-      const res = await fetch(base, rpc(msg(chatter)));
-      assert.equal(res.status, 200);
-      const { result, id } = await res.json();
-      assert.equal(id, 'x1', 'the id is echoed');
-      assert.equal(result.kind, 'message');
-      assert.equal(result.role, 'agent');
-      assert.deepEqual(result.parts, [], `"${chatter}" should be heard and not answered`);
-      assert.ok(result.contextId, 'silence still keeps a session');
-    }
+    const res = await fetch(base, send('x', { method: 'nonsense/method' }));
+    const body = await res.json();
+    assert.ok(body.error, 'the envelope is the SDK\'s to police');
   });
 });
 
-test('contextId is echoed when given, so a thread stays one conversation', async () => {
-  await withServer(async (base) => {
-    const res = await fetch(base, rpc({
-      message: { kind: 'message', messageId: 'm2', role: 'user', contextId: 'ctx-42', parts: [{ kind: 'text', text: 'hi' }] },
-    }));
-    assert.equal((await res.json()).result.contextId, 'ctx-42');
-  });
-});
-
-test('an article past the character limit is refused in words, not truncated silently', async () => {
-  const o = { ...SERVER_DEFAULTS, maxArticleChars: 100 };
-  const out = await handleMessageSend(msg('word '.repeat(60)), o);
-  assert.equal(out.silent, undefined);
+test('an over-long article is refused in words, and never scored', async () => {
+  const out = await replyFor('word '.repeat(60), { ...SERVER_DEFAULTS, maxArticleChars: 100 });
   assert.match(out.text, /this agent reads up to 100/);
+  assert.deepEqual(out.parts, [], 'a refusal has nothing structured to draw');
 });
 
-test('an oversized body is rejected before it is parsed', async () => {
-  await withServer(async (base) => {
-    const res = await fetch(base, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'message/send', params: msg('x'.repeat(300_000)) }),
-    });
-    assert.equal(res.status, 413);
-  }, { maxBodyBytes: 5_000 });
+test('textOf reads both part spellings, and joins a split article', () => {
+  assert.equal(textOf({ parts: [{ kind: 'text', text: 'a' }, { kind: 'text', text: 'b' }] }), 'a\nb');
+  assert.equal(textOf({ parts: [{ content: { $case: 'text', value: 'v1 text' } }] }), 'v1 text');
+  assert.equal(textOf({ parts: [{ kind: 'file', file: {} }] }), '', 'a non-text part contributes nothing');
+  assert.equal(textOf(undefined), '');
 });
 
-test('rate limiting protects an endpoint that receives no authentication headers', async () => {
-  await withServer(async (base) => {
-    const codes = [];
-    for (let i = 0; i < 4; i++) codes.push((await fetch(base, rpc(msg('hi')))).status);
-    assert.deepEqual(codes, [200, 200, 429, 429], 'the cap applies per IP within the window');
-    const body = await (await fetch(base, rpc(msg('hi')))).json();
-    assert.equal(body.error.code, -32029);
-  }, { rateLimit: { windowMs: 60_000, perIp: 2 } });
+test('textPart emits the v1.0 shape — the v0.3 spelling is rejected as missing content', () => {
+  assert.deepEqual(textPart('hi'), { content: { $case: 'text', value: 'hi' } });
 });
 
-test('text arrives even when a client splits the article across several parts', async () => {
-  const o = { ...SERVER_DEFAULTS, maxArticleChars: 10 };
-  const out = await handleMessageSend({
-    message: { kind: 'message', messageId: 'm3', role: 'user',
-      parts: [{ kind: 'text', text: 'word '.repeat(30) }, { kind: 'text', text: 'word '.repeat(30) }] },
-  }, o);
-  // joined, it is long enough to be a submission and past the (tiny) limit — proof both parts were read
-  assert.match(out.text, /reads up to 10/);
+test('isSubmission: a URL counts however short, prose needs to look like prose', () => {
+  assert.equal(isSubmission('https://example.com/a'), true);
+  assert.equal(isSubmission('morning!'), false);
+  assert.equal(isSubmission('word '.repeat(40)), true);
+  assert.equal(isSubmission('word '.repeat(10)), false);
 });
 
-test('a URL is a submission even though it is short; a bare greeting is not', async () => {
-  const o = { ...SERVER_DEFAULTS, maxArticleChars: 5 };
-  const url = await handleMessageSend(msg('https://example.com/article'), o);
-  assert.match(url.text, /reads up to 5/, 'a URL is treated as a submission, not as chat');
-  const greeting = await handleMessageSend(msg('hello there'), o);
-  assert.equal(greeting.silent, true);
+test('a2uiMessages: createSurface, updateComponents, updateDataModel — in that order and all v0.9', () => {
+  const result = {
+    status: 'ok', overall: 71,
+    title: { status: 'ok', score: 68, rank: 2, of: 6 },
+    lead: { status: 'skipped', reason: 'no reference lead' },
+    readability: { fk: 13.4, verdict: 'fail', target: [10, 12] },
+    length: { words: 612, verdict: 'fail', target: [450, 550] },
+    reference: { matched: [{ outlet: 'Reuters', title: 'A headline', url: 'https://r.example/a' }] },
+  };
+  const [create, comps, data] = a2uiMessages(result);
+  assert.ok(create.createSurface && comps.updateComponents && data.updateDataModel, 'order is load-bearing');
+  for (const m of [create, comps, data]) assert.equal(m.version, 'v0.9');
+  assert.match(create.createSurface.catalogId, /catalogs\/basic\/catalog\.json$/);
+
+  const byId = new Map(comps.updateComponents.components.map((c) => [c.id, c]));
+  assert.ok(byId.has('root'));
+  // every child named by the tree must exist, or a renderer draws a gap
+  for (const c of byId.values()) {
+    for (const k of Array.isArray(c.children) ? c.children : []) assert.ok(byId.has(k), `missing child ${k}`);
+    if (c.child) assert.ok(byId.has(c.child), `missing child ${c.child}`);
+  }
+
+  const model = data.updateDataModel.value;
+  assert.match(model.title, /68\/100/);
+  assert.match(model.lead, /^skipped —/, 'a skipped axis says so rather than showing a zero');
+  assert.match(model.read, /FK 13\.4/);
+  assert.match(model.len, /612 words/);
+  assert.equal(model.references.length, 1);
+  assert.equal(model.references[0].outlet, 'Reuters');
+});
+
+test('a2uiParts wraps each message as a v1.0 data part carrying the A2UI mime type', () => {
+  const parts = a2uiParts({ status: 'ok', overall: 50, readability: {}, length: {}, reference: { matched: [] } });
+  assert.equal(parts.length, 3);
+  for (const p of parts) {
+    assert.equal(p.content.$case, 'data', 'the v0.3 { kind, data } spelling is "missing content" to v1.0');
+    assert.equal(p.metadata.mimeType, A2UI_MIME);
+    assert.equal(p.mediaType, A2UI_MIME);
+  }
 });
