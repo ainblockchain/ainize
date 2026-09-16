@@ -1,0 +1,12 @@
+{
+  "name": "news-fitness-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A2A agent that scores whether an article works as news: title, lead, readability, length.",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "start": "node src/server.mjs"
+  }
+}
