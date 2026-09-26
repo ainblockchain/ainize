@@ -31,8 +31,11 @@ import { randomUUID } from 'node:crypto';
 import express from 'express';
 import { AgentEvent, DefaultRequestHandler, InMemoryTaskStore } from '@a2a-js/sdk/server';
 import { UserBuilder, agentCardHandler, jsonRpcHandler } from '@a2a-js/sdk/server/express';
-import { evaluate, renderText } from './evaluate.mjs';
-import { a2uiExtension, a2uiParts } from './a2ui.mjs';
+import { a2uiExtension } from './a2ui.mjs';
+import { isSubmission, replyFor } from './reply.mjs';
+
+// Re-exported: callers and tests reached these through the server before they moved to reply.mjs.
+export { isSubmission, replyFor };
 
 export const SERVER_DEFAULTS = {
   port: Number(process.env.PORT ?? 4010),
@@ -109,34 +112,6 @@ export const textOf = (message) => (message?.parts ?? [])
 
 /** A v1.0 text part. The compat layer turns this into `{ kind: 'text', text }` for a v0.3 caller. */
 export const textPart = (text) => ({ content: { $case: 'text', value: text } });
-
-/**
- * Is this an article, or is it chat?
- *
- * In full-delivery mode the agent sees every message in a channel and most are not articles. Scoring
- * "morning!" would produce a confident 20/100 and advice to add a lead, which is noise. A URL counts
- * however short it is; anything else has to look like prose.
- */
-export const isSubmission = (text) => /^https?:\/\/\S+$/i.test(text) || text.split(/\s+/).length >= 40;
-
-/**
- * The reply for one submission: the text answer, and the A2UI surface that renders it.
- *
- * Returns `{ text, parts }` rather than a string because a scored result has two representations and both
- * are sent. `parts` is empty for silence and for the refusals, which have nothing structured to draw.
- */
-export async function replyFor(input, o) {
-  if (!input || !isSubmission(input)) return { text: '', parts: [] };
-  if (input.length > o.maxArticleChars) {
-    return { text: `That is ${input.length} characters; this agent reads up to ${o.maxArticleChars}.`, parts: [] };
-  }
-  const result = await evaluate(input, o);
-  return {
-    text: `${renderText(result)}\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``,
-    parts: result.status === 'ok' ? a2uiParts(result) : [],
-    result,
-  };
-}
 
 /** The only part the SDK cannot supply: what this agent does with a message. */
 export class NewsFitnessExecutor {

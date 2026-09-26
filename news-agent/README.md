@@ -94,3 +94,17 @@ stops — the headline axis keeps working (it needs only the feed) and the lead 
 **The syllable count is a spelling heuristic.** Flesch–Kincaid is only as exact as it, and it is wrong on
 names and acronyms. The grade travels with `syllable_method`, the sentence count and the word count so the
 number can be checked rather than believed.
+
+## Run it on an Ainize node (hosted agent)
+
+`hosted/` packages the same scoring as a handler-mode hosted agent, so the node runs it in its own sandboxed
+container instead of a separate process on port 4010. The model is the node's (`ctx.llm`), and the reference
+corpus is fetched through the node's egress gateway.
+
+```sh
+node hosted/news-review-spec.mjs                       # the spec POSTed to /api/hosted-agents
+AINIZE_SESSION=<token> node hosted/deploy.mjs https://ainize.ai
+```
+
+The node needs `agentHost.docker.enabled`. If `news-review` is still a `config.json` agent there, remove it first
+(`ainize agent rm news-review`) — a hosted agent cannot take an id the node already proxies.
