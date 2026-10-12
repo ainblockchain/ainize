@@ -1,0 +1,10 @@
+{
+  "name": "news-fitness-agent",
+  "kind": "service",
+  "port": 8080,
+  "healthcheck": "/health",
+  "build": { "dockerfile": "news-agent/Dockerfile.ainize", "context": "news-agent" },
+  "env": {
+    "NEWS_AGENT_MODEL_URL": "https://ainize.ai/v1/chat/completions"
+  }
+}

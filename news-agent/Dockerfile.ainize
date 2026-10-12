@@ -1,0 +1,14 @@
+# ainize build for the ainize repo: deploys news-agent/ (news-fitness A2A agent, Express, Node >= 24),
+# the repo's only long-running server meant to be reachable (demo/server.mjs binds 127.0.0.1 only).
+# Build context is news-agent/. The agent's test suite runs inside `docker build`.
+FROM node:24-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+RUN npm test
+USER node
+ENV PORT=8080 HOST=0.0.0.0
+EXPOSE 8080
+CMD ["node", "src/server.mjs"]
